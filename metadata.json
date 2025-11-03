@@ -1,0 +1,7 @@
+{
+  "name": "whowhe2wha: Unified Context Engine",
+  "description": "A revolutionary Unified Context Engine that transforms fragmented digital lives into a seamless, queryable web of interconnected realities. Query your life with natural language using the 4W (Who, Where, What, When) model.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
