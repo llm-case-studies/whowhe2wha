@@ -55,7 +55,7 @@ const App: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
-  const [timelineDate, setTimelineDate] = useState(new Date('2025-11-01T12:00:00Z'));
+  const [timelineDate, setTimelineDate] = useState(new Date('2025-11-04T12:00:00Z'));
   const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
 
 
@@ -176,6 +176,7 @@ const App: React.FC = () => {
           onWhenClick={setTimeMapModalWhen}
           viewMode={viewMode}
           timelineDate={timelineDate}
+          setTimelineDate={setTimelineDate}
           timelineScale={timelineScale}
           selectedHolidayCategories={selectedHolidayCategories}
         />

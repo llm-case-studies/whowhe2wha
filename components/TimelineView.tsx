@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EventNode, TimelineScale, Holiday, Project, WhatType } from '../types';
 import { HOLIDAY_DATA } from '../constants';
 import { 
@@ -15,6 +15,7 @@ interface TimelineViewProps {
   currentDate: Date;
   scale: TimelineScale;
   selectedHolidayCategories: string[];
+  setTimelineDate: (date: Date) => void;
 }
 
 const projectColorStyles: Record<string, { bg: string, border: string }> = {
@@ -98,8 +99,15 @@ const PointEventMarker: React.FC<{event: EventNode, colorStyle: {bg: string, bor
     }
 }
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, setTimelineDate }) => {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
+  
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragInfo = useRef({
+    startX: 0,
+    startDragDate: new Date(),
+  });
   
   const projectColorMap = useMemo(() => 
       new Map(projects.map(p => [p.id, p.color])),
@@ -134,6 +142,59 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const startDateMs = startDate.getTime();
   const endDateMs = endDate.getTime();
   const totalDuration = endDateMs - startDateMs;
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+        if (isDragging) {
+            setIsDragging(false);
+        }
+    };
+
+    if (isDragging) {
+      document.body.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+    } else {
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    }
+
+    return () => {
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only main mouse button
+    e.preventDefault();
+    setIsDragging(true);
+    dragInfo.current = {
+      startX: e.pageX,
+      startDragDate: currentDate,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !timelineRef.current) return;
+    e.preventDefault();
+
+    const walk = e.pageX - dragInfo.current.startX;
+    const timelineWidth = timelineRef.current.offsetWidth;
+    
+    if (timelineWidth === 0) return;
+
+    const timeDeltaMs = (walk * totalDuration) / timelineWidth;
+    const newDate = new Date(dragInfo.current.startDragDate.getTime() - timeDeltaMs);
+
+    setTimelineDate(newDate);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
 
   const getPositionPercent = (date: Date) => {
     if (totalDuration <= 0) return 0;
@@ -178,7 +239,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
-      <div className="relative w-full h-48">
+      <div 
+        ref={timelineRef}
+        className="relative w-full h-48 cursor-grab"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         
         {isTodayVisible && (
           <div
