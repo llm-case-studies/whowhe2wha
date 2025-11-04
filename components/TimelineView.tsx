@@ -213,17 +213,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
 
         {/* Markers ON the line (Start, End, Today) */}
         <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full z-30">
-            <div className="absolute -translate-y-1/2" style={{left: '0%'}}>
+            <div className="absolute top-1/2 -translate-y-1/2" style={{left: '0%'}}>
                 <TimelineMarker label={formatDate(startDate)} align="left"/>
             </div>
             
             {isTodayVisible && (
-                <div className="absolute -translate-y-1/2" style={{left: `${todayPositionPercent}%`, transform: 'translateX(-50%)'}}>
+                <div className="absolute top-1/2 -translate-y-1/2" style={{left: `${todayPositionPercent}%`, transform: 'translateX(-50%)'}}>
                     <TimelineMarker label={"Today " + formatDate(todayDate)} isToday />
                 </div>
             )}
 
-            <div className="absolute -translate-y-1/2" style={{left: '100%', transform: 'translateX(-100%)'}}>
+            <div className="absolute top-1/2 -translate-y-1/2" style={{left: '100%', transform: 'translateX(-100%)'}}>
                  <TimelineMarker label={formatDate(endDate)} align="right"/>
             </div>
         </div>
