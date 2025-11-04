@@ -55,6 +55,11 @@ export interface Contact {
     locationName: string;
 }
 
+export interface Holiday {
+    name: string;
+    date: Date;
+}
+
 export type Theme = 'light' | 'dark' | 'focus';
 export type ViewMode = 'stream' | 'timeline';
 export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';

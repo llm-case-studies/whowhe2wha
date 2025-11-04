@@ -1,69 +1,64 @@
-import { EventNode } from '../types';
-
-export const getDaysInMonth = (date: Date): Date[] => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const days = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: days }, (_, i) => new Date(year, month, i + 1));
+export const getStartOfWeek = (date: Date): Date => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday, assuming week starts on monday
+  d.setHours(0, 0, 0, 0);
+  return new Date(d.setDate(diff));
 };
 
-export const getMonthGrid = (date: Date): (Date | null)[] => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = getDaysInMonth(date);
-    const grid: (Date|null)[] = Array(firstDay).fill(null);
-    return grid.concat(daysInMonth);
+export const getEndOfWeek = (date: Date): Date => {
+  const d = getStartOfWeek(date);
+  d.setDate(d.getDate() + 6);
+  d.setHours(23, 59, 59, 999);
+  return d;
 };
 
-export const getWeekDays = (date: Date): Date[] => {
-    const startOfWeek = new Date(date);
-    const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    startOfWeek.setDate(diff);
-
-    return Array.from({ length: 7 }, (_, i) => {
-        const day = new Date(startOfWeek);
-        day.setDate(startOfWeek.getDate() + i);
-        return day;
-    });
+export const getStartOfMonth = (date: Date): Date => {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
 };
 
-export const getMonthsForQuarter = (date: Date): Date[] => {
+export const getEndOfMonth = (date: Date): Date => {
+  const d = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+export const getStartOfQuarter = (date: Date): Date => {
     const quarter = Math.floor(date.getMonth() / 3);
-    const year = date.getFullYear();
-    return Array.from({ length: 3 }, (_, i) => new Date(year, quarter * 3 + i, 1));
+    const d = new Date(date.getFullYear(), quarter * 3, 1);
+    d.setHours(0, 0, 0, 0);
+    return d;
 };
 
-export const getMonthsForYear = (date: Date): Date[] => {
-    const year = date.getFullYear();
-    return Array.from({ length: 12 }, (_, i) => new Date(year, i, 1));
+export const getEndOfQuarter = (date: Date): Date => {
+    const quarter = Math.floor(date.getMonth() / 3);
+    const d = new Date(date.getFullYear(), quarter * 3 + 3, 0);
+    d.setHours(23, 59, 59, 999);
+    return d;
 };
 
-export const isSameDay = (d1: Date, d2: Date): boolean => {
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+export const getStartOfYear = (date: Date): Date => {
+    const d = new Date(date.getFullYear(), 0, 1);
+    d.setHours(0, 0, 0, 0);
+    return d;
 };
 
-export type TimeOfDay = 'morning' | 'midday' | 'afternoon';
-
-export const getTimeOfDay = (date: Date): TimeOfDay => {
-    const hour = date.getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 17) return 'midday';
-    return 'afternoon';
+export const getEndOfYear = (date: Date): Date => {
+    const d = new Date(date.getFullYear(), 11, 31);
+    d.setHours(23, 59, 59, 999);
+    return d;
 };
 
-export const getEventsForDay = (events: EventNode[], day: Date): EventNode[] => {
-    return events
-        .filter(e => isSameDay(new Date(e.when.timestamp), day))
-        .sort((a, b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime());
+export const addDays = (date: Date, days: number): Date => {
+    const newDate = new Date(date.valueOf());
+    newDate.setDate(newDate.getDate() + days);
+    return newDate;
 };
 
-export const getEventsForMonth = (events: EventNode[], month: Date): EventNode[] => {
-    return events.filter(e => {
-        const eventDate = new Date(e.when.timestamp);
-        return eventDate.getFullYear() === month.getFullYear() && eventDate.getMonth() === month.getMonth();
-    });
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
 };

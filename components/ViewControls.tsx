@@ -3,91 +3,120 @@ import { ViewMode, TimelineScale } from '../types';
 import { StreamIcon, TimelineIcon } from './icons';
 
 interface ViewControlsProps {
-    viewMode: ViewMode;
-    setViewMode: (mode: ViewMode) => void;
-    timelineScale: TimelineScale;
-    setTimelineScale: (scale: TimelineScale) => void;
-    timelineDate: Date;
-    setTimelineDate: (date: Date) => void;
-    onAddEventClick: () => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  timelineScale: TimelineScale;
+  setTimelineScale: (scale: TimelineScale) => void;
+  timelineDate: Date;
+  setTimelineDate: (date: Date) => void;
+  onAddEventClick: () => void;
 }
 
-const scales: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
+const scaleOptions: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const getAdjustedDate = (date: Date, scale: TimelineScale, direction: 'prev' | 'next'): Date => {
+  const newDate = new Date(date);
+  const increment = direction === 'prev' ? -1 : 1;
+  switch (scale) {
+    case 'week':
+      newDate.setDate(newDate.getDate() + 7 * increment);
+      break;
+    case 'month':
+      newDate.setMonth(newDate.getMonth() + increment);
+      break;
+    case 'quarter':
+      newDate.setMonth(newDate.getMonth() + 3 * increment);
+      break;
+    case 'year':
+      newDate.setFullYear(newDate.getFullYear() + increment);
+      break;
+  }
+  return newDate;
+};
+
+const getTimelineLabel = (date: Date, scale: TimelineScale): string => {
+  switch (scale) {
+    case 'week':
+      const startOfWeek = new Date(date);
+      // Assuming week starts on Sunday for this calculation
+      startOfWeek.setDate(date.getDate() - date.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      return `${startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    case 'month':
+      return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    case 'quarter':
+      const quarter = Math.floor(date.getMonth() / 3) + 1;
+      return `Q${quarter} ${date.getFullYear()}`;
+    case 'year':
+      return date.getFullYear().toString();
+  }
+};
 
 export const ViewControls: React.FC<ViewControlsProps> = ({
-    viewMode, setViewMode, timelineScale, setTimelineScale, timelineDate, setTimelineDate, onAddEventClick
+  viewMode,
+  setViewMode,
+  timelineScale,
+  setTimelineScale,
+  timelineDate,
+  setTimelineDate,
+  onAddEventClick,
 }) => {
+  return (
+    <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+      <div className="flex items-center space-x-1 bg-tertiary p-1 rounded-full">
+        <button
+          onClick={() => setViewMode('stream')}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
+            viewMode === 'stream' ? 'bg-secondary text-primary shadow-sm' : 'text-tertiary hover:text-primary'
+          }`}
+          aria-label="Switch to Stream view"
+        >
+          <StreamIcon className="h-4 w-4" />
+          <span>Stream</span>
+        </button>
+        <button
+          onClick={() => setViewMode('timeline')}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
+            viewMode === 'timeline' ? 'bg-secondary text-primary shadow-sm' : 'text-tertiary hover:text-primary'
+          }`}
+          aria-label="Switch to Timeline view"
+        >
+          <TimelineIcon className="h-4 w-4" />
+          <span>Timeline</span>
+        </button>
+      </div>
 
-    const handleDateChange = (direction: 'prev' | 'next') => {
-        const newDate = new Date(timelineDate);
-        const increment = direction === 'next' ? 1 : -1;
-        switch(timelineScale) {
-            case 'week':
-                newDate.setDate(newDate.getDate() + 7 * increment);
-                break;
-            case 'month':
-                newDate.setMonth(newDate.getMonth() + increment);
-                break;
-            case 'quarter':
-                newDate.setMonth(newDate.getMonth() + 3 * increment);
-                break;
-            case 'year':
-                newDate.setFullYear(newDate.getFullYear() + increment);
-                break;
-        }
-        setTimelineDate(newDate);
-    };
-
-    return (
-        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-            {/* Left Side: View Mode & Timeline Controls */}
-            <div className="flex items-center gap-4 bg-secondary p-1 rounded-lg">
-                <button
-                    onClick={() => setViewMode('stream')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${viewMode === 'stream' ? 'bg-wha-blue text-white' : 'text-secondary hover:bg-tertiary'}`}
-                >
-                    <StreamIcon /> Stream
-                </button>
-                <button
-                    onClick={() => setViewMode('timeline')}
-                     className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${viewMode === 'timeline' ? 'bg-wha-blue text-white' : 'text-secondary hover:bg-tertiary'}`}
-                >
-                    <TimelineIcon /> Timeline
-                </button>
-            </div>
-            
-            {viewMode === 'timeline' && (
-                 <div className="flex items-center gap-2 bg-secondary p-1 rounded-lg">
-                    {scales.map(scale => (
-                        <button
-                            key={scale}
-                            onClick={() => setTimelineScale(scale)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${timelineScale === scale ? 'bg-primary text-primary' : 'text-secondary hover:bg-tertiary'}`}
-                        >
-                            {capitalize(scale)}
-                        </button>
-                    ))}
-                </div>
-            )}
-            
-            {viewMode === 'timeline' && (
-                <div className="flex items-center gap-2 bg-secondary p-1 rounded-lg">
-                    <button onClick={() => handleDateChange('prev')} className="px-3 py-1.5 rounded-md text-secondary hover:bg-tertiary">&lt; Prev</button>
-                    <button onClick={() => handleDateChange('next')} className="px-3 py-1.5 rounded-md text-secondary hover:bg-tertiary">Next &gt;</button>
-                </div>
-            )}
-
-            {/* Right Side: Add Event Button */}
-            <div className="flex-grow md:flex-grow-0 flex justify-end">
-                <button
-                    onClick={onAddEventClick}
-                    className="w-full md:w-auto px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
-                >
-                    + Add Event
-                </button>
-            </div>
+      {viewMode === 'timeline' && (
+        <div className="flex items-center space-x-2 bg-tertiary p-1 rounded-full">
+          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'prev'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Previous time period">
+            &lt;
+          </button>
+          <span className="text-sm font-medium text-primary px-2 whitespace-nowrap">{getTimelineLabel(timelineDate, timelineScale)}</span>
+           <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'next'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Next time period">
+            &gt;
+          </button>
+          <select
+            value={timelineScale}
+            onChange={(e) => setTimelineScale(e.target.value as TimelineScale)}
+            className="bg-secondary border-none rounded-full text-sm text-primary py-1.5 pl-3 pr-8 focus:ring-0"
+            aria-label="Select timeline scale"
+          >
+            {scaleOptions.map(scale => (
+              <option key={scale} value={scale}>
+                {scale.charAt(0).toUpperCase() + scale.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
-    );
+      )}
+
+      <button
+        onClick={onAddEventClick}
+        className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
+      >
+        + Add Event
+      </button>
+    </div>
+  );
 };

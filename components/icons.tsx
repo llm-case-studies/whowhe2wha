@@ -53,3 +53,7 @@ export const StreamIcon: React.FC<{className?: string}> = ({className}) => (
 export const TimelineIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
 );
+
+export const StarIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2.5l2.121 4.293 4.737.688-3.428 3.34.81 4.72L10 13.25l-4.24 2.29.81-4.72-3.428-3.34 4.737-.688L10 2.5z" clipRule="evenodd" /></svg>
+);
