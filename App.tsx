@@ -1,206 +1,161 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
-import { MOCK_EVENTS, MOCK_PROJECTS } from './constants';
-import { EventNode, Location, Project, Contact, When, Theme } from './types';
-import { queryGraph } from './services/geminiService';
 import { AddEventForm } from './components/AddEventForm';
 import { MapModal } from './components/MapModal';
 import { TimeMapModal } from './components/TimeMapModal';
+import { Project, EventNode, Theme, Location, When, Contact, EntityType } from './types';
+import { MOCK_PROJECTS, MOCK_EVENTS } from './constants';
+import { queryGraph } from './services/geminiService';
 
-type VoiceStatus = 'checking' | 'supported' | 'unsupported';
-
-function App() {
+const App: React.FC = () => {
+  const [theme, setTheme] = useState<Theme>('dark');
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [allEvents, setAllEvents] = useState<EventNode[]>(MOCK_EVENTS);
-  const [displayedEvents, setDisplayedEvents] = useState<EventNode[]>(allEvents);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [events, setEvents] = useState<EventNode[]>(MOCK_EVENTS);
+  const [filteredEventIds, setFilteredEventIds] = useState<number[] | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSearched, setIsSearched] = useState<boolean>(false);
-  const [isFormVisible, setIsFormVisible] = useState<boolean>(false);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [selectedWhen, setSelectedWhen] = useState<When | null>(null);
-  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('checking');
-  const [eventDefaults, setEventDefaults] = useState<{ who?: string, where?: string } | null>(null);
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem('whowhe2wha-theme') as Theme) || 'dark'
-  );
+  
+  const [isAddEventFormOpen, setIsAddEventFormOpen] = useState(false);
+  const [mapModalLocation, setMapModalLocation] = useState<Location | null>(null);
+  const [timeMapModalWhen, setTimeMapModalWhen] = useState<When | null>(null);
+  const [addEventInitialData, setAddEventInitialData] = useState<{ who?: string; where?: string } | null>(null);
 
+  const [voiceStatus, setVoiceStatus] = useState<'checking' | 'supported' | 'unsupported'>('checking');
+  
   useEffect(() => {
-    document.body.className = '';
-    document.body.classList.add(`theme-${theme}`);
-    localStorage.setItem('whowhe2wha-theme', theme);
-  }, [theme]);
-
-
-  useEffect(() => {
-    // Check for voice recognition support on startup
-    const checkVoiceSupport = async () => {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        setVoiceStatus('unsupported');
-        return;
-      }
-      try {
-        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        if (permissionStatus.state === 'denied') {
-          setVoiceStatus('unsupported');
-        } else {
-          setVoiceStatus('supported');
-        }
-      } catch (e) {
-        // Permissions API might not be supported in all browsers (e.g., older Firefox)
-        setVoiceStatus('supported'); // Assume supported and let user click trigger prompt
-      }
-    };
-    checkVoiceSupport();
+    // Check for speech recognition support once on mount
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setVoiceStatus(SpeechRecognition ? 'supported' : 'unsupported');
   }, []);
 
-
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      handleClear();
-      return;
-    }
-
+  useEffect(() => {
+    document.documentElement.className = theme;
+  }, [theme]);
+  
+  const handleSearch = async (query: string) => {
     setIsLoading(true);
     setError(null);
-    setIsSearched(true);
-
     try {
-      const matchingIds = await queryGraph(query, { projects, events: allEvents });
-      const filteredEvents = allEvents.filter(event => matchingIds.includes(event.id));
-      setDisplayedEvents(filteredEvents);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to query the context graph. The AI may be busy, or an error occurred.');
-      setDisplayedEvents([]);
+      const data = { projects, events };
+      const matchingIds = await queryGraph(query, data);
+      setFilteredEventIds(matchingIds);
+    } catch (e) {
+      setError('An error occurred while searching. Please try again.');
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
-  }, [allEvents, projects]);
-  
-  const handleClear = useCallback(() => {
-    setDisplayedEvents(allEvents);
-    setIsSearched(false);
-    setError(null);
-  }, [allEvents]);
+  };
 
+  const handleClearSearch = () => {
+    setFilteredEventIds(null);
+    setError(null);
+  };
+  
   const handleSaveEvent = (newEventData: Omit<EventNode, 'id' | 'projectId'>, projectInfo: {id: number | null, name: string}) => {
     let targetProjectId = projectInfo.id;
-    let updatedProjects = projects;
 
-    // If it's a new project, create it first
-    if (targetProjectId === null) {
+    if (!targetProjectId) {
+      // Create a new project
       const newProject: Project = {
-        id: Math.max(...projects.map(p => p.id), 0) + 1,
+        id: Date.now(),
         name: projectInfo.name,
-        description: `New project for: ${newEventData.what.name}`,
+        description: 'Newly created project.',
         status: 'Active',
       };
-      updatedProjects = [newProject, ...projects];
-      setProjects(updatedProjects);
+      setProjects(prev => [...prev, newProject]);
       targetProjectId = newProject.id;
     }
 
-    const newEvent: EventNode = {
+    const finalEvent: EventNode = {
       ...newEventData,
-      id: Math.max(...allEvents.map(e => e.id), 0) + 1,
-      projectId: targetProjectId!,
+      id: Date.now(),
+      projectId: targetProjectId,
     };
-    
-    const updatedEvents = [newEvent, ...allEvents];
-    setAllEvents(updatedEvents);
-    setDisplayedEvents(updatedEvents);
-    
-    setIsSearched(false);
-    setError(null);
-    setIsFormVisible(false);
-  };
-  
-  const handleLocationClick = (location: Location) => {
-    setSelectedLocation(location);
-  };
-  
-  const handleWhenClick = (when: When) => {
-    setSelectedWhen(when);
+
+    setEvents(prev => [...prev, finalEvent]);
+    setIsAddEventFormOpen(false);
+    setAddEventInitialData(null);
   };
 
   const handleScheduleFromContact = (contact: Contact, location: Location) => {
-    setEventDefaults({
-      who: contact.name,
-      where: location.name,
-    });
-    setSelectedLocation(null); // Close map modal
-    setIsFormVisible(true); // Open form
+      setMapModalLocation(null); // Close map modal
+      setAddEventInitialData({
+          who: contact.name,
+          where: location.name,
+      });
+      setIsAddEventFormOpen(true);
   };
 
-  const handleCloseForm = () => {
-    setIsFormVisible(false);
-    setEventDefaults(null); // Clear any defaults
-  };
+  const displayedEvents = filteredEventIds !== null
+    ? events.filter(event => filteredEventIds.includes(event.id))
+    : events;
+
+  const displayedProjects = filteredEventIds !== null
+    ? [] // Don't show projects in search results, just the events
+    : projects;
+
 
   return (
-    <div className="min-h-screen bg-primary font-sans text-primary">
+    <div className="bg-primary min-h-screen text-primary font-sans">
       <Header theme={theme} setTheme={setTheme} />
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <SearchBar onSearch={handleSearch} onClear={handleClear} isLoading={isLoading} />
-          
-          <div className="mb-8 flex justify-end">
-            <button 
-              onClick={() => setIsFormVisible(true)}
-              className="flex items-center justify-center h-12 px-5 bg-to-orange text-white font-bold rounded-md hover:bg-orange-500 transition duration-200"
-              aria-label="Add new event"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Add Event
+      <main className="container mx-auto px-4 pb-10">
+        <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
+
+        <div className="flex justify-end mb-4">
+             <button
+                onClick={() => setIsAddEventFormOpen(true)}
+                className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
+              >
+                + Add Event
             </button>
-          </div>
-
-          {isFormVisible && (
-            <AddEventForm 
-              projects={projects}
-              onSave={handleSaveEvent} 
-              onClose={handleCloseForm}
-              voiceStatus={voiceStatus}
-              initialData={eventDefaults}
-            />
-          )}
-
-          {selectedLocation && (
-            <MapModal
-              location={selectedLocation}
-              allEvents={allEvents}
-              onClose={() => setSelectedLocation(null)}
-              onSchedule={handleScheduleFromContact}
-            />
-          )}
-          
-          {selectedWhen && (
-            <TimeMapModal
-              when={selectedWhen}
-              allEvents={allEvents}
-              onClose={() => setSelectedWhen(null)}
-            />
-          )}
-
-          <Dashboard 
-            projects={projects}
-            events={isSearched ? displayedEvents : allEvents}
-            isLoading={isLoading} 
-            error={error} 
-            isSearched={isSearched}
-            onLocationClick={handleLocationClick}
-            onWhenClick={handleWhenClick}
-          />
         </div>
+
+        <Dashboard
+          projects={displayedProjects}
+          events={displayedEvents}
+          isLoading={isLoading}
+          error={error}
+          isSearched={filteredEventIds !== null}
+          onLocationClick={setMapModalLocation}
+          onWhenClick={setTimeMapModalWhen}
+        />
       </main>
+      
+      {isAddEventFormOpen && (
+        <AddEventForm
+          projects={projects}
+          onSave={handleSaveEvent}
+          onClose={() => {
+              setIsAddEventFormOpen(false);
+              setAddEventInitialData(null);
+          }}
+          voiceStatus={voiceStatus}
+          initialData={addEventInitialData}
+        />
+      )}
+
+      {mapModalLocation && (
+        <MapModal 
+            location={mapModalLocation} 
+            allEvents={events} 
+            onClose={() => setMapModalLocation(null)}
+            onSchedule={handleScheduleFromContact}
+        />
+      )}
+
+      {timeMapModalWhen && (
+        <TimeMapModal
+            when={timeMapModalWhen}
+            allEvents={events}
+            onClose={() => setTimeMapModalWhen(null)}
+        />
+      )}
     </div>
   );
-}
+};
 
 export default App;

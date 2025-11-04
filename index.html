@@ -1,119 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>whowhe2wha: Unified Context Engine</title>
+    <script type="importmap">
+        {
+          "imports": {
+            "react": "https://aistudiocdn.com/react@^19.2.0",
+            "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+            "react/": "https://aistudiocdn.com/react@^19.2.0/",
+            "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0"
+          }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      :root, body.theme-dark {
-        --color-bg-primary: #0f172a;
-        --color-bg-secondary: rgb(30 41 59);
-        --color-bg-tertiary: rgb(51 65 85);
-        --color-bg-input: rgb(15 23 42);
-        --color-border-primary: rgb(51 65 85);
-        --color-border-secondary: rgb(30 41 59);
-        --color-text-primary: #f8fafc;
-        --color-text-secondary: #94a3b8;
-        --color-text-tertiary: #64748b;
-        --color-modal-overlay: rgba(0, 0, 0, 0.7);
+    <style type="text/tailwindcss">
+        @layer base {
+          :root {
+            /* Base */
+            --color-primary: 243 244 246; /* gray-100 */
+            --color-secondary: 156 163 175; /* gray-400 */
+            --color-tertiary: 55 65 81; /* gray-700 */
 
-        --color-status-active-bg: rgba(74, 222, 128, 0.1);
-        --color-status-active-text: #4ade80;
-        --color-status-completed-bg: rgba(148, 163, 184, 0.2);
-        --color-status-completed-text: #94a3b8;
-        --color-status-onhold-bg: rgba(250, 204, 21, 0.1);
-        --color-status-onhold-text: #facc15;
-      }
-      body.theme-light {
-        --color-bg-primary: #f1f5f9;
-        --color-bg-secondary: #ffffff;
-        --color-bg-tertiary: #e2e8f0;
-        --color-bg-input: #ffffff;
-        --color-border-primary: #cbd5e1;
-        --color-border-secondary: #e2e8f0;
-        --color-text-primary: #0f172a;
-        --color-text-secondary: #475569;
-        --color-text-tertiary: #64748b;
-        --color-modal-overlay: rgba(0, 0, 0, 0.5);
+            /* Backgrounds */
+            --background-primary: 17 24 39; /* gray-900 */
+            --background-secondary: 31 41 55; /* gray-800 */
+            --background-input: 55 65 81; /* gray-700 */
+            --background-modal-overlay: 17 24 39 / 0.8;
 
-        --color-status-active-bg: #dcfce7;
-        --color-status-active-text: #166534;
-        --color-status-completed-bg: #e2e8f0;
-        --color-status-completed-text: #475569;
-        --color-status-onhold-bg: #fef9c3;
-        --color-status-onhold-text: #854d0e;
-      }
-      body.theme-focus {
-        --color-bg-primary: #fdf6e3;
-        --color-bg-secondary: #eee8d5;
-        --color-bg-tertiary: #eee8d5;
-        --color-bg-input: #fdf6e3;
-        --color-border-primary: #93a1a1;
-        --color-border-secondary: #eee8d5;
-        --color-text-primary: #586e75;
-        --color-text-secondary: #657b83;
-        --color-text-tertiary: #839496;
-        --color-modal-overlay: rgba(0, 0, 0, 0.6);
+            /* Entities */
+            --color-who-pink: 236 72 153; /* pink-500 */
+            --color-where-green: 16 185 129; /* green-500 */
+            --color-wha-blue: 59 130 246; /* blue-500 */
+            --color-to-orange: 245 158 11; /* orange-400 */
+            
+            /* Status */
+            --color-status-active: 34 197 94; /* green-500 */
+            --color-status-active-text: 240 253 244; /* green-50 */
+            --color-status-completed: 96 165 250; /* blue-400 */
+            --color-status-completed-text: 239 246 255; /* blue-50 */
+            --color-status-onhold: 252 165 165; /* red-300 */
+            --color-status-onhold-text: 127 29 29; /* red-900 */
+             
+            /* Time of Day - Placeholder for when timeline view is active */
+            --color-morning: 245 158 11; /* amber-500 */
+            --color-midday: 59 130 246; /* blue-500 */
+            --color-afternoon: 236 72 153; /* pink-500 */
+          }
 
-        --color-status-active-bg: rgba(133, 153, 0, 0.2);
-        --color-status-active-text: #859900;
-        --color-status-completed-bg: rgba(147, 161, 161, 0.2);
-        --color-status-completed-text: #93a1a1;
-        --color-status-onhold-bg: rgba(181, 137, 0, 0.2);
-        --color-status-onhold-text: #b58900;
-      }
+          html.light {
+            --color-primary: 17 24 39; /* gray-900 */
+            --color-secondary: 75 85 99; /* gray-600 */
+            --color-tertiary: 209 213 219; /* gray-300 */
+            --background-primary: 255 255 255; /* white */
+            --background-secondary: 249 250 251; /* gray-50 */
+            --background-input: 255 255 255; /* white */
+            --background-modal-overlay: 255 255 255 / 0.8;
+            --color-status-onhold: 239 68 68; /* red-500 */
+            --color-status-onhold-text: 254 226 226; /* red-100 */
+          }
+
+          html.focus {
+             --color-primary: 92 64 51; /* custom sepia text */
+             --color-secondary: 148 112 93; /* custom sepia secondary text */
+             --color-tertiary: 228 212 197; /* custom sepia border */
+             --background-primary: 251 243 235; /* custom sepia bg */
+             --background-secondary: 245 235 224; /* custom sepia secondary bg */
+             --background-input: 251 243 235; /* custom sepia bg */
+             --background-modal-overlay: 251 243 235 / 0.8;
+             --color-status-onhold: 239 68 68;
+             --color-status-onhold-text: 254 226 226;
+          }
+        }
     </style>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              // Brand colors (theme-agnostic)
-              'who-pink': '#ec4899',
-              'where-green': '#10b981',
-              'to-orange': '#f59e0b',
-              'wha-blue': '#3b82f6',
-
-              // Themed colors using CSS variables
-              'primary': 'var(--color-text-primary)',
-              'secondary': 'var(--color-text-secondary)',
-              'tertiary': 'var(--color-text-tertiary)',
-              'border-primary': 'var(--color-border-primary)',
-              'border-secondary': 'var(--color-border-secondary)',
-              'modal-overlay': 'var(--color-modal-overlay)',
-              
-              'status-active-text': 'var(--color-status-active-text)',
-              'status-completed-text': 'var(--color-status-completed-text)',
-              'status-onhold-text': 'var(--color-status-onhold-text)',
-            },
-            backgroundColor: {
-              'primary': 'var(--color-bg-primary)',
-              'secondary': 'var(--color-bg-secondary)',
-              'tertiary': 'var(--color-bg-tertiary)',
-              'input': 'var(--color-bg-input)',
-              'status-active': 'var(--color-status-active-bg)',
-              'status-completed': 'var(--color-status-completed-bg)',
-              'status-onhold': 'var(--color-status-onhold-bg)',
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                  primary: 'rgb(var(--color-primary) / <alpha-value>)',
+                  secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+                  tertiary: 'rgb(var(--color-tertiary) / <alpha-value>)',
+                  'who-pink': 'rgb(var(--color-who-pink) / <alpha-value>)',
+                  'where-green': 'rgb(var(--color-where-green) / <alpha-value>)',
+                  'wha-blue': 'rgb(var(--color-wha-blue) / <alpha-value>)',
+                  'to-orange': 'rgb(var(--color-to-orange) / <alpha-value>)',
+                  'morning': 'rgb(var(--color-morning) / <alpha-value>)',
+                  'midday': 'rgb(var(--color-midday) / <alpha-value>)',
+                  'afternoon': 'rgb(var(--color-afternoon) / <alpha-value>)',
+                   status: {
+                      'active': 'rgb(var(--color-status-active) / <alpha-value>)',
+                      'active-text': 'rgb(var(--color-status-active-text) / <alpha-value>)',
+                      'completed': 'rgb(var(--color-status-completed) / <alpha-value>)',
+                      'completed-text': 'rgb(var(--color-status-completed-text) / <alpha-value>)',
+                      'onhold': 'rgb(var(--color-status-onhold) / <alpha-value>)',
+                      'onhold-text': 'rgb(var(--color-status-onhold-text) / <alpha-value>)',
+                  }
+              },
+              backgroundColor: {
+                primary: 'rgb(var(--background-primary) / <alpha-value>)',
+                secondary: 'rgb(var(--background-secondary) / <alpha-value>)',
+                input: 'rgb(var(--background-input) / <alpha-value>)',
+                'modal-overlay': 'rgb(var(--background-modal-overlay))',
+              },
+              borderColor: {
+                  primary: 'rgb(var(--color-tertiary) / 0.5)',
+                  secondary: 'rgb(var(--color-secondary) / 0.5)',
+              },
+              fontFamily: {
+                  sans: ['Inter', 'sans-serif'],
+              },
             }
           }
         }
-      }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
-  }
-}
-</script>
+      </script>
+      <link rel="preconnect" href="https://rsms.me/">
+      <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
-  <body class="bg-primary text-primary">
+<body class="bg-primary">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+    <script type="module" src="./index.tsx"></script>
+</body>
 </html>

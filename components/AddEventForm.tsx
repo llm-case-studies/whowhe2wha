@@ -166,13 +166,16 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
         }));
 
         const date = new Date(when);
-        const whenObject: When = {
-            id: `new-when-${Date.now()}`,
-            timestamp: date.toISOString(),
-            display: date.toLocaleString([], {
+        const displayString = date.toLocaleString([], {
                 year: 'numeric', month: 'short', day: 'numeric',
                 hour: 'numeric', minute: '2-digit', hour12: true
-            }).replace(',', ''),
+            }).replace(',', '');
+        // FIX: Add name property to When object to satisfy Entity interface.
+        const whenObject: When = {
+            id: `new-when-${Date.now()}`,
+            name: displayString,
+            timestamp: date.toISOString(),
+            display: displayString,
             type: EntityType.When,
         };
 

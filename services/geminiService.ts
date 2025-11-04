@@ -75,12 +75,13 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
   }
 }
 
+// FIX: Refactored geocodeLocation to use responseSchema for reliable JSON output instead of parsing a text response.
+// This is more robust and aligns with Gemini API best practices for structured data.
 export async function geocodeLocation(query: string): Promise<{ name: string; latitude: number; longitude: number; } | null> {
   const aiInstance = getAI();
   const prompt = `
     Find the precise address and geographic coordinates (latitude and longitude) for the following location.
-    Return the result as a single, clean JSON object with three keys: "name" (the canonical, full address), "latitude", and "longitude".
-    Do not add any commentary or markdown formatting. Just return the raw JSON object.
+    Return only the canonical, full address for the 'name' field.
 
     Location: "${query}"
   `;
@@ -90,17 +91,29 @@ export async function geocodeLocation(query: string): Promise<{ name: string; la
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
-        tools: [{ googleMaps: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: {
+              type: Type.STRING,
+              description: 'The canonical, full address of the location.'
+            },
+            latitude: {
+              type: Type.NUMBER,
+              description: 'The latitude coordinate.'
+            },
+            longitude: {
+              type: Type.NUMBER,
+              description: 'The longitude coordinate.'
+            }
+          },
+          required: ['name', 'latitude', 'longitude']
+        }
       },
     });
 
-    let textResponse = response.text.trim();
-    // The model might return the JSON wrapped in markdown backticks, so we extract it.
-    const jsonMatch = textResponse.match(/```(json)?\s*([\s\S]*?)\s*```/);
-    if (jsonMatch && jsonMatch[2]) {
-        textResponse = jsonMatch[2];
-    }
-    
+    const textResponse = response.text.trim();
     const result = JSON.parse(textResponse);
     if (result && typeof result.latitude === 'number' && typeof result.longitude === 'number' && typeof result.name === 'string') {
       return result;
