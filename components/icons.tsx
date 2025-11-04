@@ -14,8 +14,12 @@ export const PinIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 21l-4.95-6.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
 );
 
-export const CalendarIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm-2 5a1 1 0 011-1h12a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 000 2h.01a1 1 0 100-2H5zm2 0a1 1 0 000 2h.01a1 1 0 100-2H7zm2 0a1 1 0 000 2h.01a1 1 0 100-2H9zm2 0a1 1 0 000 2h.01a1 1 0 100-2H11zm2 0a1 1 0 000 2h.01a1 1 0 100-2H13zm2 0a1 1 0 000 2h.01a1 1 0 100-2H15z" clipRule="evenodd" /></svg>
+// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
+export const CalendarIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'} {...props}>
+        {title && <title>{title}</title>}
+        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm-2 5a1 1 0 011-1h12a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 000 2h.01a1 1 0 100-2H5zm2 0a1 1 0 000 2h.01a1 1 0 100-2H7zm2 0a1 1 0 000 2h.01a1 1 0 100-2H9zm2 0a1 1 0 000 2h.01a1 1 0 100-2H11zm2 0a1 1 0 000 2h.01a1 1 0 100-2H13zm2 0a1 1 0 000 2h.01a1 1 0 100-2H15z" clipRule="evenodd" />
+    </svg>
 );
 
 export const MicrophoneIcon: React.FC<{className?: string}> = ({className}) => (
@@ -56,4 +60,28 @@ export const TimelineIcon: React.FC<{className?: string}> = ({className}) => (
 
 export const StarIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2.5l2.121 4.293 4.737.688-3.428 3.34.81 4.72L10 13.25l-4.24 2.29.81-4.72-3.428-3.34 4.737-.688L10 2.5z" clipRule="evenodd" /></svg>
+);
+
+// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
+export const MilestoneIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
+        {title && <title>{title}</title>}
+        <path d="M10 0L17 7L10 14L3 7Z" />
+    </svg>
+);
+
+// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
+export const DeadlineIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
+        {title && <title>{title}</title>}
+        <path d="M2 2v18h2v-8h14l-4-4 4-4H4V2H2z" />
+    </svg>
+);
+
+// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
+export const CheckpointIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
+        {title && <title>{title}</title>}
+        <circle cx="10" cy="10" r="4" />
+    </svg>
 );

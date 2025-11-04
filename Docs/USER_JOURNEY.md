@@ -34,7 +34,16 @@ Alex is undergoing a dental implant procedure, a multi-month project involving c
     -   Alex clicks the mic for the "Where" field and says, "Downtown Library." The app transcribes the text and, on blur, geocodes it.
 -   **Outcome:** The "Town Errands" project now coexists with the "Dental Implant Treatment" project in the main stream, but all events are clearly organized.
 
-### Step 3: Proactive Planning with Natural Language
+### Step 3: Gaining a High-Level Perspective
+
+-   **The Trigger:** With several appointments now scheduled for November and December, Alex wants to see how the dental treatment timeline fits around the upcoming Thanksgiving holiday.
+-   **Action:** Alex clicks the "Timeline" button in the view controls. The view switches from the project stream to a horizontal timeline for the current month.
+-   **Interaction:**
+    -   Alex sees markers for the dental appointments.
+    -   Alex clicks the star icon (Holiday Selector), checks the box for "United States," and immediately sees a "Thanksgiving" marker appear on the timeline.
+-   **Outcome:** Alex now has a clear, high-level visual of the month, understanding the temporal relationship between personal appointments and public holidays. This allows for better long-term planning.
+
+### Step 4: Proactive Planning with Natural Language
 
 -   **The Trigger:** A week later, Alex needs to plan their travel for an upcoming busy day.
 -   **Action:** Alex goes to the **whowhe2wha** search bar.
@@ -43,7 +52,7 @@ Alex is undergoing a dental implant procedure, a multi-month project involving c
     1.  `3:00 PM`: Initial Consultation & Scan @ Springfield Clinic
     2.  `4:30 PM`: Pick up library books @ Downtown Library
 
-### Step 4: The Spatial-Temporal "Aha!" Moment
+### Step 5: The Spatial-Temporal "Aha!" Moment
 
 -   **The Trigger:** Alex sees the two events and wonders about the logistics. "How far apart are they? What's the best route?"
 -   **Action:** Alex clicks on the date tag, "Nov 15, 2025."
@@ -52,7 +61,7 @@ Alex is undergoing a dental implant procedure, a multi-month project involving c
     -   On the left, an embedded map displays a route connecting the Springfield Clinic and the Downtown Library.
 -   **Outcome:** Alex immediately understands the geographic relationship between the day's tasks. The abstract list of appointments becomes a concrete, visual plan, allowing Alex to efficiently manage time and travel.
 
-### Step 5: Discovering Hidden Context
+### Step 6: Discovering Hidden Context
 
 -   **The Trigger:** While looking at the map, Alex decides to be proactive and schedule the next major appointment.
 -   **Action:** Alex closes the Spatial-Temporal View and clicks on the location tag for "Springfield Clinic" on the event card.

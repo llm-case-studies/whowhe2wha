@@ -5,6 +5,14 @@ export enum EntityType {
   When = 'when',
 }
 
+export enum WhatType {
+  Appointment = 'appointment',
+  Period = 'period',
+  Deadline = 'deadline',
+  Milestone = 'milestone',
+  Checkpoint = 'checkpoint',
+}
+
 export interface Entity {
   id: string;
   name: string;
@@ -18,6 +26,7 @@ export interface Participant extends Entity {
 export interface What extends Entity {
   type: EntityType.What;
   description?: string;
+  whatType: WhatType;
 }
 
 export interface Location extends Entity {
@@ -37,6 +46,7 @@ export interface EventNode {
   projectId: number;
   what: What;
   when: When;
+  endWhen?: When;
   who: Participant[];
   where: Location;
 }
@@ -46,6 +56,7 @@ export interface Project {
   name: string;
   description: string;
   status: 'Active' | 'On Hold' | 'Completed';
+  color: string;
 }
 
 export interface Contact {

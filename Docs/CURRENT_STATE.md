@@ -8,7 +8,7 @@ The application is fully functional and provides a robust framework for managing
 
 1.  **Context Capture:** Users can add detailed events, which are automatically organized into user-defined projects. This forms the foundation of the user's personal context graph.
 
-2.  **Context Visualization:** The primary interface is the "Project Stream," a chronological and project-based view of all events, making it easy to see what's happening at a glance.
+2.  **Context Visualization:** The application offers two distinct ways to visualize context: the "Project Stream" for a detailed, project-oriented view, and the "Timeline" for a high-level, chronological overview.
 
 3.  **Context Querying:** The application's core strength is its AI-powered search. Users can query their entire life graph using natural, everyday language and receive instantly filtered, relevant results.
 
@@ -17,33 +17,33 @@ The application is fully functional and provides a robust framework for managing
 -   **Project and Event Management:**
     -   Create new events with detailed information (What, Who, Where, When, Description).
     -   Create new projects on-the-fly when adding an event.
-    -   View all events neatly grouped by their parent project.
+    -   View all events neatly grouped by their parent project in the Stream view.
 
 -   **AI-Powered Search:**
     -   A "Summon" bar allows for natural language queries (e.g., "dental work," "errands downtown").
     -   The search intelligently matches against event details, project names, participants, and locations.
 
+-   **Dual View Modes:**
+    -   **Project Stream:** A familiar, chronological feed of projects and their associated events.
+    -   **Timeline View:** An interactive, scalable timeline (week, month, quarter, year) that visualizes events over time.
+
 -   **Advanced User Input:**
-    -   **Voice Dictation:** Key text fields in the "Add Event" form support voice-to-text transcription via the browser's Web Speech API.
-    -   **Automatic Geocoding:** The "Where" field automatically converts textual locations into precise addresses and geographic coordinates using the Gemini API with Google Maps Grounding.
+    -   **Voice Dictation:** Key text fields in the "Add Event" form support voice-to-text transcription.
+    -   **Automatic Geocoding:** The "Where" field automatically converts textual locations into precise addresses and geographic coordinates using the Gemini API.
 
 -   **Interactive Data Exploration:**
-    -   **Spatial View (Map Modal):** Clicking a location tag opens a modal showing:
-        -   An interactive map of the location.
-        -   A list of other scheduled events in the physical vicinity.
-        -   A list of key contacts at that location, with a one-click "Schedule" action.
-    -   **Spatial-Temporal View (TimeMap Modal):** Clicking a date tag opens a modal showing:
-        -   A multi-point route map connecting all events within a 7-day window.
-        -   A chronological itinerary for that time period.
+    -   **Spatial View (Map Modal):** Clicking a location tag opens a modal showing a map, nearby events, and key contacts with a one-click "Schedule" action.
+    -   **Spatial-Temporal View (TimeMap Modal):** Clicking a date tag opens a modal showing a multi-point route map and itinerary for a 7-day window.
+    -   **Holiday Overlays:** The Timeline view allows users to select and display various national and religious holidays for better contextual planning.
 
 -   **User Interface & Experience:**
-    -   A clean, responsive, dark-themed UI.
+    -   A clean, responsive UI with multiple user-selectable themes (light, dark, focus).
     -   Clear visual language using color-coding for different entity types.
     -   Loading indicators for asynchronous AI operations.
     -   Error handling for AI queries and speech recognition.
 
 ## Technical Status
 
--   The application is client-side only and does not have a backend or database. Data is currently stored in memory and initialized from mock data; it does not persist between sessions.
+-   The application is client-side only and does not have a backend or database. Data is persisted in the browser's **localStorage**, allowing events and projects to be saved between sessions. Initial data is loaded from mock constants if no saved data is found.
 -   The build process is simplified using import maps, requiring no local build step.
 -   API key management is handled by the execution environment (`process.env.API_KEY`).

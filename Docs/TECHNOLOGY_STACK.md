@@ -4,7 +4,7 @@ The **whowhe2wha** application is built with a modern, lightweight, and powerful
 
 ### Frontend Framework
 
--   **React 19:** The core of the user interface is built with React. We leverage its component-based architecture for building a modular and maintainable UI. We use React Hooks (`useState`, `useEffect`, `useCallback`) for state management and handling side effects.
+-   **React 19:** The core of the user interface is built with React. We leverage its component-based architecture for building a modular and maintainable UI. We use React Hooks (`useState`, `useEffect`, `useRef`) for state management and handling side effects.
 -   **React DOM:** Used for rendering the React components into the browser's DOM.
 
 ### Language
@@ -14,17 +14,16 @@ The **whowhe2wha** application is built with a modern, lightweight, and powerful
 ### AI Engine
 
 -   **Google Gemini API (`@google/genai`):** This is the brain of the application. We use the `gemini-2.5-flash` model for its speed and effectiveness in two key areas:
-    1.  **Natural Language Query Processing:** The `queryGraph` service sends the user's search query and the entire data context (projects and events) to Gemini, which intelligently returns the IDs of matching events.
-    2.  **Geocoding:** The `geocodeLocation` service uses Gemini with **Google Maps Grounding** to convert user-entered location strings (e.g., "Pearl Dental in Monroe TWP NJ") into precise, canonical addresses with latitude and longitude.
+    1.  **Natural Language Query Processing:** The `queryGraph` service sends the user's search query and the entire data context (projects and events) to Gemini, which intelligently returns the IDs of matching events based on a defined JSON schema.
+    2.  **Geocoding:** The `geocodeLocation` service uses Gemini's powerful language understanding and a defined JSON `responseSchema` to convert user-entered location strings (e.g., "Pearl Dental in Monroe TWP NJ") into precise, canonical addresses with latitude and longitude.
 
 ### Styling
 
--   **Tailwind CSS:** A utility-first CSS framework used for all styling. It allows for rapid prototyping and building a custom design system directly in the HTML. The configuration is defined in a `<script>` tag in `index.html` for simplicity.
+-   **Tailwind CSS:** A utility-first CSS framework used for all styling. It allows for rapid prototyping and building a custom design system directly in the HTML. The configuration is defined in a `<script>` tag in `index.html` for simplicity and supports multiple themes (dark, light, focus).
 
 ### Browser APIs
 
 -   **Web Speech API (`SpeechRecognition`):** This browser-native API is used to implement the voice-to-text dictation feature in the "Add Event" form.
--   **Permissions API:** Used to proactively check for microphone permissions to provide a better user experience for the voice dictation feature.
 
 ### Module System & Build Process
 

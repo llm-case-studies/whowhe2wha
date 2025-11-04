@@ -10,10 +10,37 @@ import { MOCK_PROJECTS, MOCK_EVENTS } from './constants';
 import { queryGraph } from './services/geminiService';
 import { ViewControls } from './components/ViewControls';
 
+// Function to load projects from localStorage or use mock data as a fallback
+const loadProjects = (): Project[] => {
+  try {
+    const savedProjects = localStorage.getItem('whowhe2wha_projects');
+    if (savedProjects) {
+      return JSON.parse(savedProjects);
+    }
+  } catch (error) {
+    console.error("Failed to parse projects from localStorage", error);
+  }
+  return MOCK_PROJECTS;
+};
+
+// Function to load events from localStorage or use mock data as a fallback
+const loadEvents = (): EventNode[] => {
+  try {
+    const savedEvents = localStorage.getItem('whowhe2wha_events');
+    if (savedEvents) {
+      return JSON.parse(savedEvents);
+    }
+  } catch (error) {
+    console.error("Failed to parse events from localStorage", error);
+  }
+  return MOCK_EVENTS;
+};
+
+
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [events, setEvents] = useState<EventNode[]>(MOCK_EVENTS);
+  const [projects, setProjects] = useState<Project[]>(loadProjects);
+  const [events, setEvents] = useState<EventNode[]>(loadEvents);
   const [filteredEventIds, setFilteredEventIds] = useState<number[] | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -26,10 +53,9 @@ const App: React.FC = () => {
 
   const [voiceStatus, setVoiceStatus] = useState<'checking' | 'supported' | 'unsupported'>('checking');
   
-  // New state for timeline view
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
-  const [timelineDate, setTimelineDate] = useState(new Date());
+  const [timelineDate, setTimelineDate] = useState(new Date('2025-11-01T12:00:00Z'));
   const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
 
 
@@ -43,6 +69,24 @@ const App: React.FC = () => {
     document.documentElement.className = theme;
   }, [theme]);
   
+  // Persist projects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('whowhe2wha_projects', JSON.stringify(projects));
+    } catch (error) {
+      console.error("Failed to save projects to localStorage", error);
+    }
+  }, [projects]);
+
+  // Persist events to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('whowhe2wha_events', JSON.stringify(events));
+    } catch (error) {
+      console.error("Failed to save events to localStorage", error);
+    }
+  }, [events]);
+
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     setError(null);
@@ -74,6 +118,7 @@ const App: React.FC = () => {
         name: projectInfo.name,
         description: 'Newly created project.',
         status: 'Active',
+        color: ['pink', 'purple', 'yellow', 'green'][Math.floor(Math.random() * 4)]
       };
       setProjects(prev => [...prev, newProject]);
       targetProjectId = newProject.id;
@@ -103,11 +148,6 @@ const App: React.FC = () => {
     ? events.filter(event => filteredEventIds.includes(event.id))
     : events;
 
-  const displayedProjects = filteredEventIds !== null
-    ? [] // Don't show projects in search results, just the events
-    : projects;
-
-
   return (
     <div className="bg-primary min-h-screen text-primary font-sans">
       <Header theme={theme} setTheme={setTheme} />
@@ -127,7 +167,7 @@ const App: React.FC = () => {
         />
 
         <Dashboard
-          projects={displayedProjects}
+          projects={projects}
           events={displayedEvents}
           isLoading={isLoading}
           error={error}

@@ -8,10 +8,11 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **AI Search:** Gemini-powered natural language search (`queryGraph`).
 -   [x] **Event Creation:** Full-featured "Add Event" form with support for creating new projects.
 -   [x] **Voice Input:** Voice dictation for key form fields using the Web Speech API.
--   [x] **Automatic Geocoding:** Convert location text to geographic coordinates using Gemini with Google Maps Grounding.
+-   [x] **Automatic Geocoding:** Convert location text to geographic coordinates using Gemini.
 -   [x] **Spatial View:** Interactive map modal for single locations, showing nearby events and contacts.
 -   [x] **Spatial-Temporal View:** Interactive map modal for time windows, showing a multi-point itinerary and route.
--   [x] **Bug Fixes:** Resolved all known map embedding and Google API key issues.
+-   [x] **Theming:** Added a theme switcher with light, dark, and focus modes.
+-   [x] **Timeline View:** Added an interactive, scalable timeline for visualizing events and holidays.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
 
 ## Planned Features & Enhancements 🚀
@@ -37,7 +38,6 @@ This document tracks the development progress of the **whowhe2wha** application,
 
 ### Tier 4: UI/UX Polish
 
--   [ ] **Calendar View:** Add a traditional calendar interface as an alternative way to visualize and create events.
+-   [ ] **Grid-Based Calendar View:** Add a traditional calendar interface (day/week/month grid) as an alternative way to visualize and create events.
 -   [ ] **Drag-and-Drop Rescheduling:** Allow users to reschedule events by dragging them on the calendar view.
 -   [ ] **Advanced Accessibility:** Conduct a full accessibility audit and enhance keyboard navigation and ARIA attribute usage.
--   [ ] **Theming:** Allow users to switch between light and dark themes.

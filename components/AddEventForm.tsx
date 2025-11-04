@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EventNode, EntityType, Participant, When, Project, Location } from '../types';
+import { EventNode, EntityType, Participant, When, Project, Location, WhatType } from '../types';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { MicrophoneIcon, MicrophoneSlashIcon, SpinnerIcon, PinIcon } from './icons';
 import { geocodeLocation } from '../services/geminiService';
@@ -14,6 +14,8 @@ interface AddEventFormProps {
   voiceStatus: VoiceStatus;
   initialData?: { who?: string, where?: string } | null;
 }
+
+const whatTypeOptions = Object.values(WhatType).map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
 
 const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, geocodingStatus = 'idle', ...props }) => {
     const showGeoIcon = id === 'where' && (geocodingStatus === 'loading' || geocodingStatus === 'success');
@@ -67,13 +69,29 @@ const FormTextArea = ({ label, id, ...props }) => (
     </div>
 );
 
+const FormSelect = ({ label, id, ...props }) => (
+    <div>
+        <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
+        <select
+            id={id}
+            className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200"
+            {...props}
+        >
+            {whatTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+    </div>
+);
+
+
 export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, onClose, voiceStatus, initialData }) => {
     const [whatName, setWhatName] = useState('');
     const [whatDesc, setWhatDesc] = useState('');
+    const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
     const [projectName, setProjectName] = useState('');
     const [who, setWho] = useState(initialData?.who || '');
     const [where, setWhere] = useState(initialData?.where || '');
     const [when, setWhen] = useState('');
+    const [endWhen, setEndWhen] = useState('');
 
     const [listeningField, setListeningField] = useState<string | null>(null);
     const [recognitionError, setRecognitionError] = useState<string | null>(null);
@@ -113,6 +131,9 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                 case 'when':
                     setWhen(transcript);
                     break;
+                 case 'endWhen':
+                    setEndWhen(transcript);
+                    break;
             }
              // Stop listening after transcript is processed
             stopListening();
@@ -151,7 +172,22 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
         }
     };
 
-    const isFormValid = whatName && where && when && projectName;
+    const isFormValid = whatName && where && when && projectName && (whatType !== WhatType.Period || endWhen);
+
+    const createWhenObject = (datetimeString: string): When => {
+        const date = new Date(datetimeString);
+        const displayString = date.toLocaleString([], {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+        }).replace(',', '');
+        return {
+            id: `new-when-${Date.now()}-${Math.random()}`,
+            name: displayString,
+            timestamp: date.toISOString(),
+            display: displayString,
+            type: EntityType.When,
+        };
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -164,29 +200,17 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
             name,
             type: EntityType.Who,
         }));
-
-        const date = new Date(when);
-        const displayString = date.toLocaleString([], {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: 'numeric', minute: '2-digit', hour12: true
-            }).replace(',', '');
-        // FIX: Add name property to When object to satisfy Entity interface.
-        const whenObject: When = {
-            id: `new-when-${Date.now()}`,
-            name: displayString,
-            timestamp: date.toISOString(),
-            display: displayString,
-            type: EntityType.When,
-        };
-
+        
         const newEventData: Omit<EventNode, 'id' | 'projectId'> = {
             what: {
                 id: `new-what-${Date.now()}`,
                 name: whatName,
                 description: whatDesc,
                 type: EntityType.What,
+                whatType: whatType,
             },
-            when: whenObject,
+            when: createWhenObject(when),
+            endWhen: (whatType === WhatType.Period && endWhen) ? createWhenObject(endWhen) : undefined,
             who: whoArray,
             where: {
                 id: `new-where-${Date.now()}`,
@@ -218,18 +242,28 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                   </div>
                 )}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <FormInput
-                        label="What (Event/Step Name)"
-                        id="whatName"
-                        type="text"
-                        value={whatName}
-                        onChange={(e) => setWhatName(e.target.value)}
-                        placeholder="e.g., Implant Surgery"
-                        onMicClick={() => handleMicClick('whatName')}
-                        isListening={isListening && listeningField === 'whatName'}
-                        hasMicSupport={showMics}
-                        required
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2">
+                             <FormInput
+                                label="What (Event/Step Name)"
+                                id="whatName"
+                                type="text"
+                                value={whatName}
+                                onChange={(e) => setWhatName(e.target.value)}
+                                placeholder="e.g., Implant Surgery"
+                                onMicClick={() => handleMicClick('whatName')}
+                                isListening={isListening && listeningField === 'whatName'}
+                                hasMicSupport={showMics}
+                                required
+                            />
+                        </div>
+                        <FormSelect
+                            label="Event Type"
+                            id="whatType"
+                            value={whatType}
+                            onChange={(e) => setWhatType(e.target.value as WhatType)}
+                        />
+                    </div>
                     <FormTextArea
                         label="Description"
                         id="whatDesc"
@@ -252,7 +286,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                             {projects.map(p => <option key={p.id} value={p.name} />)}
                         </datalist>
                          <FormInput
-                            label="When"
+                            label={whatType === WhatType.Period ? "Start Date" : "When"}
                             id="when"
                             type="datetime-local"
                             value={when}
@@ -263,6 +297,19 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                             required
                         />
                     </div>
+                    {whatType === WhatType.Period && (
+                        <FormInput
+                            label="End Date"
+                            id="endWhen"
+                            type="datetime-local"
+                            value={endWhen}
+                            onChange={(e) => setEndWhen(e.target.value)}
+                            onMicClick={() => handleMicClick('endWhen')}
+                            isListening={isListening && listeningField === 'endWhen'}
+                            hasMicSupport={showMics}
+                            required
+                        />
+                    )}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormInput
                             label="Who (comma-separated)"

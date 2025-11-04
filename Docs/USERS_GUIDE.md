@@ -2,15 +2,18 @@
 
 Welcome to the Unified Context Engine. This guide will walk you through the core features of the application.
 
-## 1. The Main Interface: Project Stream
+## 1. The Main Interface
 
-When you open the app, you see the **Project Stream**. This is your main dashboard, which organizes all your events under their respective projects. You can expand and collapse each project card to see the events within it.
+When you open the app, you see the main dashboard. You can switch between two primary views using the **View Controls** at the top.
+
+-   **Project Stream:** This is your default view, organizing all your events under their respective projects. You can expand and collapse each project card to see the events within it.
+-   **Timeline View:** This provides a high-level, horizontal visualization of your events over a selected period (week, month, quarter, or year).
 
 ## 2. Adding an Event
 
 This is the primary way to input data into your context graph.
 
-1.  Click the **"Add Event"** button.
+1.  Click the **"+ Add Event"** button.
 2.  Fill out the form:
     -   **What (Event/Step Name):** The name of your event (e.g., "Team Meeting"). *This is required.*
     -   **Description:** Optional details about the event.
@@ -22,7 +25,7 @@ This is the primary way to input data into your context graph.
 
 ### Special Features of the Form
 
--   **Voice Dictation:** For the "What," "Where," and "When" fields, click the **microphone icon** to dictate your entry using your voice. The text will be transcribed automatically.
+-   **Voice Dictation:** For some fields, you can click the **microphone icon** to dictate your entry using your voice.
 -   **Automatic Geocoding:** When you type a location in the "Where" field and click away, the app will automatically look up its precise address and coordinates. A **green pin icon** will appear to confirm success. This powers the map features.
 
 ## 3. Summoning Context: The Search Bar
@@ -35,7 +38,7 @@ The search bar is your gateway to the AI engine. You can ask questions in plain 
     -   "dental work"
     -   "errands downtown"
     -   "What do I have to do in December?"
--   **Clearing a Search:** Click the **"×"** icon in the search bar or clear the text to return to the full Project Stream.
+-   **Clearing a Search:** Click the **"×"** icon in the search bar to return to the full Project Stream.
 
 ## 4. Interactive Tags: Exploring Your Data
 
@@ -47,7 +50,7 @@ Every event has color-coded tags for **Who**, **Where**, and **When**. The locat
 -   **What it Shows:**
     1.  **Map:** An interactive map centered on the selected location.
     2.  **Tabs:**
-        -   **Scheduled Events:** Shows a list of other events in your system that are physically close to this location (within 5 miles). This is great for discovering opportunities to "batch" errands.
+        -   **Scheduled Events:** Shows a list of other events in your system that are physically close to this location.
         -   **Contacts & Partners:** Lists key people associated with that location. You can click the **"Schedule"** button here to quickly create a new event with that person and place pre-filled.
 
 ### The TimeMap Modal (Spatial-Temporal View)
@@ -57,4 +60,18 @@ Every event has color-coded tags for **Who**, **Where**, and **When**. The locat
     1.  **Map with Route:** An interactive map showing a route that connects *all* of your events scheduled within a 7-day window around the selected date.
     2.  **Itinerary:** A chronological list of those events, showing you the flow of your week.
 
-This feature is perfect for visualizing a busy day or week, helping you plan travel and understand the logistics between appointments.
+## 5. The Timeline View
+
+This view provides a "big picture" look at your schedule.
+
+-   **How to Access:** Click the **"Timeline"** button in the View Controls.
+-   **Navigation:**
+    -   Use the **<** and **>** buttons to move to the previous or next time period.
+    -   Use the dropdown menu to change the scale from **Week** to **Month**, **Quarter**, or **Year**.
+-   **Interacting with the Timeline:**
+    -   Your events appear as dots above the central line. Hover over a dot to see a tooltip with the event's details.
+    -   The timeline displays markers for the start date, end date, and **Today** (if visible).
+-   **Holiday Overlays:**
+    -   Click the **star icon** to open the holiday selector.
+    -   Check the boxes for national or religious holiday calendars you want to see.
+    -   The selected holidays will appear as icons on the timeline, giving you valuable context for planning.

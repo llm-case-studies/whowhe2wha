@@ -35,7 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }
   
   if (viewMode === 'timeline') {
-    return <TimelineView events={events} currentDate={timelineDate} scale={timelineScale} selectedHolidayCategories={selectedHolidayCategories} />;
+    return <TimelineView events={events} projects={projects} currentDate={timelineDate} scale={timelineScale} selectedHolidayCategories={selectedHolidayCategories} />;
   }
 
   // Default to 'stream' view
