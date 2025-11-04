@@ -113,35 +113,41 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
       new Map(projects.map(p => [p.id, p.color])),
   [projects]);
 
-  const { startDate, endDate } = useMemo(() => {
-    let start: Date, end: Date;
+  const { startDate, endDate, totalDuration } = useMemo(() => {
+    const msInDay = 24 * 60 * 60 * 1000;
+    let durationMs: number;
+
     switch (scale) {
       case 'week':
-        start = getStartOfWeek(currentDate);
-        end = getEndOfWeek(currentDate);
-        break;
-      case 'quarter':
-        start = getStartOfQuarter(currentDate);
-        end = getEndOfQuarter(currentDate);
-        break;
-      case 'year':
-        start = getStartOfYear(currentDate);
-        end = getEndOfYear(currentDate);
+        durationMs = 7 * msInDay;
         break;
       case 'month':
-      default:
-        start = getStartOfMonth(currentDate);
-        end = getEndOfMonth(currentDate);
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        durationMs = daysInMonth * msInDay;
         break;
+      case 'quarter':
+        durationMs = 91.25 * msInDay; // An average quarter
+        break;
+      case 'year':
+        const isLeap = new Date(currentDate.getFullYear(), 1, 29).getDate() === 29;
+        durationMs = (isLeap ? 366 : 365) * msInDay;
+        break;
+      default: // Should not happen, but fallback to month
+        durationMs = 30 * msInDay;
     }
-    return { startDate: start, endDate: end };
+
+    const start = new Date(currentDate.getTime() - durationMs / 2);
+    const end = new Date(currentDate.getTime() + durationMs / 2);
+    
+    return { startDate: start, endDate: end, totalDuration: durationMs };
   }, [currentDate, scale]);
   
   const todayDate = new Date();
   
   const startDateMs = startDate.getTime();
   const endDateMs = endDate.getTime();
-  const totalDuration = endDateMs - startDateMs;
 
   useEffect(() => {
     const handleGlobalMouseUp = () => {
