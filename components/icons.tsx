@@ -85,3 +85,7 @@ export const CheckpointIcon: React.FC<React.SVGProps<SVGSVGElement> & {className
         <circle cx="10" cy="10" r="4" />
     </svg>
 );
+
+export const FilterIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 12.414V17a1 1 0 01-1.447.894l-2-1A1 1 0 018 16v-3.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" /></svg>
+);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewMode, TimelineScale } from '../types';
-import { StreamIcon, TimelineIcon, StarIcon } from './icons';
+import { ViewMode, TimelineScale, Project } from '../types';
+import { StreamIcon, TimelineIcon, StarIcon, FilterIcon } from './icons';
 import { HOLIDAY_CATEGORIES } from '../constants';
 
 interface ViewControlsProps {
@@ -11,8 +11,11 @@ interface ViewControlsProps {
   timelineDate: Date;
   setTimelineDate: (date: Date) => void;
   onAddEventClick: () => void;
+  projects: Project[];
   selectedHolidayCategories: string[];
   setSelectedHolidayCategories: (categories: string[]) => void;
+  selectedProjectIds: number[];
+  setSelectedProjectIds: (projectIds: number[]) => void;
 }
 
 const scaleOptions: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
@@ -40,12 +43,7 @@ const getAdjustedDate = (date: Date, scale: TimelineScale, direction: 'prev' | '
 const getTimelineLabel = (date: Date, scale: TimelineScale): string => {
   switch (scale) {
     case 'week':
-      const startOfWeek = new Date(date);
-      // Assuming week starts on Sunday for this calculation
-      startOfWeek.setDate(date.getDate() - date.getDay());
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      return `${startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     case 'month':
       return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     case 'quarter':
@@ -64,23 +62,31 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   timelineDate,
   setTimelineDate,
   onAddEventClick,
+  projects,
   selectedHolidayCategories,
   setSelectedHolidayCategories,
+  selectedProjectIds,
+  setSelectedProjectIds,
 }) => {
   const [isHolidaySelectorOpen, setIsHolidaySelectorOpen] = useState(false);
+  const [isProjectSelectorOpen, setIsProjectSelectorOpen] = useState(false);
   const holidaySelectorRef = useRef<HTMLDivElement>(null);
+  const projectSelectorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (holidaySelectorRef.current && !holidaySelectorRef.current.contains(event.target as Node)) {
         setIsHolidaySelectorOpen(false);
       }
+      if (projectSelectorRef.current && !projectSelectorRef.current.contains(event.target as Node)) {
+        setIsProjectSelectorOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [holidaySelectorRef]);
+  }, []);
 
   const handleHolidayToggle = (categoryId: string) => {
     setSelectedHolidayCategories(
@@ -89,6 +95,22 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         : [...selectedHolidayCategories, categoryId]
     );
   };
+
+  const handleProjectToggle = (projectId: number) => {
+    setSelectedProjectIds(
+        selectedProjectIds.includes(projectId)
+        ? selectedProjectIds.filter((id) => id !== projectId)
+        : [...selectedProjectIds, projectId]
+    );
+  };
+
+  const handleSelectAllProjects = (isSelected: boolean) => {
+      if (isSelected) {
+          setSelectedProjectIds(projects.map(p => p.id));
+      } else {
+          setSelectedProjectIds([]);
+      }
+  }
 
   return (
     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -136,6 +158,49 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
               </option>
             ))}
           </select>
+
+          {/* Project Selector */}
+          <div className="relative" ref={projectSelectorRef}>
+            <button
+                onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
+                className="p-2 text-tertiary hover:text-primary rounded-full relative"
+                aria-label="Filter projects on timeline"
+            >
+                <FilterIcon />
+                 {selectedProjectIds.length > 0 && selectedProjectIds.length < projects.length && (
+                    <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-wha-blue ring-2 ring-tertiary" />
+                )}
+            </button>
+            {isProjectSelectorOpen && (
+                 <div className="absolute top-full right-0 mt-2 w-56 bg-secondary border border-primary rounded-lg shadow-xl z-20 p-2 max-h-64 overflow-y-auto">
+                    <p className="text-xs text-secondary font-bold px-2 pb-1">Filter Projects</p>
+                    <div className="space-y-1">
+                        <label className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-tertiary cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={selectedProjectIds.length === projects.length}
+                                onChange={(e) => handleSelectAllProjects(e.target.checked)}
+                                className="rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
+                            />
+                            <span className="text-sm text-primary font-semibold">All Projects</span>
+                        </label>
+                         <hr className="border-primary my-1" />
+                        {projects.map(project => (
+                            <label key={project.id} className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-tertiary cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={selectedProjectIds.includes(project.id)}
+                                onChange={() => handleProjectToggle(project.id)}
+                                className="rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
+                            />
+                            <span className="text-sm text-primary truncate" title={project.name}>{project.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                 </div>
+            )}
+          </div>
+
           <div className="relative" ref={holidaySelectorRef}>
             <button
               onClick={() => setIsHolidaySelectorOpen(!isHolidaySelectorOpen)}

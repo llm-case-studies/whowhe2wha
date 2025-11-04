@@ -17,11 +17,13 @@ interface DashboardProps {
   timelineScale: TimelineScale;
   setTimelineDate: (date: Date) => void;
   selectedHolidayCategories: string[];
+  selectedProjectIds: number[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick,
-  viewMode, timelineDate, timelineScale, setTimelineDate, selectedHolidayCategories
+  viewMode, timelineDate, timelineScale, setTimelineDate, selectedHolidayCategories,
+  selectedProjectIds
 }) => {
   if (isLoading) {
     return (
@@ -43,6 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         currentDate={timelineDate} 
         scale={timelineScale} 
         selectedHolidayCategories={selectedHolidayCategories}
+        selectedProjectIds={selectedProjectIds}
         setTimelineDate={setTimelineDate}
       />
     );

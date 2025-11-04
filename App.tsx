@@ -53,10 +53,11 @@ const App: React.FC = () => {
 
   const [voiceStatus, setVoiceStatus] = useState<'checking' | 'supported' | 'unsupported'>('checking');
   
-  const [viewMode, setViewMode] = useState<ViewMode>('stream');
-  const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
+  const [timelineScale, setTimelineScale] = useState<TimelineScale>('year');
   const [timelineDate, setTimelineDate] = useState(new Date('2025-11-04T12:00:00Z'));
-  const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
+  const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US', 'Jewish']);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>(() => projects.map(p => p.id));
 
 
   useEffect(() => {
@@ -162,8 +163,11 @@ const App: React.FC = () => {
           timelineDate={timelineDate}
           setTimelineDate={setTimelineDate}
           onAddEventClick={() => setIsAddEventFormOpen(true)}
+          projects={projects}
           selectedHolidayCategories={selectedHolidayCategories}
           setSelectedHolidayCategories={setSelectedHolidayCategories}
+          selectedProjectIds={selectedProjectIds}
+          setSelectedProjectIds={setSelectedProjectIds}
         />
 
         <Dashboard
@@ -179,6 +183,7 @@ const App: React.FC = () => {
           setTimelineDate={setTimelineDate}
           timelineScale={timelineScale}
           selectedHolidayCategories={selectedHolidayCategories}
+          selectedProjectIds={selectedProjectIds}
         />
       </main>
       
