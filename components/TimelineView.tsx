@@ -188,7 +188,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
           />
         )}
         
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-px bg-tertiary" />
+        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" />
 
         {/* Container for Period Events (bars) */}
         <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-10 z-10">
