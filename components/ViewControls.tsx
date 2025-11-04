@@ -96,7 +96,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         <button
           onClick={() => setViewMode('stream')}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
-            viewMode === 'stream' ? 'bg-secondary text-primary shadow-sm' : 'text-tertiary hover:text-primary'
+            viewMode === 'stream' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
           }`}
           aria-label="Switch to Stream view"
         >
@@ -106,7 +106,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         <button
           onClick={() => setViewMode('timeline')}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
-            viewMode === 'timeline' ? 'bg-secondary text-primary shadow-sm' : 'text-tertiary hover:text-primary'
+            viewMode === 'timeline' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
           }`}
           aria-label="Switch to Timeline view"
         >

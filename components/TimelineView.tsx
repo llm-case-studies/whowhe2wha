@@ -118,11 +118,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
         const holidayDateMs = holiday.date.getTime();
         return holidayDateMs >= startDateMs && holidayDateMs <= endDateMs;
     });
-    
-    const religiousHolidays = visibleHolidays.filter(h => h.type === 'religious');
-    const civilHolidays = visibleHolidays.filter(h => h.type === 'civil');
 
-    return { visibleEvents, religiousHolidays, civilHolidays };
+    return {
+      visibleEvents,
+      religiousHolidays: visibleHolidays.filter(h => h.type === 'religious'),
+      civilHolidays: visibleHolidays.filter(h => h.type === 'civil'),
+    };
   }, [events, selectedHolidayCategories, startDateMs, endDateMs]);
 
 
@@ -143,10 +144,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
             <div className="h-full bg-blue-500 rounded-full"></div>
         </div>
 
-        {/* Container for all markers */}
+        {/* Container for markers above the line */}
         <div className="absolute top-0 left-0 w-full h-full z-20">
-
-            {/* Event Markers (Above) */}
             {visibleEvents.map(event => {
                 const position = getPositionPercent(new Date(event.when.timestamp));
                 return (
@@ -167,45 +166,50 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
                     </div>
                 );
             })}
-
-            {/* Religious Holidays (Below - Level 1) */}
-            {religiousHolidays.map(holiday => {
-                const position = getPositionPercent(holiday.date);
-                const verticalOffset = 20;
-                return (
-                    <div 
-                        key={`${holiday.name}-${holiday.date}`}
-                        className="absolute"
-                        style={{ left: `${position}%`, top: `calc(50% + ${verticalOffset}px)`, transform: 'translateX(-50%)' }}
-                    >
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-px bg-tertiary" style={{height: `${verticalOffset}px`}}></div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-base" title={holiday.category}>{getIconForHoliday(holiday)}</span>
-                            <span className="text-xs text-secondary whitespace-nowrap mt-1">{holiday.name}</span>
-                        </div>
-                    </div>
-                );
-            })}
-            
-            {/* Civil Holidays (Below - Level 2) */}
-            {civilHolidays.map(holiday => {
-                const position = getPositionPercent(holiday.date);
-                const verticalOffset = 65;
-                return (
-                    <div 
-                        key={`${holiday.name}-${holiday.date}`}
-                        className="absolute"
-                        style={{ left: `${position}%`, top: `calc(50% + ${verticalOffset}px)`, transform: 'translateX(-50%)' }}
-                    >
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-px bg-tertiary" style={{height: `${verticalOffset}px`}}></div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-lg" title={holiday.category}>{getIconForHoliday(holiday)}</span>
-                            <span className="text-xs text-secondary whitespace-nowrap mt-1">{holiday.name}</span>
-                        </div>
-                    </div>
-                );
-            })}
         </div>
+
+        {/* Tier 1: Religious Holidays */}
+        {religiousHolidays.map(holiday => {
+          const position = getPositionPercent(holiday.date);
+          return (
+            <div
+              key={`${holiday.name}-religious-${holiday.date.getTime()}`}
+              className="absolute top-1/2 h-full"
+              style={{ left: `${position}%`, zIndex: 20 }}
+            >
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-8 w-px bg-secondary" />
+              <div
+                className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default"
+                title={`${holiday.name} (${holiday.category})`}
+              >
+                <span className="text-lg leading-none" aria-hidden="true">{getIconForHoliday(holiday)}</span>
+                <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Tier 2: Civil Holidays */}
+        {civilHolidays.map(holiday => {
+          const position = getPositionPercent(holiday.date);
+          return (
+            <div
+              key={`${holiday.name}-civil-${holiday.date.getTime()}`}
+              className="absolute top-1/2 h-full"
+              style={{ left: `${position}%`, zIndex: 20 }}
+            >
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-20 w-px bg-secondary" />
+              <div
+                className="absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default"
+                title={`${holiday.name} (${holiday.category})`}
+              >
+                <span className="text-lg leading-none" aria-hidden="true">{getIconForHoliday(holiday)}</span>
+                <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
+              </div>
+            </div>
+          );
+        })}
+
 
         {/* Markers ON the line (Start, End, Today) */}
         <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full z-30">
