@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { EventNode, TimelineScale } from '../types';
+import { EventNode, TimelineScale, Holiday } from '../types';
 import { HOLIDAY_DATA } from '../constants';
-import { StarIcon } from './icons';
 import { 
     getStartOfWeek, getEndOfWeek,
     getStartOfMonth, getEndOfMonth,
@@ -16,22 +15,47 @@ interface TimelineViewProps {
   selectedHolidayCategories: string[];
 }
 
-// A generic marker component for the timeline.
-const TimelineMarker: React.FC<{ label: string; isToday?: boolean }> = ({ label, isToday = false }) => {
-  // Today's marker is blue and prominent, others are neutral gray
+const getIconForHoliday = (holiday: Holiday): string => {
+  const category = holiday.category;
+  switch (category) {
+    // Civil (Flags)
+    case 'US': return '🇺🇸';
+    case 'Canada': return '🇨🇦';
+    case 'Mexico': return '🇲🇽';
+    case 'UK': return '🇬🇧';
+    case 'EU': return '🇪🇺';
+    case 'China': return '🇨🇳';
+    case 'India': return '🇮🇳';
+    // Religious
+    case 'Christian': return '✝️';
+    case 'Jewish': return '✡️';
+    case 'Muslim': return '☪️';
+    case 'Hindu': return '🕉️';
+    default: return '⭐';
+  }
+};
+
+const TimelineMarker: React.FC<{ label: string; isToday?: boolean, align?: 'left' | 'center' | 'right' }> = ({ label, isToday = false, align = 'center' }) => {
   const circleClasses = isToday
     ? 'bg-wha-blue border-primary ring-2 ring-wha-blue/50'
     : 'bg-tertiary border-secondary';
   const textColor = isToday ? 'text-wha-blue font-bold' : 'text-primary';
 
+  let spanClasses = 'absolute top-full pt-2 text-xs uppercase tracking-wider whitespace-nowrap ';
+  if (align === 'left') {
+    spanClasses += ' left-0';
+  } else if (align === 'right') {
+    spanClasses += ' right-0';
+  } else {
+    spanClasses += ' left-1/2 -translate-x-1/2';
+  }
+
   return (
-    <div className="flex flex-col items-center">
-      {/* The circle marker that the line goes through */}
+    <div className="relative flex flex-col items-center">
       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center z-10 ${circleClasses}`}>
         <div className="w-2 h-2 bg-primary rounded-full" />
       </div>
-      {/* The label below the marker */}
-      <span className={`absolute top-full pt-2 text-xs uppercase tracking-wider whitespace-nowrap ${textColor}`}>{label}</span>
+      <span className={`${spanClasses} ${textColor}`}>{label}</span>
     </div>
   );
 };
@@ -39,36 +63,34 @@ const TimelineMarker: React.FC<{ label: string; isToday?: boolean }> = ({ label,
 export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate, scale, selectedHolidayCategories }) => {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
 
-  // Dynamic Date Range Calculation based on scale
-  let startDate: Date;
-  let endDate: Date;
-
-  switch (scale) {
-    case 'week':
-      startDate = getStartOfWeek(currentDate);
-      endDate = getEndOfWeek(currentDate);
-      break;
-    case 'quarter':
-      startDate = getStartOfQuarter(currentDate);
-      endDate = getEndOfQuarter(currentDate);
-      break;
-    case 'year':
-      startDate = getStartOfYear(currentDate);
-      endDate = getEndOfYear(currentDate);
-      break;
-    case 'month':
-    default:
-      startDate = getStartOfMonth(currentDate);
-      endDate = getEndOfMonth(currentDate);
-      break;
-  }
+  const { startDate, endDate } = useMemo(() => {
+    let start: Date, end: Date;
+    switch (scale) {
+      case 'week':
+        start = getStartOfWeek(currentDate);
+        end = getEndOfWeek(currentDate);
+        break;
+      case 'quarter':
+        start = getStartOfQuarter(currentDate);
+        end = getEndOfQuarter(currentDate);
+        break;
+      case 'year':
+        start = getStartOfYear(currentDate);
+        end = getEndOfYear(currentDate);
+        break;
+      case 'month':
+      default:
+        start = getStartOfMonth(currentDate);
+        end = getEndOfMonth(currentDate);
+        break;
+    }
+    return { startDate: start, endDate: end };
+  }, [currentDate, scale]);
   
   const todayDate = new Date();
   
   const startDateMs = startDate.getTime();
   const endDateMs = endDate.getTime();
-
-  // Calculate the total duration of the timeline
   const totalDuration = endDateMs - startDateMs;
 
   const getPositionPercent = (date: Date) => {
@@ -84,34 +106,47 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
     return date.toLocaleDateString('en-US', { timeZone: 'UTC', month: '2-digit', day: '2-digit', year: 'numeric' });
   };
   
-  const visibleEvents = events.filter(event => {
-    const eventDateMs = new Date(event.when.timestamp).getTime();
-    return eventDateMs >= startDateMs && eventDateMs <= endDateMs;
-  });
+  const { visibleEvents, religiousHolidays, civilHolidays } = useMemo(() => {
+    const visibleEvents = events.filter(event => {
+      const eventDateMs = new Date(event.when.timestamp).getTime();
+      return eventDateMs >= startDateMs && eventDateMs <= endDateMs;
+    });
 
-  const holidaysToDisplay = useMemo(() => {
-    return selectedHolidayCategories.flatMap(category => HOLIDAY_DATA[category] || []);
-  }, [selectedHolidayCategories]);
+    const holidaysToDisplay = selectedHolidayCategories.flatMap(category => HOLIDAY_DATA[category] || []);
 
-  const visibleHolidays = holidaysToDisplay.filter(holiday => {
-      const holidayDateMs = holiday.date.getTime();
-      return holidayDateMs >= startDateMs && holidayDateMs <= endDateMs;
-  });
+    const visibleHolidays = holidaysToDisplay.filter(holiday => {
+        const holidayDateMs = holiday.date.getTime();
+        return holidayDateMs >= startDateMs && holidayDateMs <= endDateMs;
+    });
+    
+    const religiousHolidays = visibleHolidays.filter(h => h.type === 'religious');
+    const civilHolidays = visibleHolidays.filter(h => h.type === 'civil');
+
+    return { visibleEvents, religiousHolidays, civilHolidays };
+  }, [events, selectedHolidayCategories, startDateMs, endDateMs]);
 
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
-      <div className="relative w-full h-24">
+      <div className="relative w-full h-48">
         
-        {/* The main timeline route/bar, positioned between the centers of the end markers */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 right-2.5 h-2 bg-blue-500/50 rounded-full">
+        {/* Today Marker Vertical Line */}
+        {isTodayVisible && (
+          <div
+            className="absolute top-0 bottom-0 w-px bg-wha-blue/70 z-0"
+            style={{ left: `${todayPositionPercent}%` }}
+            aria-hidden="true"
+          />
+        )}
+        
+        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 right-2.5 h-2 bg-blue-500/50 rounded-full z-10">
             <div className="h-full bg-blue-500 rounded-full"></div>
         </div>
 
         {/* Container for all markers */}
-        <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-0 left-0 w-full h-full z-20">
 
-            {/* Event Markers (Above) with Tooltips */}
+            {/* Event Markers (Above) */}
             {visibleEvents.map(event => {
                 const position = getPositionPercent(new Date(event.when.timestamp));
                 return (
@@ -122,57 +157,70 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
                         onMouseEnter={() => setActiveTooltip(event.id)}
                         onMouseLeave={() => setActiveTooltip(null)}
                     >
-                        {/* Tooltip */}
                         {activeTooltip === event.id && (
                            <div className="absolute bottom-full mb-2 w-56 bg-tertiary text-primary text-xs rounded-md shadow-lg p-2 z-20 pointer-events-none">
                                 <p className="font-bold text-sm">{event.what.name}</p>
                                 {event.what.description && <p className="text-secondary mt-1">{event.what.description}</p>}
                             </div>
                         )}
-                        {/* Marker Circle */}
                         <div className="w-3 h-3 bg-wha-blue rounded-full border-2 border-secondary cursor-pointer"/>
                     </div>
                 );
             })}
 
-            {/* Holiday Markers (Below) */}
-            {visibleHolidays.map(holiday => {
+            {/* Religious Holidays (Below - Level 1) */}
+            {religiousHolidays.map(holiday => {
                 const position = getPositionPercent(holiday.date);
+                const verticalOffset = 20;
                 return (
                     <div 
                         key={`${holiday.name}-${holiday.date}`}
                         className="absolute"
-                        style={{ left: `${position}%`, top: 'calc(50% + 6px)', transform: 'translateX(-50%)' }}
+                        style={{ left: `${position}%`, top: `calc(50% + ${verticalOffset}px)`, transform: 'translateX(-50%)' }}
                     >
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-px bg-tertiary" style={{height: `${verticalOffset}px`}}></div>
                         <div className="flex flex-col items-center">
-                            <div className="w-4 h-4 text-morning flex items-center justify-center">
-                               <StarIcon />
-                            </div>
-                            <span className="text-xs text-morning whitespace-nowrap mt-1">{holiday.name}</span>
+                            <span className="text-base" title={holiday.category}>{getIconForHoliday(holiday)}</span>
+                            <span className="text-xs text-secondary whitespace-nowrap mt-1">{holiday.name}</span>
+                        </div>
+                    </div>
+                );
+            })}
+            
+            {/* Civil Holidays (Below - Level 2) */}
+            {civilHolidays.map(holiday => {
+                const position = getPositionPercent(holiday.date);
+                const verticalOffset = 65;
+                return (
+                    <div 
+                        key={`${holiday.name}-${holiday.date}`}
+                        className="absolute"
+                        style={{ left: `${position}%`, top: `calc(50% + ${verticalOffset}px)`, transform: 'translateX(-50%)' }}
+                    >
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-px bg-tertiary" style={{height: `${verticalOffset}px`}}></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-lg" title={holiday.category}>{getIconForHoliday(holiday)}</span>
+                            <span className="text-xs text-secondary whitespace-nowrap mt-1">{holiday.name}</span>
                         </div>
                     </div>
                 );
             })}
         </div>
 
-
         {/* Markers ON the line (Start, End, Today) */}
-        <div className="absolute top-1/2 left-0 w-full">
-            {/* Start Marker */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full z-30">
             <div className="absolute -translate-y-1/2" style={{left: '0%'}}>
-                <TimelineMarker label={formatDate(startDate)} />
+                <TimelineMarker label={formatDate(startDate)} align="left"/>
             </div>
             
-            {/* Today Marker */}
             {isTodayVisible && (
                 <div className="absolute -translate-y-1/2" style={{left: `${todayPositionPercent}%`, transform: 'translateX(-50%)'}}>
                     <TimelineMarker label={"Today " + formatDate(todayDate)} isToday />
                 </div>
             )}
 
-            {/* End Marker */}
             <div className="absolute -translate-y-1/2" style={{left: '100%', transform: 'translateX(-100%)'}}>
-                 <TimelineMarker label={formatDate(endDate)} />
+                 <TimelineMarker label={formatDate(endDate)} align="right"/>
             </div>
         </div>
 

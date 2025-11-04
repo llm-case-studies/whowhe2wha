@@ -58,6 +58,8 @@ export interface Contact {
 export interface Holiday {
     name: string;
     date: Date;
+    type: 'civil' | 'religious';
+    category: string;
 }
 
 export type Theme = 'light' | 'dark' | 'focus';
