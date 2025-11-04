@@ -32,23 +32,38 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onC
   
   const getMapUrl = (): string => {
     const locationsWithCoords = eventsInWindow
-        .map(e => e.where)
-        .filter((w): w is Location & { latitude: number, longitude: number } => !!w.latitude && !!w.longitude);
-
+      .map(e => e.where)
+      .filter((w): w is Location & { latitude: number, longitude: number } => !!w.latitude && !!w.longitude);
+      
     if (locationsWithCoords.length === 0) {
+      // Generic map of the US, no key needed
       return `https://maps.google.com/maps?q=USA&t=&z=4&ie=UTF8&iwloc=&output=embed`;
     }
 
-    const uniqueLocations = Array.from(new Map(locationsWithCoords.map(item => [item.id, item])).values());
+    const uniqueLocations = Array.from(new Map(locationsWithCoords.map(item => [`${item.latitude},${item.longitude}`, item])).values());
     
-    if (uniqueLocations.length > 1) {
-      const waypoints = uniqueLocations.map(loc => `${loc.latitude},${loc.longitude}`).join('/');
-      return `https://www.google.com/maps/dir/${waypoints}?output=embed`;
+    if (uniqueLocations.length === 1) {
+      const loc = uniqueLocations[0];
+      // Single point embed, no key needed
+      return `https://maps.google.com/maps?q=${loc.latitude},${loc.longitude}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
     } 
     
-    // Default to a single point map if only one location
-    const loc = uniqueLocations[0];
-    return `https://maps.google.com/maps?q=${loc.latitude},${loc.longitude}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    // For multiple locations, construct a directions URL using saddr and daddr which is embeddable.
+    const origin = uniqueLocations[0];
+    const destination = uniqueLocations[uniqueLocations.length - 1];
+    const waypoints = uniqueLocations.slice(1, -1);
+
+    const originParam = `${origin.latitude},${origin.longitude}`;
+    const destinationParam = `${destination.latitude},${destination.longitude}`;
+
+    let url = `https://maps.google.com/maps?output=embed&saddr=${originParam}&daddr=${destinationParam}`;
+
+    if (waypoints.length > 0) {
+        const waypointsParam = waypoints.map(wp => `${wp.latitude},${wp.longitude}`).join('+to:');
+        url += `+to:${waypointsParam}`;
+    }
+    
+    return url;
   };
 
   const mapUrl = getMapUrl();

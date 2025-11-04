@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { EventNode, Project } from '../types';
 
@@ -50,7 +49,6 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
     const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      // FIX: Use responseSchema for robust JSON output.
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -63,7 +61,6 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
     });
     
     const textResponse = response.text.trim();
-    // FIX: Removed markdown cleaning as it's not needed with responseMimeType.
     const result = JSON.parse(textResponse);
 
     if (Array.isArray(result) && result.every(item => typeof item === 'number')) {
@@ -75,5 +72,43 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
   } catch (error) {
     console.error("Error calling Gemini API or parsing response:", error);
     throw new Error("Failed to process query with AI.");
+  }
+}
+
+export async function geocodeLocation(query: string): Promise<{ name: string; latitude: number; longitude: number; } | null> {
+  const aiInstance = getAI();
+  const prompt = `
+    Find the precise address and geographic coordinates (latitude and longitude) for the following location.
+    Return the result as a single, clean JSON object with three keys: "name" (the canonical, full address), "latitude", and "longitude".
+    Do not add any commentary or markdown formatting. Just return the raw JSON object.
+
+    Location: "${query}"
+  `;
+
+  try {
+    const response = await aiInstance.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+      },
+    });
+
+    let textResponse = response.text.trim();
+    // The model might return the JSON wrapped in markdown backticks, so we extract it.
+    const jsonMatch = textResponse.match(/```(json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[2]) {
+        textResponse = jsonMatch[2];
+    }
+    
+    const result = JSON.parse(textResponse);
+    if (result && typeof result.latitude === 'number' && typeof result.longitude === 'number' && typeof result.name === 'string') {
+      return result;
+    }
+    console.warn('Geocoding response was not in the expected format:', result);
+    return null;
+  } catch (error) {
+    console.error("Error during geocoding with Gemini:", error);
+    return null;
   }
 }

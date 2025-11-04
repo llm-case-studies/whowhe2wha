@@ -55,6 +55,14 @@ export const MOCK_EVENTS: EventNode[] = [
     where: { id: 'where-2', name: 'Zoom Room', type: EntityType.Where },
   },
   {
+    id: 7,
+    projectId: 1,
+    what: { id: 'what-7', name: 'Dental Appointment', description: 'Check-up at Pearl Dental Arts.', type: EntityType.What },
+    when: { id: 'when-7', timestamp: '2025-11-26T14:00:00Z', display: 'Nov 26, 2025, 2:00 PM', type: EntityType.When },
+    who: [{ id: 'who-5', name: 'Dentist', type: EntityType.Who }],
+    where: { id: 'where-5', name: 'Pearl Dental Arts, 215 Applegarth Rd, Monroe Township, NJ 08831, USA', type: EntityType.Where, latitude: 40.3235, longitude: -74.4204 },
+  },
+  {
     id: 3,
     projectId: 1,
     what: { id: 'what-3', name: 'Implant Surgery', description: 'Placement of the titanium implant.', type: EntityType.What },

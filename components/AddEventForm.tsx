@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { EventNode, EntityType, Participant, When, Project } from '../types';
+import { EventNode, EntityType, Participant, When, Project, Location } from '../types';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
-import { MicrophoneIcon, MicrophoneSlashIcon } from './icons';
+import { MicrophoneIcon, MicrophoneSlashIcon, SpinnerIcon, PinIcon } from './icons';
+import { geocodeLocation } from '../services/geminiService';
 
 type VoiceStatus = 'checking' | 'supported' | 'unsupported';
+type GeocodingStatus = 'idle' | 'loading' | 'success' | 'error';
 
 interface AddEventFormProps {
   projects: Project[];
@@ -13,38 +15,45 @@ interface AddEventFormProps {
   initialData?: { who?: string, where?: string } | null;
 }
 
-// FIX: Added default values to make microphone-related props optional.
-const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, ...props }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
-        <div className="relative">
-            <input
-                id={id}
-                className={`w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasMicSupport ? 'pr-10' : ''}`}
-                {...props}
-            />
-            {hasMicSupport !== undefined && (
+const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, geocodingStatus = 'idle', ...props }) => {
+    const showGeoIcon = id === 'where' && (geocodingStatus === 'loading' || geocodingStatus === 'success');
+    const showMicButton = hasMicSupport && !showGeoIcon;
+    const showMicDisabled = hasMicSupport === false && !showGeoIcon;
+
+    return (
+        <div>
+            <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+            <div className="relative">
+                <input
+                    id={id}
+                    className={`w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasMicSupport || id === 'where' ? 'pr-10' : ''}`}
+                    {...props}
+                />
                 <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                {hasMicSupport ? (
-                    <button
-                        type="button"
-                        onClick={onMicClick}
-                        className="w-full h-full flex items-center justify-center text-slate-400 hover:text-white transition-colors duration-200"
-                        aria-label={`Dictate ${label}`}
-                        title={`Dictate ${label}`}
-                    >
-                        <MicrophoneIcon className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
-                    </button>
-                ) : (
-                   <div title="Speech recognition not supported or permission denied">
-                      <MicrophoneSlashIcon className="h-5 w-5 text-slate-500" />
-                   </div>
-                )}
-              </div>
-            )}
+                    {showGeoIcon && geocodingStatus === 'loading' && <SpinnerIcon className="h-5 w-5 animate-spin text-slate-400" />}
+                    {showGeoIcon && geocodingStatus === 'success' && <div title={`Geocoded: ${props.value}`}><PinIcon className="h-5 w-5 text-green-500" /></div>}
+                    
+                    {showMicButton && (
+                         <button
+                            type="button"
+                            onClick={onMicClick}
+                            className="w-full h-full flex items-center justify-center text-slate-400 hover:text-white transition-colors duration-200"
+                            aria-label={`Dictate ${label}`}
+                            title={`Dictate ${label}`}
+                        >
+                            <MicrophoneIcon className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
+                        </button>
+                    )}
+                    {showMicDisabled && (
+                       <div title="Speech recognition not supported or permission denied">
+                          <MicrophoneSlashIcon className="h-5 w-5 text-slate-500" />
+                       </div>
+                    )}
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const FormTextArea = ({ label, id, ...props }) => (
     <div>
@@ -68,6 +77,9 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
 
     const [listeningField, setListeningField] = useState<string | null>(null);
     const [recognitionError, setRecognitionError] = useState<string | null>(null);
+    
+    const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>('idle');
+    const [geocodedData, setGeocodedData] = useState<{name: string, latitude: number, longitude: number} | null>(null);
 
     const {
         transcript,
@@ -118,6 +130,26 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
             startListening();
         }
     };
+    
+    const handleWhereBlur = async () => {
+        if (!where.trim() || where === geocodedData?.name) {
+            return;
+        }
+        setGeocodingStatus('loading');
+        setGeocodedData(null);
+        try {
+            const result = await geocodeLocation(where);
+            if (result) {
+                setGeocodedData(result);
+                setWhere(result.name);
+                setGeocodingStatus('success');
+            } else {
+                setGeocodingStatus('error');
+            }
+        } catch(e) {
+            setGeocodingStatus('error');
+        }
+    };
 
     const isFormValid = whatName && where && when && projectName;
 
@@ -157,6 +189,8 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                 id: `new-where-${Date.now()}`,
                 name: where,
                 type: EntityType.Where,
+                latitude: geocodedData?.latitude,
+                longitude: geocodedData?.longitude,
             },
         };
         
@@ -240,11 +274,19 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                             id="where"
                             type="text"
                             value={where}
-                            onChange={(e) => setWhere(e.target.value)}
+                            onChange={(e) => {
+                                setWhere(e.target.value);
+                                if (geocodingStatus !== 'loading') {
+                                    setGeocodingStatus('idle');
+                                    setGeocodedData(null);
+                                }
+                            }}
+                            onBlur={handleWhereBlur}
                             placeholder="e.g., Springfield Clinic"
                             onMicClick={() => handleMicClick('where')}
                             isListening={isListening && listeningField === 'where'}
                             hasMicSupport={showMics}
+                            geocodingStatus={geocodingStatus}
                             required
                         />
                     </div>
