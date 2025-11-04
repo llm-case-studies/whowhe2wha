@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface SearchBarProps {
@@ -34,17 +33,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onClear, isLoadi
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="whowhe2wha Dr. Smith..."
-          className="w-full pl-4 pr-32 py-4 bg-slate-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 text-lg"
+          className="w-full pl-4 pr-32 py-4 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 text-lg"
           disabled={isLoading}
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-           {query && <button type="button" onClick={handleClear} className="px-3 py-2 text-slate-400 hover:text-white" disabled={isLoading}>
+           {query && <button type="button" onClick={handleClear} className="px-3 py-2 text-secondary hover:text-primary" disabled={isLoading}>
                 &times;
             </button>}
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center justify-center h-12 px-5 bg-wha-blue text-white font-bold rounded-md hover:bg-blue-600 transition duration-200 disabled:bg-slate-700 disabled:cursor-not-allowed"
+            className="flex items-center justify-center h-12 px-5 bg-wha-blue text-white font-bold rounded-md hover:bg-blue-600 transition duration-200 disabled:bg-tertiary disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

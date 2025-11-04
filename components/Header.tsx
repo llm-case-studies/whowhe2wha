@@ -1,5 +1,11 @@
-
 import React from 'react';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { Theme } from '../types';
+
+interface HeaderProps {
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+}
 
 const Logo = () => (
   <svg width="280" height="60" viewBox="0 0 350 100" xmlns="http://www.w3.org/2000/svg" className="w-auto h-10 md:h-12">
@@ -24,12 +30,18 @@ const Logo = () => (
   </svg>
 );
 
-export const Header: React.FC = () => {
+export const Header: React.FC<HeaderProps> = ({ theme, setTheme }) => {
   return (
     <header className="py-6 px-4">
-      <div className="container mx-auto flex justify-center items-center flex-col space-y-2">
-        <Logo />
-        <p className="text-sm text-slate-400">The Unified Context Engine for Life and Work</p>
+      <div className="container mx-auto flex justify-between items-center">
+        <div className="flex-1"></div>
+        <div className="flex-1 flex justify-center items-center flex-col space-y-2">
+          <Logo />
+          <p className="text-sm text-secondary">The Unified Context Engine for Life and Work</p>
+        </div>
+        <div className="flex-1 flex justify-end">
+            <ThemeSwitcher theme={theme} setTheme={setTheme} />
+        </div>
       </div>
     </header>
   );

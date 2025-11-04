@@ -42,3 +42,22 @@ export const SpinnerIcon = ({ className = '' }: { className?: string }) => (
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
 );
+
+export const SunIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 18a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zm-4.95-2.464l-.707.707a1 1 0 101.414 1.414l.707-.707a1 1 0 10-1.414-1.414zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm3.536-6.464l-.707-.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414z" clipRule="evenodd" />
+    </svg>
+);
+
+export const MoonIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+    </svg>
+);
+
+export const BrainIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M8 5a1 1 0 100 2h4a1 1 0 100-2H8z" />
+      <path fillRule="evenodd" d="M2 9.5A3.5 3.5 0 005.5 13H6v1.5a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0014 14.5V13h.5a3.5 3.5 0 10-2.5-3.235V9.5A1.5 1.5 0 0010.5 8h-1A1.5 1.5 0 008 9.5v.265A3.5 3.5 0 102 9.5zm7.5 1.5V13h-3v-1.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5z" clipRule="evenodd" />
+    </svg>
+);

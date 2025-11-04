@@ -69,45 +69,45 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onC
   const mapUrl = getMapUrl();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="time-map-modal-title">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="time-map-modal-title">
+      <div className="bg-secondary border border-primary rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <div className="flex items-center space-x-2">
             <CalendarIcon />
             <div>
               <h2 id="time-map-modal-title" className="text-2xl font-bold">Spatial-Temporal View</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-secondary">
                 {formatDate(startDate)} - {formatDate(endDate)}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl leading-none" aria-label="Close modal">&times;</button>
+          <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close modal">&times;</button>
         </div>
 
         <iframe
           src={mapUrl}
-          className="w-full h-64 rounded-lg border-2 border-slate-700 mb-4 flex-shrink-0"
+          className="w-full h-64 rounded-lg border-2 border-primary mb-4 flex-shrink-0"
           loading="lazy"
           title={`Map of events from ${formatDate(startDate)} to ${formatDate(endDate)}`}
           allowFullScreen
         ></iframe>
 
         <div className="overflow-y-auto">
-          <h3 className="text-lg font-semibold text-slate-300 mb-2">
+          <h3 className="text-lg font-semibold text-primary mb-2">
             Itinerary ({eventsInWindow.length} {eventsInWindow.length === 1 ? 'Event' : 'Events'})
           </h3>
            {eventsInWindow.length > 0 ? (
-                <div className="divide-y divide-slate-700">
+                <div className="divide-y divide-primary">
                   {eventsInWindow.map(event => (
                     <div key={event.id} className="py-3">
-                      <p className="font-semibold text-text-light">{event.what.name}</p>
-                      <p className="text-sm text-slate-400">{event.when.display}</p>
-                      <p className="text-sm text-slate-300 font-medium">@ {event.where.name}</p>
+                      <p className="font-semibold text-primary">{event.what.name}</p>
+                      <p className="text-sm text-secondary">{event.when.display}</p>
+                      <p className="text-sm text-primary font-medium">@ {event.where.name}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500">No events scheduled in this time window.</p>
+                <p className="text-tertiary">No events scheduled in this time window.</p>
               )}
         </div>
       </div>

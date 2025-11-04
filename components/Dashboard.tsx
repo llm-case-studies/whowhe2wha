@@ -17,7 +17,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
   if (isLoading) {
     return (
         <div className="text-center py-10">
-            <div className="text-slate-400">Querying the context graph...</div>
+            <div className="text-secondary">Querying the context graph...</div>
         </div>
     );
   }
@@ -32,7 +32,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
         return (
           <div className="text-center py-10">
             <h3 className="text-xl font-semibold mb-2">No Connections Found</h3>
-            <p className="text-slate-400">The context engine couldn't find any events matching your query. Try a different search.</p>
+            <p className="text-secondary">The context engine couldn't find any events matching your query. Try a different search.</p>
           </div>
         );
       }
@@ -49,7 +49,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight text-slate-300 border-b border-slate-700 pb-2">
+      <h2 className="text-2xl font-bold tracking-tight text-primary border-b border-primary pb-2">
         {isSearched ? "Query Results" : "Project Stream"}
       </h2>
       {renderContent()}

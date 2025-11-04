@@ -44,7 +44,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
       className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
         activeTab === tab 
           ? 'bg-wha-blue text-white' 
-          : 'text-slate-300 hover:bg-slate-700'
+          : 'text-primary hover:bg-tertiary'
       }`}
       role="tab"
       aria-selected={activeTab === tab}
@@ -55,25 +55,25 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
+      <div className="bg-secondary border border-primary rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 id="map-modal-title" className="text-2xl font-bold flex items-center">
             <PinIcon />
             <span className="ml-2">{location.name}</span>
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl leading-none" aria-label="Close modal">&times;</button>
+          <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close modal">&times;</button>
         </div>
         
         <iframe
           src={mapSrc}
-          className="w-full h-64 rounded-lg border-2 border-slate-700 mb-4"
+          className="w-full h-64 rounded-lg border-2 border-primary mb-4"
           loading="lazy"
           title={`Map of ${location.name}`}
           aria-label={`Map of ${location.name}`}
         ></iframe>
 
-        <div className="flex-shrink-0 mb-4 border-b border-slate-700" role="tablist">
+        <div className="flex-shrink-0 mb-4 border-b border-primary" role="tablist">
           <div className="flex space-x-2">
             <TabButton tab="events" label="Scheduled Events" icon={<CalendarIcon />} />
             <TabButton tab="contacts" label="Contacts & Partners" icon={<UsersIcon />} />
@@ -83,7 +83,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
         <div className="overflow-y-auto">
           {activeTab === 'events' && (
             <div role="tabpanel">
-              <h3 className="text-lg font-semibold text-slate-300 mb-2">
+              <h3 className="text-lg font-semibold text-primary mb-2">
                 Nearby Events (within {NEARBY_RADIUS_MILES} miles)
               </h3>
               {nearbyEvents.length > 0 ? (
@@ -93,22 +93,22 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500">No other events found nearby.</p>
+                <p className="text-tertiary">No other events found nearby.</p>
               )}
             </div>
           )}
           {activeTab === 'contacts' && (
              <div role="tabpanel">
-              <h3 className="text-lg font-semibold text-slate-300 mb-2">
+              <h3 className="text-lg font-semibold text-primary mb-2">
                 Key Contacts at this Location
               </h3>
               {locationContacts.length > 0 ? (
-                <div className="divide-y divide-slate-700">
+                <div className="divide-y divide-primary">
                   {locationContacts.map(contact => (
                     <div key={contact.id} className="flex items-center justify-between py-3">
                       <div>
-                        <p className="font-semibold text-text-light">{contact.name}</p>
-                        <p className="text-sm text-slate-400">{contact.role}</p>
+                        <p className="font-semibold text-primary">{contact.name}</p>
+                        <p className="text-sm text-secondary">{contact.role}</p>
                       </div>
                       <button 
                         onClick={() => onSchedule(contact, location)}
@@ -120,7 +120,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500">No key contacts listed for this location.</p>
+                <p className="text-tertiary">No key contacts listed for this location.</p>
               )}
             </div>
           )}

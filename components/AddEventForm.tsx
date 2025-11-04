@@ -22,22 +22,22 @@ const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasM
 
     return (
         <div>
-            <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+            <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
             <div className="relative">
                 <input
                     id={id}
-                    className={`w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasMicSupport || id === 'where' ? 'pr-10' : ''}`}
+                    className={`w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasMicSupport || id === 'where' ? 'pr-10' : ''}`}
                     {...props}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                    {showGeoIcon && geocodingStatus === 'loading' && <SpinnerIcon className="h-5 w-5 animate-spin text-slate-400" />}
+                    {showGeoIcon && geocodingStatus === 'loading' && <SpinnerIcon className="h-5 w-5 animate-spin text-secondary" />}
                     {showGeoIcon && geocodingStatus === 'success' && <div title={`Geocoded: ${props.value}`}><PinIcon className="h-5 w-5 text-green-500" /></div>}
                     
                     {showMicButton && (
                          <button
                             type="button"
                             onClick={onMicClick}
-                            className="w-full h-full flex items-center justify-center text-slate-400 hover:text-white transition-colors duration-200"
+                            className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
                             aria-label={`Dictate ${label}`}
                             title={`Dictate ${label}`}
                         >
@@ -46,7 +46,7 @@ const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasM
                     )}
                     {showMicDisabled && (
                        <div title="Speech recognition not supported or permission denied">
-                          <MicrophoneSlashIcon className="h-5 w-5 text-slate-500" />
+                          <MicrophoneSlashIcon className="h-5 w-5 text-tertiary" />
                        </div>
                     )}
                 </div>
@@ -57,11 +57,11 @@ const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasM
 
 const FormTextArea = ({ label, id, ...props }) => (
     <div>
-        <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+        <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
         <textarea
             id={id}
             rows={2}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200"
+            className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200"
             {...props}
         />
     </div>
@@ -203,11 +203,11 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
+            <div className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 id="add-event-title" className="text-2xl font-bold">Add New Event</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl leading-none" aria-label="Close form">&times;</button>
+                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
                 </div>
                 {recognitionError && (
                   <div className="bg-red-900/50 border border-red-700 text-red-300 text-sm rounded-md p-3 mb-4" role="alert">
@@ -291,13 +291,13 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                         />
                     </div>
                     <div className="flex justify-end space-x-4 pt-4">
-                        <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-slate-300 hover:bg-slate-700 transition">
+                        <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-primary hover:bg-tertiary transition">
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={!isFormValid}
-                            className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-slate-600 disabled:cursor-not-allowed"
+                            className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary disabled:cursor-not-allowed"
                         >
                             Save Event
                         </button>

@@ -5,6 +5,8 @@ export enum EntityType {
   When = 'When',
 }
 
+export type Theme = 'dark' | 'light' | 'focus';
+
 export interface Project {
   id: number;
   name: string;

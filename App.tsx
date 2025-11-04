@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
 import { MOCK_EVENTS, MOCK_PROJECTS } from './constants';
-import { EventNode, Location, Project, Contact, When } from './types';
+import { EventNode, Location, Project, Contact, When, Theme } from './types';
 import { queryGraph } from './services/geminiService';
 import { AddEventForm } from './components/AddEventForm';
 import { MapModal } from './components/MapModal';
@@ -23,6 +23,16 @@ function App() {
   const [selectedWhen, setSelectedWhen] = useState<When | null>(null);
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('checking');
   const [eventDefaults, setEventDefaults] = useState<{ who?: string, where?: string } | null>(null);
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem('whowhe2wha-theme') as Theme) || 'dark'
+  );
+
+  useEffect(() => {
+    document.body.className = '';
+    document.body.classList.add(`theme-${theme}`);
+    localStorage.setItem('whowhe2wha-theme', theme);
+  }, [theme]);
+
 
   useEffect(() => {
     // Check for voice recognition support on startup
@@ -132,8 +142,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-dark font-sans text-text-light">
-      <Header />
+    <div className="min-h-screen bg-primary font-sans text-primary">
+      <Header theme={theme} setTheme={setTheme} />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <SearchBar onSearch={handleSearch} onClear={handleClear} isLoading={isLoading} />

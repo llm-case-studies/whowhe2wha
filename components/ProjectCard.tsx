@@ -10,9 +10,9 @@ interface ProjectCardProps {
 }
 
 const statusColorMap = {
-    'Active': 'text-green-400 bg-green-900/50',
-    'Completed': 'text-slate-400 bg-slate-700/50',
-    'On Hold': 'text-yellow-400 bg-yellow-900/50',
+    'Active': 'text-status-active-text bg-status-active',
+    'Completed': 'text-status-completed-text bg-status-completed',
+    'On Hold': 'text-status-onhold-text bg-status-onhold',
 };
 
 const ChevronDownIcon = ({ className = '' }: { className?: string }) => (
@@ -28,16 +28,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, events, onLoc
     const sortedEvents = [...events].sort((a,b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime());
 
     return (
-        <div className="bg-slate-900/70 border border-slate-800 rounded-lg overflow-hidden">
+        <div className="bg-secondary/70 border border-secondary rounded-lg overflow-hidden">
             <button 
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex justify-between items-center p-4 bg-slate-800/50 hover:bg-slate-800 transition duration-200"
+                className="w-full flex justify-between items-center p-4 bg-secondary/50 hover:bg-tertiary transition duration-200"
                 aria-expanded={isExpanded}
                 aria-controls={`project-events-${project.id}`}
             >
                 <div className="text-left">
-                    <h3 className="text-xl font-bold text-text-light">{project.name}</h3>
-                    <p className="text-slate-400 text-sm">{project.description}</p>
+                    <h3 className="text-xl font-bold text-primary">{project.name}</h3>
+                    <p className="text-secondary text-sm">{project.description}</p>
                 </div>
                 <div className="flex items-center space-x-4">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColorMap[project.status]}`}>
@@ -52,7 +52,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, events, onLoc
                     {sortedEvents.length > 0 ? (
                         sortedEvents.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />)
                     ) : (
-                        <div className="text-center text-slate-500 py-4">No events in this project yet.</div>
+                        <div className="text-center text-tertiary py-4">No events in this project yet.</div>
                     )}
                 </div>
             )}
