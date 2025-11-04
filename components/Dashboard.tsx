@@ -15,11 +15,12 @@ interface DashboardProps {
   viewMode: ViewMode;
   timelineDate: Date;
   timelineScale: TimelineScale;
+  selectedHolidayCategories: string[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick,
-  viewMode, timelineDate, timelineScale
+  viewMode, timelineDate, timelineScale, selectedHolidayCategories
 }) => {
   if (isLoading) {
     return (
@@ -34,7 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }
   
   if (viewMode === 'timeline') {
-    return <TimelineView events={events} currentDate={timelineDate} scale={timelineScale} />;
+    return <TimelineView events={events} currentDate={timelineDate} scale={timelineScale} selectedHolidayCategories={selectedHolidayCategories} />;
   }
 
   // Default to 'stream' view

@@ -7,12 +7,101 @@ export const COLORS: { [key in EntityType]: string } = {
   [EntityType.When]: 'bg-wha-blue',
 };
 
-export const MOCK_HOLIDAYS: Holiday[] = [
-    { name: 'Veterans Day', date: new Date('2025-11-11T12:00:00Z') },
-    // Thanksgiving 2025 is Nov 27, which is outside the default demo range.
-    // { name: 'Thanksgiving', date: new Date('2025-11-27T12:00:00Z') }, 
+export const HOLIDAY_CATEGORIES = [
+  { id: 'US', label: 'United States' },
+  { id: 'Canada', label: 'Canada' },
+  { id: 'Mexico', label: 'Mexico' },
+  { id: 'UK', label: 'United Kingdom' },
+  { id: 'EU', label: 'European Union' },
+  { id: 'China', label: 'China' },
+  { id: 'India', label: 'India' },
+  { id: 'Christian', label: 'Christian' },
+  { id: 'Jewish', label: 'Jewish' },
+  { id: 'Muslim', label: 'Muslim' },
+  { id: 'Hindu', label: 'Hindu' },
 ];
 
+export const HOLIDAY_DATA: Record<string, Holiday[]> = {
+  US: [
+    { name: "New Year's Day", date: new Date('2025-01-01T12:00:00Z') },
+    { name: 'MLK Day', date: new Date('2025-01-20T12:00:00Z') },
+    { name: "Presidents' Day", date: new Date('2025-02-17T12:00:00Z') },
+    { name: 'Memorial Day', date: new Date('2025-05-26T12:00:00Z') },
+    { name: 'Juneteenth', date: new Date('2025-06-19T12:00:00Z') },
+    { name: 'Independence Day', date: new Date('2025-07-04T12:00:00Z') },
+    { name: 'Labor Day', date: new Date('2025-09-01T12:00:00Z') },
+    { name: 'Veterans Day', date: new Date('2025-11-11T12:00:00Z') },
+    { name: 'Thanksgiving', date: new Date('2025-11-27T12:00:00Z') },
+    { name: 'Christmas Day', date: new Date('2025-12-25T12:00:00Z') },
+  ],
+  Canada: [
+    { name: "New Year's Day", date: new Date('2025-01-01T12:00:00Z') },
+    { name: 'Victoria Day', date: new Date('2025-05-19T12:00:00Z') },
+    { name: 'Canada Day', date: new Date('2025-07-01T12:00:00Z') },
+    { name: 'Labour Day', date: new Date('2025-09-01T12:00:00Z') },
+    { name: 'Thanksgiving', date: new Date('2025-10-13T12:00:00Z') },
+    { name: 'Remembrance Day', date: new Date('2025-11-11T12:00:00Z') },
+  ],
+  Mexico: [
+    { name: "New Year's Day", date: new Date('2025-01-01T12:00:00Z') },
+    { name: 'Constitution Day', date: new Date('2025-02-05T12:00:00Z') },
+    { name: 'Benito Juárez\'s B-day', date: new Date('2025-03-21T12:00:00Z') },
+    { name: 'Labor Day', date: new Date('2025-05-01T12:00:00Z') },
+    { name: 'Independence Day', date: new Date('2025-09-16T12:00:00Z') },
+    { name: 'Revolution Day', date: new Date('2025-11-20T12:00:00Z') },
+  ],
+  UK: [
+    { name: "New Year's Day", date: new Date('2025-01-01T12:00:00Z') },
+    { name: 'Good Friday', date: new Date('2025-04-18T12:00:00Z') },
+    { name: 'Easter Monday', date: new Date('2025-04-21T12:00:00Z') },
+    { name: 'Early May Bank Holiday', date: new Date('2025-05-05T12:00:00Z') },
+    { name: 'Spring Bank Holiday', date: new Date('2025-05-26T12:00:00Z') },
+    { name: 'Summer Bank Holiday', date: new Date('2025-08-25T12:00:00Z') },
+    { name: 'Christmas Day', date: new Date('2025-12-25T12:00:00Z') },
+    { name: 'Boxing Day', date: new Date('2025-12-26T12:00:00Z') },
+  ],
+  EU: [
+    { name: "New Year's Day", date: new Date('2025-01-01T12:00:00Z') },
+    { name: 'Labour Day', date: new Date('2025-05-01T12:00:00Z') },
+    { name: 'Europe Day', date: new Date('2025-05-09T12:00:00Z') },
+    { name: 'Ascension Day', date: new Date('2025-05-29T12:00:00Z') },
+    { name: 'Assumption of Mary', date: new Date('2025-08-15T12:00:00Z') },
+    { name: "All Saints' Day", date: new Date('2025-11-01T12:00:00Z') },
+  ],
+  China: [
+    { name: 'Chinese New Year', date: new Date('2025-01-29T12:00:00Z') },
+    { name: 'Qingming Festival', date: new Date('2025-04-05T12:00:00Z') },
+    { name: 'Labor Day', date: new Date('2025-05-01T12:00:00Z') },
+    { name: 'Dragon Boat Festival', date: new Date('2025-05-31T12:00:00Z') },
+    { name: 'Mid-Autumn Festival', date: new Date('2025-10-06T12:00:00Z') },
+    { name: 'National Day', date: new Date('2025-10-01T12:00:00Z') },
+  ],
+  India: [
+    { name: 'Republic Day', date: new Date('2025-01-26T12:00:00Z') },
+    { name: 'Holi', date: new Date('2025-03-14T12:00:00Z') },
+    { name: 'Independence Day', date: new Date('2025-08-15T12:00:00Z') },
+    { name: 'Gandhi Jayanti', date: new Date('2025-10-02T12:00:00Z') },
+    { name: 'Diwali', date: new Date('2025-10-21T12:00:00Z') },
+  ],
+  Christian: [
+    { name: 'Good Friday', date: new Date('2025-04-18T12:00:00Z') },
+    { name: 'Easter', date: new Date('2025-04-20T12:00:00Z') },
+    { name: 'Christmas', date: new Date('2025-12-25T12:00:00Z') },
+  ],
+  Jewish: [
+    { name: 'Rosh Hashanah', date: new Date('2025-09-23T12:00:00Z') },
+    { name: 'Yom Kippur', date: new Date('2025-10-02T12:00:00Z') },
+    { name: 'Hanukkah Begins', date: new Date('2025-12-15T12:00:00Z') },
+  ],
+  Muslim: [
+    { name: 'Eid al-Fitr', date: new Date('2025-03-30T12:00:00Z') },
+    { name: 'Eid al-Adha', date: new Date('2025-06-06T12:00:00Z') },
+  ],
+  Hindu: [
+    { name: 'Holi', date: new Date('2025-03-14T12:00:00Z') },
+    { name: 'Diwali', date: new Date('2025-10-21T12:00:00Z') },
+  ],
+};
 
 export const MOCK_PROJECTS: Project[] = [
   {

@@ -30,6 +30,8 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
   const [timelineDate, setTimelineDate] = useState(new Date());
+  const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
+
 
   useEffect(() => {
     // Check for speech recognition support once on mount
@@ -120,6 +122,8 @@ const App: React.FC = () => {
           timelineDate={timelineDate}
           setTimelineDate={setTimelineDate}
           onAddEventClick={() => setIsAddEventFormOpen(true)}
+          selectedHolidayCategories={selectedHolidayCategories}
+          setSelectedHolidayCategories={setSelectedHolidayCategories}
         />
 
         <Dashboard
@@ -133,6 +137,7 @@ const App: React.FC = () => {
           viewMode={viewMode}
           timelineDate={timelineDate}
           timelineScale={timelineScale}
+          selectedHolidayCategories={selectedHolidayCategories}
         />
       </main>
       

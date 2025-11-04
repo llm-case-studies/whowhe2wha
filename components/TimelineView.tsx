@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { EventNode, TimelineScale } from '../types';
-import { MOCK_HOLIDAYS } from '../constants';
+import { HOLIDAY_DATA } from '../constants';
 import { StarIcon } from './icons';
 import { 
     getStartOfWeek, getEndOfWeek,
@@ -13,6 +13,7 @@ interface TimelineViewProps {
   events: EventNode[];
   currentDate: Date;
   scale: TimelineScale;
+  selectedHolidayCategories: string[];
 }
 
 // A generic marker component for the timeline.
@@ -35,7 +36,7 @@ const TimelineMarker: React.FC<{ label: string; isToday?: boolean }> = ({ label,
   );
 };
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate, scale }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate, scale, selectedHolidayCategories }) => {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
 
   // Dynamic Date Range Calculation based on scale
@@ -88,10 +89,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
     return eventDateMs >= startDateMs && eventDateMs <= endDateMs;
   });
 
-  const visibleHolidays = MOCK_HOLIDAYS.filter(holiday => {
+  const holidaysToDisplay = useMemo(() => {
+    return selectedHolidayCategories.flatMap(category => HOLIDAY_DATA[category] || []);
+  }, [selectedHolidayCategories]);
+
+  const visibleHolidays = holidaysToDisplay.filter(holiday => {
       const holidayDateMs = holiday.date.getTime();
       return holidayDateMs >= startDateMs && holidayDateMs <= endDateMs;
   });
+
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
@@ -134,7 +140,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, currentDate,
                 const position = getPositionPercent(holiday.date);
                 return (
                     <div 
-                        key={holiday.name}
+                        key={`${holiday.name}-${holiday.date}`}
                         className="absolute"
                         style={{ left: `${position}%`, top: 'calc(50% + 6px)', transform: 'translateX(-50%)' }}
                     >

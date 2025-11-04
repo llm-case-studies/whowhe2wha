@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ViewMode, TimelineScale } from '../types';
-import { StreamIcon, TimelineIcon } from './icons';
+import { StreamIcon, TimelineIcon, StarIcon } from './icons';
+import { HOLIDAY_CATEGORIES } from '../constants';
 
 interface ViewControlsProps {
   viewMode: ViewMode;
@@ -10,6 +11,8 @@ interface ViewControlsProps {
   timelineDate: Date;
   setTimelineDate: (date: Date) => void;
   onAddEventClick: () => void;
+  selectedHolidayCategories: string[];
+  setSelectedHolidayCategories: (categories: string[]) => void;
 }
 
 const scaleOptions: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
@@ -61,7 +64,32 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   timelineDate,
   setTimelineDate,
   onAddEventClick,
+  selectedHolidayCategories,
+  setSelectedHolidayCategories,
 }) => {
+  const [isHolidaySelectorOpen, setIsHolidaySelectorOpen] = useState(false);
+  const holidaySelectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (holidaySelectorRef.current && !holidaySelectorRef.current.contains(event.target as Node)) {
+        setIsHolidaySelectorOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [holidaySelectorRef]);
+
+  const handleHolidayToggle = (categoryId: string) => {
+    setSelectedHolidayCategories(
+      selectedHolidayCategories.includes(categoryId)
+        ? selectedHolidayCategories.filter((c) => c !== categoryId)
+        : [...selectedHolidayCategories, categoryId]
+    );
+  };
+
   return (
     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
       <div className="flex items-center space-x-1 bg-tertiary p-1 rounded-full">
@@ -93,7 +121,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
             &lt;
           </button>
           <span className="text-sm font-medium text-primary px-2 whitespace-nowrap">{getTimelineLabel(timelineDate, timelineScale)}</span>
-           <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'next'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Next time period">
+          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'next'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Next time period">
             &gt;
           </button>
           <select
@@ -108,6 +136,39 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
               </option>
             ))}
           </select>
+          <div className="relative" ref={holidaySelectorRef}>
+            <button
+              onClick={() => setIsHolidaySelectorOpen(!isHolidaySelectorOpen)}
+              className="p-2 text-tertiary hover:text-primary rounded-full relative"
+              aria-label="Select holidays to display"
+            >
+              <StarIcon />
+              {selectedHolidayCategories.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wha-blue opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-wha-blue"></span>
+                </span>
+              )}
+            </button>
+            {isHolidaySelectorOpen && (
+              <div className="absolute top-full right-0 mt-2 w-56 bg-secondary border border-primary rounded-lg shadow-xl z-20 p-2">
+                <p className="text-xs text-secondary font-bold px-2 pb-1">Show Holidays</p>
+                <div className="space-y-1">
+                  {HOLIDAY_CATEGORIES.map(category => (
+                    <label key={category.id} className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-tertiary cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedHolidayCategories.includes(category.id)}
+                        onChange={() => handleHolidayToggle(category.id)}
+                        className="rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
+                      />
+                      <span className="text-sm text-primary">{category.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
