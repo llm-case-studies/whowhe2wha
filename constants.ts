@@ -1,4 +1,4 @@
-import { EventNode, EntityType, Project, Contact } from './types';
+import { EventNode, EntityType, Project, Contact, Holiday } from './types';
 
 export const COLORS: { [key in EntityType]: string } = {
   [EntityType.Who]: 'bg-who-pink',
@@ -6,6 +6,13 @@ export const COLORS: { [key in EntityType]: string } = {
   [EntityType.What]: 'bg-wha-blue',
   [EntityType.When]: 'bg-wha-blue',
 };
+
+export const MOCK_HOLIDAYS: Holiday[] = [
+    { name: 'Veterans Day', date: new Date('2025-11-11T12:00:00Z') },
+    // Thanksgiving 2025 is Nov 27, which is outside the default demo range.
+    // { name: 'Thanksgiving', date: new Date('2025-11-27T12:00:00Z') }, 
+];
+
 
 export const MOCK_PROJECTS: Project[] = [
   {
