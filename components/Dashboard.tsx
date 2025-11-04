@@ -1,7 +1,8 @@
 import React from 'react';
-import { EventNode, Location, Project, When } from '../types';
+import { EventNode, Location, Project, When, ViewMode, TimelineScale } from '../types';
 import { EventCard } from './EventCard';
 import { ProjectCard } from './ProjectCard';
+import { TimelineView } from './TimelineView';
 
 interface DashboardProps {
   projects: Project[];
@@ -11,9 +12,15 @@ interface DashboardProps {
   isSearched: boolean;
   onLocationClick: (location: Location) => void;
   onWhenClick: (when: When) => void;
+  viewMode: ViewMode;
+  timelineDate: Date;
+  timelineScale: TimelineScale;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick,
+  viewMode, timelineDate, timelineScale
+}) => {
   if (isLoading) {
     return (
         <div className="text-center py-10">
@@ -26,6 +33,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
     return <div className="text-center py-10 px-4 bg-red-900/50 border border-red-700 rounded-lg text-red-300">{error}</div>;
   }
   
+  if (viewMode === 'timeline') {
+    return <TimelineView events={events} currentDate={timelineDate} scale={timelineScale} />;
+  }
+
+  // Default to 'stream' view
   const renderContent = () => {
     if (isSearched) {
       if (events.length === 0) {
@@ -39,6 +51,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
       return events.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
     }
 
+    if (projects.length === 0 && events.length > 0) {
+      // Handle case where search results might only contain events without their projects
+       return events.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
+    }
+
     return projects
       .sort((a,b) => a.id - b.id)
       .map(project => {
@@ -48,7 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, events, isLoadin
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-6">
       <h2 className="text-2xl font-bold tracking-tight text-primary border-b border-primary pb-2">
         {isSearched ? "Query Results" : "Project Stream"}
       </h2>

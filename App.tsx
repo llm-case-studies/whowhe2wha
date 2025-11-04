@@ -5,9 +5,10 @@ import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
 import { MapModal } from './components/MapModal';
 import { TimeMapModal } from './components/TimeMapModal';
-import { Project, EventNode, Theme, Location, When, Contact, EntityType } from './types';
+import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale } from './types';
 import { MOCK_PROJECTS, MOCK_EVENTS } from './constants';
 import { queryGraph } from './services/geminiService';
+import { ViewControls } from './components/ViewControls';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -25,6 +26,11 @@ const App: React.FC = () => {
 
   const [voiceStatus, setVoiceStatus] = useState<'checking' | 'supported' | 'unsupported'>('checking');
   
+  // New state for timeline view
+  const [viewMode, setViewMode] = useState<ViewMode>('stream');
+  const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
+  const [timelineDate, setTimelineDate] = useState(new Date());
+
   useEffect(() => {
     // Check for speech recognition support once on mount
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -42,6 +48,7 @@ const App: React.FC = () => {
       const data = { projects, events };
       const matchingIds = await queryGraph(query, data);
       setFilteredEventIds(matchingIds);
+      setViewMode('stream'); // Force back to stream view for search results
     } catch (e) {
       setError('An error occurred while searching. Please try again.');
       console.error(e);
@@ -76,7 +83,7 @@ const App: React.FC = () => {
       projectId: targetProjectId,
     };
 
-    setEvents(prev => [...prev, finalEvent]);
+    setEvents(prev => [...prev, finalEvent].sort((a, b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime()));
     setIsAddEventFormOpen(false);
     setAddEventInitialData(null);
   };
@@ -105,14 +112,15 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 pb-10">
         <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
 
-        <div className="flex justify-end mb-4">
-             <button
-                onClick={() => setIsAddEventFormOpen(true)}
-                className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
-              >
-                + Add Event
-            </button>
-        </div>
+        <ViewControls
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          timelineScale={timelineScale}
+          setTimelineScale={setTimelineScale}
+          timelineDate={timelineDate}
+          setTimelineDate={setTimelineDate}
+          onAddEventClick={() => setIsAddEventFormOpen(true)}
+        />
 
         <Dashboard
           projects={displayedProjects}
@@ -122,6 +130,9 @@ const App: React.FC = () => {
           isSearched={filteredEventIds !== null}
           onLocationClick={setMapModalLocation}
           onWhenClick={setTimeMapModalWhen}
+          viewMode={viewMode}
+          timelineDate={timelineDate}
+          timelineScale={timelineScale}
         />
       </main>
       

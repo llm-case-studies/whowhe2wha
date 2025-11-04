@@ -45,3 +45,11 @@ export const MoonIcon: React.FC<{className?: string}> = ({className}) => (
 export const BrainIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM3 10a7 7 0 1114 0 7 7 0 01-14 0z" clipRule="evenodd" /><path d="M7 10a3 3 0 116 0 3 3 0 01-6 0z" /></svg>
 );
+
+export const StreamIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+);
+
+export const TimelineIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+);
