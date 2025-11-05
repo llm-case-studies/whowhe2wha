@@ -2,6 +2,8 @@
 
 Welcome to the Unified Context Engine. This guide will walk you through the core features of the application.
 
+Google AI Stodio link to the workspace: https://aistudio.google.com/apps/drive/16HCQUfRMItTpfH-yRnJ4b06boI6OlaR2?showAssistant=true&resourceKey=&showCode=true
+
 ## 1. The Main Interface
 
 When you open the app, you see the main dashboard. You can switch between two primary views using the **View Controls** at the top.
