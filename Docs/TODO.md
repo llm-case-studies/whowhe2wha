@@ -15,6 +15,7 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **Theming:** Added a theme switcher with light, dark, and focus modes.
 -   [x] **Timeline View:** Added an interactive, scalable timeline for visualizing events and holidays.
 -   [x] **Dynamic Timeline Layout:** Implemented a configurable, multi-tier (swimlane) timeline layout.
+-   [x] **PWA Functionality:** Made the app installable on mobile and desktop devices with offline support via a service worker and web manifest.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
 
 ## Planned Features & Enhancements 🚀

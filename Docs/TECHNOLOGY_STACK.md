@@ -21,6 +21,11 @@ The **whowhe2wha** application is built with a modern, lightweight, and powerful
 
 -   **Tailwind CSS:** A utility-first CSS framework used for all styling. It allows for rapid prototyping and building a custom design system directly in the HTML. The configuration is defined in a `<script>` tag in `index.html` for simplicity and supports multiple themes (dark, light, focus).
 
+### PWA & Offline Support
+
+-   **Web App Manifest (`manifest.json`):** A manifest file is provided to describe the application to the browser, allowing it to be installed on the user's home screen or desktop. It defines the app's name, icons, and display mode for a seamless, standalone experience.
+-   **Service Workers:** A service worker script is used to provide core Progressive Web App features. It caches the application shell, enabling instant loading on subsequent visits and allowing the app to function even when offline.
+
 ### Browser APIs
 
 -   **Web Speech API (`SpeechRecognition`):** This browser-native API is used to implement the voice-to-text dictation feature in the "Add Event" form.

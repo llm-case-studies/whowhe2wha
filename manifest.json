@@ -1,0 +1,22 @@
+
+{
+  "short_name": "whowhe2wha",
+  "name": "whowhe2wha: Unified Context Engine",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#111827",
+  "background_color": "#111827",
+  "description": "A revolutionary Unified Context Engine that transforms fragmented digital lives into a seamless, queryable web of interconnected realities."
+}

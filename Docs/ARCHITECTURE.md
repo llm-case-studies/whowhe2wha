@@ -4,7 +4,7 @@ This document provides a high-level overview of the `whowhe2wha` application's s
 
 ## 1. High-Level Design
 
-`whowhe2wha` is a **Single-Page Application (SPA)** built with React. The architecture emphasizes a clear separation of concerns, modularity, and a unidirectional data flow. All logic and rendering happen on the client-side, with the Google Gemini API serving as the external intelligence layer.
+`whowhe2wha` is a **Single-Page Application (SPA)** built with React. The architecture emphasizes a clear separation of concerns, modularity, and a unidirectional data flow. All logic and rendering happen on the client-side, with the Google Gemini API serving as the external intelligence layer. The application is also a **Progressive Web App (PWA)**, enabling installation and offline use.
 
 ## 2. Component-Based Structure
 
@@ -67,3 +67,10 @@ The application follows a predictable, unidirectional data flow.
     2.  `AddEventForm` calls the `onSave` prop function, passing the new event data.
     3.  `App.tsx` receives the data, creates a new event object with a unique ID, and adds it to the `events` state array.
     4.  React re-renders the `Dashboard`, which now includes the new event in the appropriate view.
+
+## 6. Progressive Web App (PWA) Features
+
+The application is enhanced with PWA capabilities to provide a more native-like experience.
+
+-   **`manifest.json` (Web App Manifest):** This file provides metadata about the application (name, icons, theme colors). It allows browsers on desktop and mobile to "install" the web app to the user's home screen or applications folder, where it can run in a standalone window without the browser's UI chrome.
+-   **`service-worker.js` (Service Worker):** This script runs in the background, separate from the main application thread. Its primary role is to provide network resilience and offline support by caching the core application assets (the "app shell"). On subsequent visits, it intercepts network requests and can serve the cached assets directly, resulting in near-instant load times and the ability for the app to function without a network connection.
