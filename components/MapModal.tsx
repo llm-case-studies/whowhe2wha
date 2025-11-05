@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Location, EventNode, Contact } from '../types';
 import { getDistanceInMiles } from '../services/geoService';
 import { EventCard } from './EventCard';
-import { PinIcon, CalendarIcon, UsersIcon } from './icons';
+import { PinIcon, CalendarIcon, UsersIcon, NavigateIcon } from './icons';
 import { MOCK_CONTACTS } from '../constants';
 
 interface MapModalProps {
@@ -37,6 +37,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
   const handleWhenClick = () => {};
 
   const mapSrc = `https://maps.google.com/maps?q=${location.latitude},${location.longitude}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  const navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
 
   const TabButton: React.FC<{tab: ActiveTab, label: string, icon: React.ReactNode}> = ({ tab, label, icon }) => (
     <button
@@ -57,11 +58,24 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
   return (
     <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
       <div className="bg-secondary border border-primary rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
-          <h2 id="map-modal-title" className="text-2xl font-bold flex items-center">
-            <PinIcon />
-            <span className="ml-2">{location.name}</span>
-          </h2>
+        <div className="flex justify-between items-start mb-4 flex-shrink-0">
+          <div>
+            <h2 id="map-modal-title" className="text-2xl font-bold flex items-center">
+              <PinIcon />
+              <span className="ml-2">{location.name}</span>
+            </h2>
+            {location.latitude && location.longitude && (
+                <a 
+                    href={navigationUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200"
+                >
+                    <NavigateIcon className="h-5 w-5 mr-2" />
+                    Navigate
+                </a>
+            )}
+          </div>
           <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close modal">&times;</button>
         </div>
         

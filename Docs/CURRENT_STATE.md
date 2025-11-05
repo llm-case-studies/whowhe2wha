@@ -18,6 +18,7 @@ The application is fully functional and provides a robust framework for managing
     -   Create new events with detailed information (What, Who, Where, When, Description).
     -   Create new projects on-the-fly when adding an event.
     -   View all events neatly grouped by their parent project in the Stream view.
+    -   Data is persisted in the browser's `localStorage` between sessions.
 
 -   **AI-Powered Search:**
     -   A "Summon" bar allows for natural language queries (e.g., "dental work," "errands downtown").
@@ -25,7 +26,7 @@ The application is fully functional and provides a robust framework for managing
 
 -   **Dual View Modes:**
     -   **Project Stream:** A familiar, chronological feed of projects and their associated events.
-    -   **Timeline View:** An interactive, scalable timeline (week, month, quarter, year) that visualizes events over time.
+    -   **Timeline View:** An interactive, scalable timeline (week, month, quarter, year) that visualizes events over time. It features a fully configurable **multi-tier (swimlane) layout**, allowing users to group project categories into logical sections. A collapsible sidebar shows project details aligned with their swimlanes.
 
 -   **Advanced User Input:**
     -   **Voice Dictation:** Key text fields in the "Add Event" form support voice-to-text transcription.
@@ -35,6 +36,7 @@ The application is fully functional and provides a robust framework for managing
     -   **Spatial View (Map Modal):** Clicking a location tag opens a modal showing a map, nearby events, and key contacts with a one-click "Schedule" action.
     -   **Spatial-Temporal View (TimeMap Modal):** Clicking a date tag opens a modal showing a multi-point route map and itinerary for a 7-day window.
     -   **Holiday Overlays:** The Timeline view allows users to select and display various national and religious holidays for better contextual planning.
+    -   **Project Filtering:** The Timeline view allows users to filter which project categories are visible.
 
 -   **User Interface & Experience:**
     -   A clean, responsive UI with multiple user-selectable themes (light, dark, focus).

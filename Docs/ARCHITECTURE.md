@@ -11,8 +11,8 @@ This document provides a high-level overview of the `whowhe2wha` application's s
 The UI is broken down into a tree of reusable React components located in the `src/components` directory.
 
 -   **`App.tsx` (Root Component):** This is the central hub of the application. It is responsible for:
-    -   Managing the primary application state (lists of all projects and events, theme, view mode, timeline settings).
-    -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`).
+    -   Managing the primary application state (lists of all projects and events, theme, view mode, timeline settings, tier configuration).
+    -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`).
     -   Orchestrating the data flow between its child components. It passes down state and callback functions as props.
 
 -   **UI Components:**
@@ -23,18 +23,19 @@ The UI is broken down into a tree of reusable React components located in the `s
     -   `ProjectCard.tsx`: A container for a single project, which lists all of its associated `EventCard` components.
     -   `EventCard.tsx`: Displays the details of a single event node.
     -   `EntityTag.tsx`: A small, reusable component for displaying the color-coded `Who`, `Where`, and `When` tags.
-    -   `TimelineView.tsx`: A complex component for visualizing events and holidays on a scalable timeline.
+    -   `TimelineView.tsx`: A complex component for visualizing events and holidays on a scalable, multi-tier timeline.
 
 -   **Modal Components:**
     -   `AddEventForm.tsx`: A stateful component for creating new events.
     -   `MapModal.tsx`: Displays the single-location map view.
     -   `TimeMapModal.tsx`: Displays the multi-location itinerary and route map.
+    -   `TierConfigModal.tsx`: Allows users to create, edit, and assign project categories to timeline tiers.
 
 ## 3. State Management
 
 State management is handled using React's built-in hooks, following a "lifted state" pattern.
 
--   **Global State:** The master lists of `events` and `projects`, as well as UI state like `theme`, `viewMode`, `timelineScale`, `timelineDate`, and `selectedHolidayCategories` are held in the top-level `App.tsx` component. This serves as the single source of truth.
+-   **Global State:** The master lists of `events` and `projects`, as well as UI state like `theme`, `viewMode`, `timelineScale`, `timelineDate`, `selectedHolidayCategories`, and `tierConfig` are held in the top-level `App.tsx` component. This serves as the single source of truth.
 -   **Local State:** Individual components manage their own UI-specific state. For example, `AddEventForm` manages the state of its input fields.
 -   **Props Drilling:** State and update functions are passed down through the component tree via props. For an application of this scale, this is a straightforward and effective approach.
 -   **Data Persistence:** The application's core data (`projects` and `events`) is persisted to the browser's `localStorage`. This is handled within the root `App.tsx` component. State is loaded from `localStorage` on initial application mount, and `useEffect` hooks automatically save any changes to the state back to `localStorage`, ensuring data continuity across sessions.

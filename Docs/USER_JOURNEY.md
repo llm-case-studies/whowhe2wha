@@ -36,19 +36,30 @@ Alex is undergoing a dental implant procedure, a multi-month project involving c
 
 ### Step 3: Gaining a High-Level Perspective
 
--   **The Trigger:** With several appointments now scheduled for November and December, Alex wants to see how the dental treatment timeline fits around the upcoming Thanksgiving holiday.
--   **Action:** Alex clicks the "Timeline" button in the view controls. The view switches from the project stream to a horizontal timeline for the current month.
+-   **The Trigger:** With several appointments scheduled, Alex wants to see how the timeline fits around upcoming holidays.
+-   **Action:** Alex clicks the "Timeline" button. The view switches to a horizontal timeline.
 -   **Interaction:**
-    -   Alex sees markers for the dental appointments.
-    -   Alex clicks the star icon (Holiday Selector), checks the box for "United States," and immediately sees a "Thanksgiving" marker appear on the timeline.
--   **Outcome:** Alex now has a clear, high-level visual of the month, understanding the temporal relationship between personal appointments and public holidays. This allows for better long-term planning.
+    -   Alex sees markers for all the new appointments.
+    -   Alex clicks the star icon (Holiday Selector), checks the box for "United States," and immediately sees holiday icons appear on the timeline.
+-   **Outcome:** Alex now has a clear, high-level visual, understanding the temporal relationship between personal appointments and public holidays.
+
+### Step 3.5: Customizing the View
+
+-   **The Trigger:** Alex notices the timeline shows all projects mixed together and wants to visually separate different life domains.
+-   **Action:** Alex clicks the "Configure timeline layout" button (layers icon) in the timeline controls.
+-   **Interaction:**
+    -   In the "Timeline Layout" modal, Alex renames "Tier 1" to "Life Admin" and "Tier 2" to "Health & Work".
+    -   Using the dropdowns on the right, Alex assigns the 'Home' and 'Personal' categories to the "Life Admin" tier.
+    -   Alex assigns the 'Health', 'Work', and 'Finance' categories to the "Health & Work" tier.
+    -   Alex clicks "Save Layout".
+-   **Outcome:** The timeline instantly redraws itself into two distinct sections. The top section contains all "Life Admin" events, while the bottom section shows "Health & Work". The view is now perfectly tailored to how Alex thinks about their life, making it even easier to spot patterns and potential conflicts.
 
 ### Step 4: Proactive Planning with Natural Language
 
 -   **The Trigger:** A week later, Alex needs to plan their travel for an upcoming busy day.
 -   **Action:** Alex goes to the **whowhe2wha** search bar.
 -   **Query:** Alex types a natural language query: **"what's happening on November 15th?"**
--   **Result:** The Dashboard instantly filters, hiding all other projects and showing only the two events scheduled for that day:
+-   **Result:** The Dashboard instantly filters, showing only the two events for that day:
     1.  `3:00 PM`: Initial Consultation & Scan @ Springfield Clinic
     2.  `4:30 PM`: Pick up library books @ Downtown Library
 
@@ -59,14 +70,13 @@ Alex is undergoing a dental implant procedure, a multi-month project involving c
 -   **Result:** The **Spatial-Temporal View** modal appears.
     -   On the right, a clear itinerary lists the two events in chronological order.
     -   On the left, an embedded map displays a route connecting the Springfield Clinic and the Downtown Library.
--   **Outcome:** Alex immediately understands the geographic relationship between the day's tasks. The abstract list of appointments becomes a concrete, visual plan, allowing Alex to efficiently manage time and travel.
+-   **Outcome:** Alex immediately understands the geographic relationship between the day's tasks. The abstract list of appointments becomes a concrete, visual plan.
 
 ### Step 6: Discovering Hidden Context
 
 -   **The Trigger:** While looking at the map, Alex decides to be proactive and schedule the next major appointment.
 -   **Action:** Alex closes the Spatial-Temporal View and clicks on the location tag for "Springfield Clinic" on the event card.
 -   **Result:** The **Map Modal** for the clinic opens.
-    -   It shows the clinic's location on a map.
     -   Alex clicks the "Contacts & Partners" tab.
     -   The app lists "Dr. Smith" and "Clinic Reception." Next to the reception's name is a "Schedule" button.
 -   **Action:** Alex clicks "Schedule."

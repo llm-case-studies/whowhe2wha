@@ -1,6 +1,6 @@
 import React from 'react';
 import { When, EventNode, Location } from '../types';
-import { CalendarIcon } from './icons';
+import { CalendarIcon, NavigateIcon } from './icons';
 
 interface TimeMapModalProps {
   when: When;
@@ -99,10 +99,23 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onC
            {eventsInWindow.length > 0 ? (
                 <div className="divide-y divide-primary">
                   {eventsInWindow.map(event => (
-                    <div key={event.id} className="py-3">
-                      <p className="font-semibold text-primary">{event.what.name}</p>
-                      <p className="text-sm text-secondary">{event.when.display}</p>
-                      <p className="text-sm text-primary font-medium">@ {event.where.name}</p>
+                    <div key={event.id} className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="font-semibold text-primary">{event.what.name}</p>
+                        <p className="text-sm text-secondary">{event.when.display}</p>
+                        <p className="text-sm text-primary font-medium">@ {event.where.name}</p>
+                      </div>
+                      {event.where.latitude && event.where.longitude && (
+                         <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${event.where.latitude},${event.where.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-tertiary hover:bg-green-600 hover:text-white transition-colors duration-200"
+                            title={`Navigate to ${event.where.name}`}
+                         >
+                             <NavigateIcon className="h-5 w-5" />
+                         </a>
+                      )}
                     </div>
                   ))}
                 </div>

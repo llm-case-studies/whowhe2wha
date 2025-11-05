@@ -105,3 +105,7 @@ export const ChevronsRightIcon: React.FC<{className?: string}> = ({className}) =
 export const LayersIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 6a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V6zm2-2a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1V6a1 1 0 00-1-1H5z" clipRule="evenodd" /><path d="M2.5 7.5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-1.5a.5.5 0 011 0V17a2 2 0 01-2 2H2a2 2 0 01-2-2V8a2 2 0 012-2h1.5a.5.5 0 010 1H2.5z" /></svg>
 );
+
+export const NavigateIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+);
