@@ -116,9 +116,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     categoryLayout,
     tierLayouts,
     containerHeight,
+    tierPositions
   } = useMemo(() => {
     const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
-    const projectCategoryMap = new Map<number, string>(projects.map(p => [p.id, p.category]));
     
     const finalTierConfig: TierConfig = JSON.parse(JSON.stringify(tierConfig));
     const assignedCategories = new Set(finalTierConfig.flatMap(t => t.categories));
@@ -129,18 +129,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     } else if (unassignedCategories.length > 0) {
       finalTierConfig.push({ id: 'tier-unassigned', name: 'Unassigned', categories: unassignedCategories });
     }
-
-    const categoryToTierMap = new Map<string, number>();
-    finalTierConfig.forEach((tier, index) => {
-        tier.categories.forEach(cat => categoryToTierMap.set(cat, index));
-    });
     
     const generatedLaneInfo = new Map<number, { tierIndex: number, laneIndex: number, topOffset: number }>();
     const generatedCategoryLayouts = new Map<string, { top: number, height: number, tierIndex: number }>();
     const generatedTierLayouts = finalTierConfig.map(() => ({ totalHeight: 0, categories: new Set<string>() }));
     
-    let totalSwimlaneHeight = 0;
-
     finalTierConfig.forEach((tier, tierIndex) => {
         const projectsInTier = visibleProjects.filter(p => tier.categories.includes(p.category));
         const groupedByCategory = new Map<string, Project[]>();
@@ -173,18 +166,46 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
         }
         const tierHeight = currentLane * LANE_HEIGHT + Math.max(0, categoryCount - 1) * CATEGORY_GAP + LANE_START_OFFSET * 2;
         generatedTierLayouts[tierIndex].totalHeight = tierHeight;
-        totalSwimlaneHeight += tierHeight;
     });
-    
-    const finalContainerHeight = Math.max(MIN_CONTAINER_HEIGHT, totalSwimlaneHeight + (finalTierConfig.length -1) * TIMELINE_BAR_HEIGHT);
+
+    const totalTierHeights = generatedTierLayouts.reduce((sum, tier) => sum + tier.totalHeight, 0);
+    const totalBarHeights = Math.max(0, generatedTierLayouts.length - 1) * TIMELINE_BAR_HEIGHT;
+    const contentHeight = totalTierHeights + totalBarHeights;
+    const finalContainerHeight = Math.max(MIN_CONTAINER_HEIGHT, contentHeight);
+
+    let accumulatedHeight = (finalContainerHeight - contentHeight) / 2;
+    const generatedTierPositions: number[] = [];
+    generatedTierLayouts.forEach((tier) => {
+        generatedTierPositions.push(accumulatedHeight);
+        accumulatedHeight += tier.totalHeight + TIMELINE_BAR_HEIGHT;
+    });
 
     return {
       laneInfo: generatedLaneInfo,
       categoryLayout: generatedCategoryLayouts,
       tierLayouts: generatedTierLayouts,
       containerHeight: finalContainerHeight,
+      tierPositions: generatedTierPositions,
     };
   }, [projects, selectedProjectCategories, tierConfig]);
+
+  const allBarPositions = useMemo(() => {
+    const bars: number[] = [];
+    if (tierLayouts.length > 0 && tierPositions.length > 0) {
+        let yPos = tierPositions[0];
+        bars.push(yPos); // Bar 0 - Top of first tier
+        
+        for (let i = 0; i < tierLayouts.length; i++) {
+            yPos += tierLayouts[i].totalHeight;
+            bars.push(yPos); // Bar i+1 - Bottom of tier i
+             if (i < tierLayouts.length - 1) {
+                yPos += TIMELINE_BAR_HEIGHT;
+            }
+        }
+    }
+    return bars;
+  }, [tierLayouts, tierPositions]);
+
 
   const { startDate, endDate, totalDuration } = useMemo(() => {
     const msInDay = 24 * 60 * 60 * 1000;
@@ -271,6 +292,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   
   const isTodayVisible = todayDate.getTime() >= startDateMs && todayDate.getTime() <= endDateMs;
   const todayPositionPercent = isTodayVisible ? getPositionPercent(todayDate) : -1;
+  const topBarY = allBarPositions.length > 0 ? allBarPositions[0] : containerHeight / 2;
 
   const formatDate = (date: Date) => date.toLocaleDateString('en-US', { timeZone: 'UTC', month: '2-digit', day: '2-digit', year: 'numeric' });
   
@@ -301,24 +323,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
       {event.what.description && <p className="text-secondary mt-1">{event.what.description}</p>}
     </div>
   );
-
-  const totalTierHeights = tierLayouts.reduce((sum, tier) => sum + tier.totalHeight, 0);
-  const totalBarHeights = Math.max(0, tierLayouts.length - 1) * TIMELINE_BAR_HEIGHT;
-  const contentHeight = totalTierHeights + totalBarHeights;
-
-  let accumulatedHeight = (containerHeight - contentHeight) / 2;
-  const barPositions: number[] = [];
-  const tierPositions: number[] = [];
-
-  tierLayouts.forEach((tier, index) => {
-    tierPositions.push(accumulatedHeight);
-    accumulatedHeight += tier.totalHeight;
-    if (index < tierLayouts.length - 1) {
-        barPositions.push(accumulatedHeight + TIMELINE_BAR_HEIGHT / 2);
-        accumulatedHeight += TIMELINE_BAR_HEIGHT;
-    }
-  });
-
+  
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
       <div className="flex w-full">
@@ -395,7 +400,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
             
             {isTodayVisible && <div className="absolute top-0 bottom-0 w-[1.5px] bg-wha-blue/80 z-10 pointer-events-none" style={{ left: `${todayPositionPercent}%`, transform: 'translateX(-50%)' }} />}
             
-            {barPositions.map((top, index) => (
+            {allBarPositions.map((top, index) => (
                <div key={`bar-${index}`} className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `${top}px`, transform: 'translateY(-50%)' }} />
             ))}
 
@@ -409,24 +414,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                     const isHovered = activeTooltip === event.id;
                     
                     const tierTop = tierPositions[info.tierIndex];
-                    const barY = barPositions[info.tierIndex] || barPositions[info.tierIndex - 1] || 0;
                     const eventY = tierTop + info.topOffset;
-
-                    const topPosition = `${eventY}px`;
-                    const droplineHeight = Math.abs(barY - eventY);
-                    const droplineTop = Math.min(barY, eventY);
+                    const tierBottomBarY = allBarPositions[info.tierIndex + 1] || eventY;
                     
                     return (
                         <div 
                             key={event.id}
                             className="absolute flex flex-col items-center z-20 pointer-events-auto"
-                            style={{ left: `${position}%`, top: topPosition, transform: 'translate(-50%, -50%)' }}
+                            style={{ left: `${position}%`, top: `${eventY}px`, transform: 'translate(-50%, -50%)' }}
                             onMouseEnter={() => setActiveTooltip(event.id)}
                             onMouseLeave={() => setActiveTooltip(null)}
                         >
                             {isHovered && renderTooltip(event)}
                             <PointEventMarker event={event} colorStyle={colorStyle} />
-                            <div className="absolute left-1/2 -translate-x-1/2 w-px bg-tertiary/70" style={{ top: `${droplineTop - eventY}px`, height: `${droplineHeight}px` }}/>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-px bg-tertiary/70" style={{ height: `${tierBottomBarY - eventY}px` }}/>
                         </div>
                     );
                 })}
@@ -434,15 +435,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
             {/* Markers ON the line */}
             <div className="absolute top-0 bottom-0 left-0 w-full z-30 pointer-events-none">
-                <div className="absolute -translate-y-1/2" style={{left: '0%', top: barPositions[0] || '50%' }}>
+                <div className="absolute -translate-y-1/2" style={{left: '0%', top: `${topBarY}px` }}>
                     <TimelineMarker label={formatDate(startDate)} align="left"/>
                 </div>
-                {isTodayVisible && barPositions.map((barTop, index) => (
-                    <div key={`today-${index}`} className="absolute -translate-y-1/2" style={{ left: `${todayPositionPercent}%`, top: `${barTop}px`, transform: 'translateX(-50%)'}}>
-                        <TimelineMarker isToday={index === 0} label={index === 0 ? "Today " + formatDate(todayDate) : undefined} />
-                    </div>
-                ))}
-                <div className="absolute" style={{ left: '100%', top: barPositions[0] || '50%', transform: 'translate(-100%, -50%)' }}>
+                {isTodayVisible && (
+                  <div className="absolute -translate-y-1/2" style={{ left: `${todayPositionPercent}%`, top: `${topBarY}px`, transform: 'translateX(-50%)' }}>
+                    <TimelineMarker isToday={true} label={"Today " + formatDate(todayDate)} />
+                  </div>
+                )}
+                <div className="absolute" style={{ left: '100%', top: `${topBarY}px`, transform: 'translate(-100%, -50%)' }}>
                      <TimelineMarker label={formatDate(endDate)} align="right"/>
                 </div>
             </div>
