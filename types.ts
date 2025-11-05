@@ -1,72 +1,79 @@
-
-export type Theme = 'light' | 'dark' | 'focus';
-
 export enum EntityType {
-    Who = 'who',
-    Where = 'where',
-    When = 'when',
-    What = 'what',
-    Project = 'project',
+  Who = 'who',
+  Where = 'where',
+  What = 'what',
+  When = 'when',
 }
 
 export enum WhatType {
-    Appointment = 'Appointment',
-    Milestone = 'Milestone',
-    Deadline = 'Deadline',
-    Checkpoint = 'Checkpoint',
-    Period = 'Period',
+  Appointment = 'appointment',
+  Period = 'period',
+  Deadline = 'deadline',
+  Milestone = 'milestone',
+  Checkpoint = 'checkpoint',
 }
 
-export interface Participant {
-    id: string;
-    name: string;
-    type: EntityType.Who;
+export interface Entity {
+  id: string;
+  name: string;
+  type: EntityType;
 }
 
-export interface Location {
-    id: string;
-    name: string;
-    type: EntityType.Where;
-    latitude?: number;
-    longitude?: number;
+export interface Participant extends Entity {
+  type: EntityType.Who;
 }
 
-export interface When {
-    id: string;
-    name: string;
-    timestamp: string;
-    display: string;
-    type: EntityType.When;
+export interface What extends Entity {
+  type: EntityType.What;
+  description?: string;
+  whatType: WhatType;
 }
 
-export interface What {
-    id: string;
-    name: string;
-    description?: string;
-    type: EntityType.What;
-    whatType: WhatType;
+export interface Location extends Entity {
+  type: EntityType.Where;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface When extends Entity {
+  type: EntityType.When;
+  timestamp: string; // ISO 8601
+  display: string;
 }
 
 export interface EventNode {
-    id: number;
-    projectId: number;
-    what: What;
-    when: When;
-    endWhen?: When;
-    who: Participant[];
-    where: Location;
+  id: number;
+  projectId: number;
+  what: What;
+  when: When;
+  endWhen?: When;
+  who: Participant[];
+  where: Location;
 }
 
 export interface Project {
-    id: number;
-    name: string;
-    description: string;
-    status: 'Active' | 'Completed' | 'On Hold';
+  id: number;
+  name: string;
+  description: string;
+  status: 'Active' | 'On Hold' | 'Completed';
+  color: string;
+  category: string;
 }
 
 export interface Contact {
-  id: number;
-  name: string;
-  role: string;
-  locationName: string;
+    id: string;
+    name: string;
+    role: string;
+    locationName: string;
 }
+
+export interface Holiday {
+    name: string;
+    date: Date;
+    type: 'civil' | 'religious';
+    category: string;
+}
+
+export type Theme = 'light' | 'dark' | 'focus';
+export type ViewMode = 'stream' | 'timeline';
+export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
