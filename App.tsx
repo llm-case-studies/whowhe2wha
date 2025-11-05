@@ -5,7 +5,8 @@ import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
 import { MapModal } from './components/MapModal';
 import { TimeMapModal } from './components/TimeMapModal';
-import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale } from './types';
+import { TierConfigModal } from './components/TierConfigModal';
+import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale, Tier } from './types';
 import { MOCK_PROJECTS, MOCK_EVENTS, PROJECT_CATEGORIES } from './constants';
 import { queryGraph } from './services/geminiService';
 import { ViewControls } from './components/ViewControls';
@@ -58,6 +59,15 @@ const App: React.FC = () => {
   const [timelineDate, setTimelineDate] = useState(new Date('2025-11-04T12:00:00Z'));
   const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US', 'Jewish']);
   const [selectedProjectCategories, setSelectedProjectCategories] = useState<string[]>(PROJECT_CATEGORIES);
+
+  // State for dynamic timeline tiers
+  const initialTierConfig: Tier[] = [
+    { id: 'tier-1', name: 'Tier 1', categories: ['Home', 'Personal'] },
+    { id: 'tier-2', name: 'Tier 2', categories: ['Work', 'Health'] },
+    { id: 'tier-3', name: 'Tier 3', categories: ['Finance'] },
+  ];
+  const [tierConfig, setTierConfig] = useState<Tier[]>(initialTierConfig);
+  const [isTierConfigModalOpen, setIsTierConfigModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -145,6 +155,11 @@ const App: React.FC = () => {
       });
       setIsAddEventFormOpen(true);
   };
+  
+  const handleSaveTierConfig = (newConfig: Tier[]) => {
+    setTierConfig(newConfig);
+    setIsTierConfigModalOpen(false);
+  }
 
   const displayedEvents = filteredEventIds !== null
     ? events.filter(event => filteredEventIds.includes(event.id))
@@ -168,6 +183,7 @@ const App: React.FC = () => {
           setSelectedHolidayCategories={setSelectedHolidayCategories}
           selectedProjectCategories={selectedProjectCategories}
           setSelectedProjectCategories={setSelectedProjectCategories}
+          onConfigureTiersClick={() => setIsTierConfigModalOpen(true)}
         />
 
         <Dashboard
@@ -181,10 +197,10 @@ const App: React.FC = () => {
           viewMode={viewMode}
           timelineDate={timelineDate}
           setTimelineDate={setTimelineDate}
-
           timelineScale={timelineScale}
           selectedHolidayCategories={selectedHolidayCategories}
           selectedProjectCategories={selectedProjectCategories}
+          tierConfig={tierConfig}
         />
       </main>
       
@@ -198,6 +214,14 @@ const App: React.FC = () => {
           }}
           voiceStatus={voiceStatus}
           initialData={addEventInitialData}
+        />
+      )}
+
+      {isTierConfigModalOpen && (
+        <TierConfigModal
+          currentConfig={tierConfig}
+          onSave={handleSaveTierConfig}
+          onClose={() => setIsTierConfigModalOpen(false)}
         />
       )}
 

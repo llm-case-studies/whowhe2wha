@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewMode, TimelineScale } from '../types';
-import { StreamIcon, TimelineIcon, StarIcon, FilterIcon } from './icons';
+import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon } from './icons';
 import { HOLIDAY_CATEGORIES, PROJECT_CATEGORIES } from '../constants';
 
 interface ViewControlsProps {
@@ -15,6 +15,7 @@ interface ViewControlsProps {
   setSelectedHolidayCategories: (categories: string[]) => void;
   selectedProjectCategories: string[];
   setSelectedProjectCategories: (categories: string[]) => void;
+  onConfigureTiersClick: () => void;
 }
 
 const scaleOptions: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
@@ -65,6 +66,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   setSelectedHolidayCategories,
   selectedProjectCategories,
   setSelectedProjectCategories,
+  onConfigureTiersClick,
 }) => {
   const [isHolidaySelectorOpen, setIsHolidaySelectorOpen] = useState(false);
   const [isProjectSelectorOpen, setIsProjectSelectorOpen] = useState(false);
@@ -198,6 +200,16 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
                  </div>
             )}
           </div>
+          
+          {/* Tier/Layout Configurator */}
+          <button
+              onClick={onConfigureTiersClick}
+              className="p-2 text-tertiary hover:text-primary rounded-full relative"
+              aria-label="Configure timeline layout"
+              title="Configure timeline layout"
+            >
+              <LayersIcon />
+            </button>
 
           <div className="relative" ref={holidaySelectorRef}>
             <button

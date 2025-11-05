@@ -77,3 +77,11 @@ export interface Holiday {
 export type Theme = 'light' | 'dark' | 'focus';
 export type ViewMode = 'stream' | 'timeline';
 export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
+
+// New types for dynamic timeline tiers
+export interface Tier {
+  id: string;
+  name: string;
+  categories: string[];
+}
+export type TierConfig = Tier[];

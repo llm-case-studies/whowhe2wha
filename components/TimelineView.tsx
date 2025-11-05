@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { EventNode, TimelineScale, Holiday, Project, WhatType } from '../types';
-import { HOLIDAY_DATA } from '../constants';
+import { EventNode, TimelineScale, Holiday, Project, WhatType, Tier, TierConfig } from '../types';
+import { HOLIDAY_DATA, PROJECT_CATEGORIES } from '../constants';
 import { MilestoneIcon, DeadlineIcon, CheckpointIcon, ChevronsLeftIcon, ChevronsRightIcon } from './icons';
 
 interface TimelineViewProps {
@@ -11,6 +11,7 @@ interface TimelineViewProps {
   selectedHolidayCategories: string[];
   selectedProjectCategories: string[];
   setTimelineDate: (date: Date) => void;
+  tierConfig: TierConfig;
 }
 
 const projectColorStyles: Record<string, { bg: string, border: string, text: string }> = {
@@ -24,12 +25,12 @@ const projectColorStyles: Record<string, { bg: string, border: string, text: str
 const defaultColorStyle = projectColorStyles.blue;
 
 // --- Layout Constants ---
-const TIMELINE_Y_OFFSET_TOP = '8rem';
-const TIMELINE_Y_OFFSET_MIDDLE = '0rem';
-const TIMELINE_Y_OFFSET_BOTTOM = '8rem';
 const LANE_HEIGHT = 36;
-const LANE_START_OFFSET = 20; // Start lanes this many pixels away from the timeline bar
-const CATEGORY_GAP = 16; // Visual gap between categories in the sidebar
+const LANE_START_OFFSET = 20;
+const CATEGORY_GAP = 16;
+const TIMELINE_BAR_HEIGHT = 10;
+const MIN_CONTAINER_HEIGHT = 350;
+const HOLIDAY_AREA_HEIGHT = 48;
 
 const getIconForHoliday = (holiday: Holiday): string => {
   const category = holiday.category;
@@ -97,91 +98,93 @@ const PointEventMarker: React.FC<{event: EventNode, colorStyle: {bg: string, bor
 }
 
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig }) => {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [hoveredHoliday, setHoveredHoliday] = useState<Holiday | null>(null);
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragInfo = useRef({ startX: 0, startDragDate: new Date() });
+  const latestMouseX = useRef(0);
+  const animationFrameId = useRef<number | null>(null);
   
   const projectColorMap = useMemo(() => new Map(projects.map(p => [p.id, p.color])), [projects]);
 
   const {
     laneInfo,
-    categoryOffsets,
-    tier3Categories,
-    tier2Categories,
-    tier1Categories,
-    maxTier3Offset,
-    maxTier2Offset,
-    maxTier1Offset,
+    categoryLayout,
+    tierLayouts,
+    containerHeight,
   } = useMemo(() => {
-    const TIER3_CATEGORIES = ['Home', 'Personal'];
-    const TIER2_CATEGORIES = ['Work', 'Health'];
-
     const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
+    const projectCategoryMap = new Map<number, string>(projects.map(p => [p.id, p.category]));
     
-    const tier3Projects = visibleProjects.filter(p => TIER3_CATEGORIES.includes(p.category));
-    const tier2Projects = visibleProjects.filter(p => TIER2_CATEGORIES.includes(p.category));
-    const tier1Projects = visibleProjects.filter(p => !TIER3_CATEGORIES.includes(p.category) && !TIER2_CATEGORIES.includes(p.category));
+    const finalTierConfig: TierConfig = JSON.parse(JSON.stringify(tierConfig));
+    const assignedCategories = new Set(finalTierConfig.flatMap(t => t.categories));
+    const unassignedCategories = PROJECT_CATEGORIES.filter(c => !assignedCategories.has(c));
 
-    const generatedLaneInfo = new Map<number, { tier: number, laneIndex: number, topOffset: number }>();
-    const generatedCatOffsets = new Map<string, { top: number, height: number }>();
-    const tier3Cats = new Set<string>();
-    const tier2Cats = new Set<string>();
-    const tier1Cats = new Set<string>();
-    let maxT3 = 0, maxT2 = 0, maxT1 = 0;
+    if (unassignedCategories.length > 0 && finalTierConfig.length > 0) {
+      finalTierConfig[finalTierConfig.length - 1].categories.push(...unassignedCategories);
+    } else if (unassignedCategories.length > 0) {
+      finalTierConfig.push({ id: 'tier-unassigned', name: 'Unassigned', categories: unassignedCategories });
+    }
 
-    const process = (projectList: Project[], tier: number) => {
-      const grouped = new Map<string, Project[]>();
-      projectList.forEach(p => {
-        if (tier === 3) tier3Cats.add(p.category);
-        else if (tier === 2) tier2Cats.add(p.category);
-        else tier1Cats.add(p.category);
+    const categoryToTierMap = new Map<string, number>();
+    finalTierConfig.forEach((tier, index) => {
+        tier.categories.forEach(cat => categoryToTierMap.set(cat, index));
+    });
+    
+    const generatedLaneInfo = new Map<number, { tierIndex: number, laneIndex: number, topOffset: number }>();
+    const generatedCategoryLayouts = new Map<string, { top: number, height: number, tierIndex: number }>();
+    const generatedTierLayouts = finalTierConfig.map(() => ({ totalHeight: 0, categories: new Set<string>() }));
+    
+    let totalSwimlaneHeight = 0;
 
-        if (!grouped.has(p.category)) grouped.set(p.category, []);
-        grouped.get(p.category)!.push(p);
-      });
-
-      const sortedGrouped = new Map([...grouped.entries()].sort((a,b) => a[0].localeCompare(b[0])));
-      let currentLane = 0;
-      let categoryCount = 0;
-
-      for (const [category, projectsInCategory] of sortedGrouped.entries()) {
-        const categoryTop = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
-        projectsInCategory.sort((a,b) => a.id - b.id);
-
-        projectsInCategory.forEach(project => {
-          const topOffset = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
-          generatedLaneInfo.set(project.id, { tier, laneIndex: currentLane, topOffset });
-          if (tier === 3) maxT3 = Math.max(maxT3, topOffset);
-          else if (tier === 2) maxT2 = Math.max(maxT2, topOffset);
-          else maxT1 = Math.max(maxT1, topOffset);
-          currentLane++;
+    finalTierConfig.forEach((tier, tierIndex) => {
+        const projectsInTier = visibleProjects.filter(p => tier.categories.includes(p.category));
+        const groupedByCategory = new Map<string, Project[]>();
+        
+        projectsInTier.forEach(p => {
+            if(!groupedByCategory.has(p.category)) groupedByCategory.set(p.category, []);
+            groupedByCategory.get(p.category)!.push(p);
         });
 
-        const categoryHeight = projectsInCategory.length * LANE_HEIGHT;
-        generatedCatOffsets.set(category, { top: categoryTop, height: categoryHeight });
-        if (projectsInCategory.length > 0) categoryCount++;
-      }
-    };
+        const sortedCategories = [...groupedByCategory.keys()].sort();
+        let currentLane = 0;
+        let categoryCount = 0;
+
+        for (const category of sortedCategories) {
+            const projectsInCategory = groupedByCategory.get(category)!.sort((a,b) => a.id - b.id);
+            const categoryTop = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
+            
+            projectsInCategory.forEach(project => {
+                const topOffset = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
+                generatedLaneInfo.set(project.id, { tierIndex, laneIndex: currentLane, topOffset });
+                currentLane++;
+            });
+            
+            const categoryHeight = projectsInCategory.length * LANE_HEIGHT;
+            generatedCategoryLayouts.set(category, { top: categoryTop, height: categoryHeight, tierIndex });
+            if (projectsInCategory.length > 0) {
+                generatedTierLayouts[tierIndex].categories.add(category);
+                categoryCount++;
+            }
+        }
+        const tierHeight = currentLane * LANE_HEIGHT + Math.max(0, categoryCount - 1) * CATEGORY_GAP + LANE_START_OFFSET * 2;
+        generatedTierLayouts[tierIndex].totalHeight = tierHeight;
+        totalSwimlaneHeight += tierHeight;
+    });
     
-    process(tier3Projects, 3);
-    process(tier2Projects, 2);
-    process(tier1Projects, 1);
+    const finalContainerHeight = Math.max(MIN_CONTAINER_HEIGHT, totalSwimlaneHeight + (finalTierConfig.length -1) * TIMELINE_BAR_HEIGHT);
 
     return {
       laneInfo: generatedLaneInfo,
-      categoryOffsets: generatedCatOffsets,
-      tier3Categories: [...tier3Cats].sort(),
-      tier2Categories: [...tier2Cats].sort(),
-      tier1Categories: [...tier1Cats].sort(),
-      maxTier3Offset: maxT3,
-      maxTier2Offset: maxT2,
-      maxTier1Offset: maxT1,
+      categoryLayout: generatedCategoryLayouts,
+      tierLayouts: generatedTierLayouts,
+      containerHeight: finalContainerHeight,
     };
-  }, [projects, selectedProjectCategories]);
+  }, [projects, selectedProjectCategories, tierConfig]);
 
   const { startDate, endDate, totalDuration } = useMemo(() => {
     const msInDay = 24 * 60 * 60 * 1000;
@@ -207,7 +210,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const endDateMs = endDate.getTime();
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => isDragging && setIsDragging(false);
+    const handleGlobalMouseUp = () => {
+        if(isDragging) {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = null;
+            }
+            setIsDragging(false);
+        }
+    };
     window.addEventListener('mouseup', handleGlobalMouseUp);
     if (isDragging) {
       document.body.style.cursor = 'grabbing';
@@ -228,20 +239,29 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     e.preventDefault();
     setIsDragging(true);
     dragInfo.current = { startX: e.pageX, startDragDate: currentDate };
+    latestMouseX.current = e.pageX;
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragging || !timelineRef.current) return;
     e.preventDefault();
-    const walk = e.pageX - dragInfo.current.startX;
-    const timelineWidth = timelineRef.current.offsetWidth;
-    if (timelineWidth === 0) return;
-    const timeDeltaMs = (walk * totalDuration) / timelineWidth;
-    const newDate = new Date(dragInfo.current.startDragDate.getTime() - timeDeltaMs);
-    setTimelineDate(newDate);
-  };
+    latestMouseX.current = e.pageX;
 
-  const handleMouseUp = () => setIsDragging(false);
+    const updateOnFrame = () => {
+        if (!timelineRef.current) return;
+        const walk = latestMouseX.current - dragInfo.current.startX;
+        const timelineWidth = timelineRef.current.offsetWidth;
+        if (timelineWidth === 0) return;
+        const timeDeltaMs = (walk * totalDuration) / timelineWidth;
+        const newDate = new Date(dragInfo.current.startDragDate.getTime() - timeDeltaMs);
+        setTimelineDate(newDate);
+        animationFrameId.current = null;
+    };
+    
+    if (!animationFrameId.current) {
+        animationFrameId.current = requestAnimationFrame(updateOnFrame);
+    }
+  };
 
   const getPositionPercent = (date: Date) => {
     if (totalDuration <= 0) return 0;
@@ -282,51 +302,26 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     </div>
   );
 
-  const containerHeight = Math.max(350, 150 + maxTier3Offset + maxTier2Offset + maxTier1Offset);
+  const totalTierHeights = tierLayouts.reduce((sum, tier) => sum + tier.totalHeight, 0);
+  const totalBarHeights = Math.max(0, tierLayouts.length - 1) * TIMELINE_BAR_HEIGHT;
+  const contentHeight = totalTierHeights + totalBarHeights;
 
-  const getEventPositionAndDropline = (info: { tier: number, topOffset: number }) => {
-      let topPosition = '';
-      let droplineStyle: React.CSSProperties = {};
-      switch (info.tier) {
-          case 3: // Top bar
-              topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${info.topOffset}px)`;
-              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
-              break;
-          case 2: // Middle bar
-              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${info.topOffset}px)`;
-              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
-              break;
-          case 1: // Bottom bar
-              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${info.topOffset}px)`;
-              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
-              break;
-      }
-      return { topPosition, droplineStyle };
-  };
+  let accumulatedHeight = (containerHeight - contentHeight) / 2;
+  const barPositions: number[] = [];
+  const tierPositions: number[] = [];
 
-  const getPeriodEventPositionAndDropline = (info: { tier: number, topOffset: number }) => {
-    let topPosition = '';
-    let droplineStyle: React.CSSProperties = {};
-     switch (info.tier) {
-          case 3:
-              topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${info.topOffset}px)`;
-              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
-              break;
-          case 2:
-              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${info.topOffset}px)`;
-              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
-              break;
-          case 1:
-              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${info.topOffset}px)`;
-              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
-              break;
-      }
-      return { topPosition, droplineStyle };
-  }
+  tierLayouts.forEach((tier, index) => {
+    tierPositions.push(accumulatedHeight);
+    accumulatedHeight += tier.totalHeight;
+    if (index < tierLayouts.length - 1) {
+        barPositions.push(accumulatedHeight + TIMELINE_BAR_HEIGHT / 2);
+        accumulatedHeight += TIMELINE_BAR_HEIGHT;
+    }
+  });
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
-      <div className="flex w-full" style={{ height: `${containerHeight}px` }}>
+      <div className="flex w-full">
         {/* Sidebar */}
         <div className={`relative flex-shrink-0 border-r border-primary pr-4 transition-all duration-300 ${isSidebarOpen ? 'w-48' : 'w-10'}`}>
           <button 
@@ -337,182 +332,142 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
             {isSidebarOpen ? <ChevronsLeftIcon /> : <ChevronsRightIcon />}
           </button>
           
-          <div className={`transition-opacity duration-200 h-full relative ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-             {tier3Categories.map(category => {
-                const projectsInCategory = projects.filter(p => p.category === category);
-                const offsetInfo = categoryOffsets.get(category);
-                if (!offsetInfo) return null;
-                const topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
+          <div className={`transition-opacity duration-200 h-full relative ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: `${containerHeight}px` }}>
+             {tierLayouts.map((tierLayout, tierIndex) => {
+                 const tierTop = tierPositions[tierIndex];
+                 const sortedCategories = [...tierLayout.categories].sort();
+                 return sortedCategories.map(category => {
+                     const projectsInCategory = projects.filter(p => p.category === category);
+                     const offsetInfo = categoryLayout.get(category);
+                     if (!offsetInfo) return null;
 
-                return (
-                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
-                         <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
-                         {projectsInCategory.map(project => {
-                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
-                             return(
-                                <div key={project.id} className="relative h-6 flex items-center justify-end">
-                                    <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
-                                    <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
-                                </div>
-                             )
-                         })}
-                    </div>
-                );
-            })}
-            {tier2Categories.map(category => {
-                const projectsInCategory = projects.filter(p => p.category === category);
-                const offsetInfo = categoryOffsets.get(category);
-                if (!offsetInfo) return null;
-                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
-
-                return (
-                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
-                         <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
-                         {projectsInCategory.map(project => {
-                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
-                             return(
-                                <div key={project.id} className="relative h-6 flex items-center justify-end">
-                                    <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
-                                    <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
-                                </div>
-                             )
-                         })}
-                    </div>
-                );
-            })}
-             {tier1Categories.map(category => {
-                const projectsInCategory = projects.filter(p => p.category === category);
-                const offsetInfo = categoryOffsets.get(category);
-                if (!offsetInfo) return null;
-                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
-
-                 return (
-                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
-                         <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
-                         {projectsInCategory.map(project => {
-                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
-                             return(
-                                <div key={project.id} className="relative h-6 flex items-center justify-end">
-                                    <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
-                                    <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
-                                </div>
-                             )
-                         })}
-                    </div>
-                );
-            })}
+                     const topPosition = tierTop + offsetInfo.top + offsetInfo.height / 2;
+                     return (
+                         <div key={`${tierIndex}-${category}`} className="absolute right-4 w-full text-right" style={{ top: `${topPosition}px`, transform: 'translateY(-50%)' }}>
+                             <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
+                             {projectsInCategory.map(project => {
+                                 const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
+                                 return(
+                                    <div key={project.id} className="relative h-6 flex items-center justify-end">
+                                        <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
+                                        <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
+                                    </div>
+                                 )
+                             })}
+                        </div>
+                     );
+                 });
+             })}
           </div>
         </div>
         
-        {/* Timeline Area */}
-        <div 
-          ref={timelineRef}
-          className="relative flex-grow h-full"
-        >
-          {/* Draggable pane */}
-          <div className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          />
+        {/* Timeline & Holiday Wrapper */}
+        <div className="flex-grow">
+          {/* Timeline Area */}
+          <div 
+            ref={timelineRef}
+            className="relative w-full"
+            style={{ height: `${containerHeight}px` }}
+          >
+            {/* Draggable pane */}
+            <div className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+            />
 
-          {isTodayVisible && <div className="absolute top-0 bottom-0 w-px bg-wha-blue/70 z-10 pointer-events-none" style={{ left: `${todayPositionPercent}%` }} />}
-          
-          {/* Top timeline bar */}
-          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% - ${TIMELINE_Y_OFFSET_TOP})` }} />
-          {/* Middle timeline bar */}
-          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE})` }} />
-          {/* Bottom timeline bar */}
-          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM})` }}/>
+            {/* Vertical Holiday Lines */}
+            {holidays.map(holiday => {
+              const posPercent = getPositionPercent(holiday.date);
+              const isHovered = hoveredHoliday?.name === holiday.name && hoveredHoliday.date.getTime() === holiday.date.getTime();
+              const lineClasses = `absolute top-0 bottom-0 z-0 pointer-events-none transition-all duration-200 ${
+                  isHovered 
+                  ? 'w-0.5 bg-wha-blue shadow-[0_0_8px_1px_rgba(59,130,246,0.5)]' 
+                  : 'w-px bg-wha-blue/50'
+              }`;
+              return (
+                <div 
+                  key={`${holiday.name}-${holiday.date}-line`}
+                  className={lineClasses}
+                  style={{ left: `${posPercent}%`, transform: 'translateX(-50%)' }}
+                />
+              );
+            })}
+            
+            {isTodayVisible && <div className="absolute top-0 bottom-0 w-[1.5px] bg-wha-blue/80 z-10 pointer-events-none" style={{ left: `${todayPositionPercent}%`, transform: 'translateX(-50%)' }} />}
+            
+            {barPositions.map((top, index) => (
+               <div key={`bar-${index}`} className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `${top}px`, transform: 'translateY(-50%)' }} />
+            ))}
 
-          <div className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none">
-              {periodEvents.map(event => {
-                  const info = laneInfo.get(event.projectId);
-                  if (!info) return null;
-                  
-                  const startPercent = getPositionPercent(new Date(event.when.timestamp));
-                  const endPercent = getPositionPercent(new Date(event.endWhen!.timestamp));
-                  const widthPercent = Math.max(0.5, endPercent - startPercent);
-                  const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
-                  const isHovered = activeTooltip === event.id;
-                  
-                  const { topPosition, droplineStyle } = getPeriodEventPositionAndDropline(info);
-                  
-                  return (
-                      <div
-                          key={event.id}
-                          className="absolute h-6 pointer-events-auto"
-                          style={{ left: `${startPercent}%`, width: `${widthPercent}%`, top: topPosition, transform: 'translateY(-50%)' }}
-                          onMouseEnter={() => setActiveTooltip(event.id)}
-                          onMouseLeave={() => setActiveTooltip(null)}
-                      >
-                          {isHovered && renderTooltip(event)}
-                          <div className={`w-full h-full ${colorStyle.bg} opacity-70 hover:opacity-100 rounded flex items-center justify-start px-2 overflow-hidden transition-opacity`}>
-                              <span className="text-white text-xs font-medium truncate">{event.what.name}</span>
-                          </div>
-                          <div className="absolute w-px bg-tertiary/70" style={droplineStyle} />
-                      </div>
-                  );
-              })}
-              {pointEvents.map(event => {
-                  const info = laneInfo.get(event.projectId);
-                  if (!info) return null;
+            <div className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none">
+                {pointEvents.map(event => {
+                    const info = laneInfo.get(event.projectId);
+                    if (!info) return null;
 
-                  const position = getPositionPercent(new Date(event.when.timestamp));
-                  const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
-                  const isHovered = activeTooltip === event.id;
-                  
-                  const { topPosition, droplineStyle } = getEventPositionAndDropline(info);
+                    const position = getPositionPercent(new Date(event.when.timestamp));
+                    const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
+                    const isHovered = activeTooltip === event.id;
+                    
+                    const tierTop = tierPositions[info.tierIndex];
+                    const barY = barPositions[info.tierIndex] || barPositions[info.tierIndex - 1] || 0;
+                    const eventY = tierTop + info.topOffset;
 
-                  return (
-                      <div 
-                          key={event.id}
-                          className="absolute flex flex-col items-center z-20 pointer-events-auto"
-                          style={{ left: `${position}%`, top: topPosition, transform: 'translate(-50%, -50%)' }}
-                          onMouseEnter={() => setActiveTooltip(event.id)}
-                          onMouseLeave={() => setActiveTooltip(null)}
-                      >
-                          {isHovered && renderTooltip(event)}
-                          <PointEventMarker event={event} colorStyle={colorStyle} />
-                          <div className="absolute left-1/2 -translate-x-1/2 w-px bg-tertiary/70" style={droplineStyle}/>
-                      </div>
-                  );
-              })}
+                    const topPosition = `${eventY}px`;
+                    const droplineHeight = Math.abs(barY - eventY);
+                    const droplineTop = Math.min(barY, eventY);
+                    
+                    return (
+                        <div 
+                            key={event.id}
+                            className="absolute flex flex-col items-center z-20 pointer-events-auto"
+                            style={{ left: `${position}%`, top: topPosition, transform: 'translate(-50%, -50%)' }}
+                            onMouseEnter={() => setActiveTooltip(event.id)}
+                            onMouseLeave={() => setActiveTooltip(null)}
+                        >
+                            {isHovered && renderTooltip(event)}
+                            <PointEventMarker event={event} colorStyle={colorStyle} />
+                            <div className="absolute left-1/2 -translate-x-1/2 w-px bg-tertiary/70" style={{ top: `${droplineTop - eventY}px`, height: `${droplineHeight}px` }}/>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Markers ON the line */}
+            <div className="absolute top-0 bottom-0 left-0 w-full z-30 pointer-events-none">
+                <div className="absolute -translate-y-1/2" style={{left: '0%', top: barPositions[0] || '50%' }}>
+                    <TimelineMarker label={formatDate(startDate)} align="left"/>
+                </div>
+                {isTodayVisible && barPositions.map((barTop, index) => (
+                    <div key={`today-${index}`} className="absolute -translate-y-1/2" style={{ left: `${todayPositionPercent}%`, top: `${barTop}px`, transform: 'translateX(-50%)'}}>
+                        <TimelineMarker isToday={index === 0} label={index === 0 ? "Today " + formatDate(todayDate) : undefined} />
+                    </div>
+                ))}
+                <div className="absolute" style={{ left: '100%', top: barPositions[0] || '50%', transform: 'translate(-100%, -50%)' }}>
+                     <TimelineMarker label={formatDate(endDate)} align="right"/>
+                </div>
+            </div>
           </div>
-
-          {/* Markers ON the line */}
-          <div className="absolute top-0 bottom-0 left-0 w-full z-30 pointer-events-none">
-              <div className="absolute top-1/2 -translate-y-1/2" style={{left: '0%'}}>
-                  <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}>
-                     <TimelineMarker label={formatDate(startDate)} align="left"/>
-                  </div>
-              </div>
-              {isTodayVisible && (
-                  <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${todayPositionPercent}%`}}>
-                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_TOP})`}}><TimelineMarker isToday /></div>
-                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_MIDDLE})`}}><TimelineMarker isToday /></div>
-                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}><TimelineMarker label={"Today " + formatDate(todayDate)} isToday /></div>
-                  </div>
-              )}
-              <div className="absolute top-1/2" style={{ left: '100%', transform: 'translate(-100%, -50%)' }}>
-                   <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}>
-                       <TimelineMarker label={formatDate(endDate)} align="right"/>
-                   </div>
-              </div>
+          {/* Holiday Area */}
+          <div className="relative w-full" style={{ height: `${HOLIDAY_AREA_HEIGHT}px`}}>
+            {holidays.map(holiday => {
+                const posPercent = getPositionPercent(holiday.date);
+                return (
+                    <div
+                        key={`${holiday.name}-${holiday.date}`}
+                        className="absolute top-0 h-full"
+                        style={{ left: `${posPercent}%`, zIndex: 5, transform: 'translateX(-50%)' }}
+                        onMouseEnter={() => setHoveredHoliday(holiday)}
+                        onMouseLeave={() => setHoveredHoliday(null)}
+                    >
+                        <div className="relative flex flex-col items-center gap-1 cursor-pointer pt-1" title={holiday.name}>
+                            <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
+                            <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
+                        </div>
+                    </div>
+                )
+            })}
           </div>
         </div>
-      </div>
-      {/* Holiday Area */}
-      <div className="relative w-full h-12 mt-4">
-        {holidays.map(holiday => (
-          <div key={`${holiday.name}-icon`} className="absolute top-0" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
-                <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
-                  <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
-                  <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
-              </div>
-          </div>
-        ))}
       </div>
     </div>
   );

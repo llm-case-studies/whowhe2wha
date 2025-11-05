@@ -1,5 +1,5 @@
 import React from 'react';
-import { EventNode, Location, Project, When, ViewMode, TimelineScale } from '../types';
+import { EventNode, Location, Project, When, ViewMode, TimelineScale, Tier } from '../types';
 import { EventCard } from './EventCard';
 import { ProjectCard } from './ProjectCard';
 import { TimelineView } from './TimelineView';
@@ -18,12 +18,13 @@ interface DashboardProps {
   setTimelineDate: (date: Date) => void;
   selectedHolidayCategories: string[];
   selectedProjectCategories: string[];
+  tierConfig: Tier[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick,
   viewMode, timelineDate, timelineScale, setTimelineDate, selectedHolidayCategories,
-  selectedProjectCategories
+  selectedProjectCategories, tierConfig
 }) => {
   if (isLoading) {
     return (
@@ -47,6 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         selectedHolidayCategories={selectedHolidayCategories}
         selectedProjectCategories={selectedProjectCategories}
         setTimelineDate={setTimelineDate}
+        tierConfig={tierConfig}
       />
     );
   }
