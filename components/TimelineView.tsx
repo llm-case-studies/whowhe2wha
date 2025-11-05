@@ -24,7 +24,9 @@ const projectColorStyles: Record<string, { bg: string, border: string, text: str
 const defaultColorStyle = projectColorStyles.blue;
 
 // --- Layout Constants ---
-const TIMELINE_Y_OFFSET = '3rem'; // Distance of each bar from the vertical center
+const TIMELINE_Y_OFFSET_TOP = '8rem';
+const TIMELINE_Y_OFFSET_MIDDLE = '0rem';
+const TIMELINE_Y_OFFSET_BOTTOM = '8rem';
 const LANE_HEIGHT = 36;
 const LANE_START_OFFSET = 20; // Start lanes this many pixels away from the timeline bar
 const CATEGORY_GAP = 16; // Visual gap between categories in the sidebar
@@ -47,7 +49,7 @@ const getIconForHoliday = (holiday: Holiday): string => {
   }
 };
 
-const TimelineMarker: React.FC<{ label: string; isToday?: boolean, align?: 'left' | 'center' | 'right' }> = ({ label, isToday = false, align = 'center' }) => {
+const TimelineMarker: React.FC<{ label?: string; isToday?: boolean, align?: 'left' | 'center' | 'right' }> = ({ label, isToday = false, align = 'center' }) => {
   const circleSize = isToday ? 'w-6 h-6' : 'w-5 h-5';
   
   const todayCircleClasses = 'bg-gradient-to-br from-blue-400 to-wha-blue border-blue-300 shadow-[0_0_12px_2px_rgba(59,130,246,0.6)]';
@@ -72,9 +74,9 @@ const TimelineMarker: React.FC<{ label: string; isToday?: boolean, align?: 'left
       <div className={`rounded-full border-2 flex items-center justify-center ${circleSize} ${circleClasses}`}>
         <div className={`w-2 h-2 rounded-full ${dotClasses}`} />
       </div>
-      <div className={labelContainerClasses}>
+      {label && <div className={labelContainerClasses}>
         <span className={`text-xs uppercase tracking-wider ${textColor}`}>{label}</span>
-      </div>
+      </div>}
     </div>
   );
 };
@@ -108,28 +110,36 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const {
     laneInfo,
     categoryOffsets,
-    topCategories,
-    bottomCategories,
-    maxTopOffset,
-    maxBottomOffset,
+    tier3Categories,
+    tier2Categories,
+    tier1Categories,
+    maxTier3Offset,
+    maxTier2Offset,
+    maxTier1Offset,
   } = useMemo(() => {
-    const TOP_TIER_CATEGORIES = ['Work', 'Health'];
+    const TIER3_CATEGORIES = ['Home', 'Personal'];
+    const TIER2_CATEGORIES = ['Work', 'Health'];
+
     const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
     
-    const topTierProjects = visibleProjects.filter(p => TOP_TIER_CATEGORIES.includes(p.category));
-    const bottomTierProjects = visibleProjects.filter(p => !TOP_TIER_CATEGORIES.includes(p.category));
+    const tier3Projects = visibleProjects.filter(p => TIER3_CATEGORIES.includes(p.category));
+    const tier2Projects = visibleProjects.filter(p => TIER2_CATEGORIES.includes(p.category));
+    const tier1Projects = visibleProjects.filter(p => !TIER3_CATEGORIES.includes(p.category) && !TIER2_CATEGORIES.includes(p.category));
 
-    const generatedLaneInfo = new Map<number, { laneIndex: number, topOffset: number }>();
+    const generatedLaneInfo = new Map<number, { tier: number, laneIndex: number, topOffset: number }>();
     const generatedCatOffsets = new Map<string, { top: number, height: number }>();
-    const topCats = new Set<string>();
-    const bottomCats = new Set<string>();
-    let maxTop = 0;
-    let maxBottom = 0;
+    const tier3Cats = new Set<string>();
+    const tier2Cats = new Set<string>();
+    const tier1Cats = new Set<string>();
+    let maxT3 = 0, maxT2 = 0, maxT1 = 0;
 
-    const process = (projectList: Project[], tier: 'top' | 'bottom') => {
+    const process = (projectList: Project[], tier: number) => {
       const grouped = new Map<string, Project[]>();
       projectList.forEach(p => {
-        (tier === 'top' ? topCats : bottomCats).add(p.category);
+        if (tier === 3) tier3Cats.add(p.category);
+        else if (tier === 2) tier2Cats.add(p.category);
+        else tier1Cats.add(p.category);
+
         if (!grouped.has(p.category)) grouped.set(p.category, []);
         grouped.get(p.category)!.push(p);
       });
@@ -144,9 +154,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
         projectsInCategory.forEach(project => {
           const topOffset = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
-          generatedLaneInfo.set(project.id, { laneIndex: currentLane, topOffset });
-          if (tier === 'top') maxTop = Math.max(maxTop, topOffset);
-          else maxBottom = Math.max(maxBottom, topOffset);
+          generatedLaneInfo.set(project.id, { tier, laneIndex: currentLane, topOffset });
+          if (tier === 3) maxT3 = Math.max(maxT3, topOffset);
+          else if (tier === 2) maxT2 = Math.max(maxT2, topOffset);
+          else maxT1 = Math.max(maxT1, topOffset);
           currentLane++;
         });
 
@@ -156,16 +167,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
       }
     };
     
-    process(topTierProjects, 'top');
-    process(bottomTierProjects, 'bottom');
+    process(tier3Projects, 3);
+    process(tier2Projects, 2);
+    process(tier1Projects, 1);
 
     return {
       laneInfo: generatedLaneInfo,
       categoryOffsets: generatedCatOffsets,
-      topCategories: [...topCats].sort(),
-      bottomCategories: [...bottomCats].sort(),
-      maxTopOffset: maxTop,
-      maxBottomOffset: maxBottom,
+      tier3Categories: [...tier3Cats].sort(),
+      tier2Categories: [...tier2Cats].sort(),
+      tier1Categories: [...tier1Cats].sort(),
+      maxTier3Offset: maxT3,
+      maxTier2Offset: maxT2,
+      maxTier1Offset: maxT1,
     };
   }, [projects, selectedProjectCategories]);
 
@@ -268,9 +282,47 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     </div>
   );
 
-  const containerHeight = Math.max(250, 100 + maxTopOffset + maxBottomOffset);
+  const containerHeight = Math.max(350, 150 + maxTier3Offset + maxTier2Offset + maxTier1Offset);
 
-  const getProjectForEvent = (event: EventNode) => projects.find(p => p.id === event.projectId);
+  const getEventPositionAndDropline = (info: { tier: number, topOffset: number }) => {
+      let topPosition = '';
+      let droplineStyle: React.CSSProperties = {};
+      switch (info.tier) {
+          case 3: // Top bar
+              topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${info.topOffset}px)`;
+              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
+              break;
+          case 2: // Middle bar
+              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${info.topOffset}px)`;
+              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
+              break;
+          case 1: // Bottom bar
+              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${info.topOffset}px)`;
+              droplineStyle = { top: '50%', height: `${info.topOffset}px` };
+              break;
+      }
+      return { topPosition, droplineStyle };
+  };
+
+  const getPeriodEventPositionAndDropline = (info: { tier: number, topOffset: number }) => {
+    let topPosition = '';
+    let droplineStyle: React.CSSProperties = {};
+     switch (info.tier) {
+          case 3:
+              topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${info.topOffset}px)`;
+              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
+              break;
+          case 2:
+              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${info.topOffset}px)`;
+              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
+              break;
+          case 1:
+              topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${info.topOffset}px)`;
+              droplineStyle = { top: '100%', height: `${info.topOffset - LANE_START_OFFSET + LANE_HEIGHT / 2}px`, left: '1px' };
+              break;
+      }
+      return { topPosition, droplineStyle };
+  }
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
@@ -286,11 +338,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
           </button>
           
           <div className={`transition-opacity duration-200 h-full relative ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-             {topCategories.map(category => {
+             {tier3Categories.map(category => {
                 const projectsInCategory = projects.filter(p => p.category === category);
                 const offsetInfo = categoryOffsets.get(category);
                 if (!offsetInfo) return null;
-                const topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${offsetInfo.top}px + ${offsetInfo.height / 2}px)`;
+                const topPosition = `calc(50% - ${TIMELINE_Y_OFFSET_TOP} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
 
                 return (
                      <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
@@ -307,11 +359,32 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                     </div>
                 );
             })}
-             {bottomCategories.map(category => {
+            {tier2Categories.map(category => {
                 const projectsInCategory = projects.filter(p => p.category === category);
                 const offsetInfo = categoryOffsets.get(category);
                 if (!offsetInfo) return null;
-                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
+                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
+
+                return (
+                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
+                         <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
+                         {projectsInCategory.map(project => {
+                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
+                             return(
+                                <div key={project.id} className="relative h-6 flex items-center justify-end">
+                                    <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
+                                    <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
+                                </div>
+                             )
+                         })}
+                    </div>
+                );
+            })}
+             {tier1Categories.map(category => {
+                const projectsInCategory = projects.filter(p => p.category === category);
+                const offsetInfo = categoryOffsets.get(category);
+                if (!offsetInfo) return null;
+                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
 
                  return (
                      <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
@@ -334,51 +407,42 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
         {/* Timeline Area */}
         <div 
           ref={timelineRef}
-          className="relative flex-grow h-full cursor-grab"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          className="relative flex-grow h-full"
         >
-          {isTodayVisible && <div className="absolute top-0 bottom-0 w-px bg-wha-blue/70 z-0" style={{ left: `${todayPositionPercent}%` }} />}
-          
-          {holidays.map(holiday => (
-              <div key={holiday.name} className="absolute top-0 bottom-0 w-px bg-secondary/50 z-0" style={{ left: `${getPositionPercent(holiday.date)}%` }} />
-          ))}
+          {/* Draggable pane */}
+          <div className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          />
 
+          {isTodayVisible && <div className="absolute top-0 bottom-0 w-px bg-wha-blue/70 z-10 pointer-events-none" style={{ left: `${todayPositionPercent}%` }} />}
+          
           {/* Top timeline bar */}
-          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% - ${TIMELINE_Y_OFFSET})` }} />
-          
+          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% - ${TIMELINE_Y_OFFSET_TOP})` }} />
+          {/* Middle timeline bar */}
+          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET_MIDDLE})` }} />
           {/* Bottom timeline bar */}
-          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET})` }}/>
+          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET_BOTTOM})` }}/>
 
-          <div className="absolute top-0 left-0 w-full h-full z-10">
+          <div className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none">
               {periodEvents.map(event => {
-                  const project = getProjectForEvent(event);
-                  if (!project) return null;
                   const info = laneInfo.get(event.projectId);
                   if (!info) return null;
                   
-                  const isTopTier = topCategories.includes(project.category);
                   const startPercent = getPositionPercent(new Date(event.when.timestamp));
                   const endPercent = getPositionPercent(new Date(event.endWhen!.timestamp));
                   const widthPercent = Math.max(0.5, endPercent - startPercent);
                   const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
                   const isHovered = activeTooltip === event.id;
-
-                  let topPosition: string, droplineStyle: React.CSSProperties;
-                  if (isTopTier) {
-                      topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${info.topOffset}px)`;
-                      droplineStyle = { bottom: '100%', height: `${info.topOffset}px`, left: '1px' };
-                  } else {
-                      topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${info.topOffset}px)`;
-                      droplineStyle = { top: '100%', height: `${info.topOffset}px`, left: '1px' };
-                  }
+                  
+                  const { topPosition, droplineStyle } = getPeriodEventPositionAndDropline(info);
                   
                   return (
                       <div
                           key={event.id}
-                          className="absolute h-6"
+                          className="absolute h-6 pointer-events-auto"
                           style={{ left: `${startPercent}%`, width: `${widthPercent}%`, top: topPosition, transform: 'translateY(-50%)' }}
                           onMouseEnter={() => setActiveTooltip(event.id)}
                           onMouseLeave={() => setActiveTooltip(null)}
@@ -392,29 +456,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                   );
               })}
               {pointEvents.map(event => {
-                  const project = getProjectForEvent(event);
-                  if (!project) return null;
                   const info = laneInfo.get(event.projectId);
                   if (!info) return null;
 
-                  const isTopTier = topCategories.includes(project.category);
                   const position = getPositionPercent(new Date(event.when.timestamp));
                   const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
                   const isHovered = activeTooltip === event.id;
-
-                  let topPosition: string, droplineStyle: React.CSSProperties;
-                  if (isTopTier) {
-                      topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${info.topOffset}px)`;
-                      droplineStyle = { bottom: '50%', height: `${info.topOffset}px` };
-                  } else {
-                      topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${info.topOffset}px)`;
-                      droplineStyle = { top: '50%', height: `${info.topOffset}px` };
-                  }
+                  
+                  const { topPosition, droplineStyle } = getEventPositionAndDropline(info);
 
                   return (
                       <div 
                           key={event.id}
-                          className="absolute flex flex-col items-center z-20"
+                          className="absolute flex flex-col items-center z-20 pointer-events-auto"
                           style={{ left: `${position}%`, top: topPosition, transform: 'translate(-50%, -50%)' }}
                           onMouseEnter={() => setActiveTooltip(event.id)}
                           onMouseLeave={() => setActiveTooltip(null)}
@@ -427,31 +481,38 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
               })}
           </div>
 
-          {/* Holiday Icons */}
-          {holidays.map(holiday => (
-            <div key={`${holiday.name}-icon`} className="absolute top-1/2 -translate-y-1/2" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
-                 <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
-                    <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
-                    <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
-                </div>
-            </div>
-          ))}
-
           {/* Markers ON the line */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full z-30 pointer-events-none">
+          <div className="absolute top-0 bottom-0 left-0 w-full z-30 pointer-events-none">
               <div className="absolute top-1/2 -translate-y-1/2" style={{left: '0%'}}>
-                  <TimelineMarker label={formatDate(startDate)} align="left"/>
+                  <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}>
+                     <TimelineMarker label={formatDate(startDate)} align="left"/>
+                  </div>
               </div>
               {isTodayVisible && (
-                  <div className="absolute top-1/2" style={{ left: `${todayPositionPercent}%`, transform: 'translate(-50%, -50%)' }}>
-                      <TimelineMarker label={"Today " + formatDate(todayDate)} isToday />
+                  <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${todayPositionPercent}%`}}>
+                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_TOP})`}}><TimelineMarker isToday /></div>
+                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_MIDDLE})`}}><TimelineMarker isToday /></div>
+                      <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}><TimelineMarker label={"Today " + formatDate(todayDate)} isToday /></div>
                   </div>
               )}
               <div className="absolute top-1/2" style={{ left: '100%', transform: 'translate(-100%, -50%)' }}>
-                   <TimelineMarker label={formatDate(endDate)} align="right"/>
+                   <div className="absolute" style={{top: `calc(0px - ${TIMELINE_Y_OFFSET_BOTTOM})`}}>
+                       <TimelineMarker label={formatDate(endDate)} align="right"/>
+                   </div>
               </div>
           </div>
         </div>
+      </div>
+      {/* Holiday Area */}
+      <div className="relative w-full h-12 mt-4">
+        {holidays.map(holiday => (
+          <div key={`${holiday.name}-icon`} className="absolute top-0" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
+                <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
+                  <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
+                  <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
+              </div>
+          </div>
+        ))}
       </div>
     </div>
   );
