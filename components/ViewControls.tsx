@@ -139,11 +139,11 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
 
       {viewMode === 'timeline' && (
         <div className="flex items-center space-x-2 bg-tertiary p-1 rounded-full">
-          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'prev'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Previous time period">
+          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'prev'))} className="p-2 text-secondary hover:text-primary rounded-full" aria-label="Previous time period">
             &lt;
           </button>
           <span className="text-sm font-medium text-primary px-2 whitespace-nowrap">{getTimelineLabel(timelineDate, timelineScale)}</span>
-          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'next'))} className="p-2 text-tertiary hover:text-primary rounded-full" aria-label="Next time period">
+          <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'next'))} className="p-2 text-secondary hover:text-primary rounded-full" aria-label="Next time period">
             &gt;
           </button>
           <select
@@ -163,7 +163,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           <div className="relative" ref={projectSelectorRef}>
             <button
                 onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
-                className="p-2 text-tertiary hover:text-primary rounded-full relative"
+                className="p-2 text-secondary hover:text-primary rounded-full relative"
                 aria-label="Filter projects on timeline"
             >
                 <FilterIcon />
@@ -204,7 +204,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           {/* Tier/Layout Configurator */}
           <button
               onClick={onConfigureTiersClick}
-              className="p-2 text-tertiary hover:text-primary rounded-full relative"
+              className="p-2 text-secondary hover:text-primary rounded-full relative"
               aria-label="Configure timeline layout"
               title="Configure timeline layout"
             >
@@ -214,7 +214,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           <div className="relative" ref={holidaySelectorRef}>
             <button
               onClick={() => setIsHolidaySelectorOpen(!isHolidaySelectorOpen)}
-              className="p-2 text-tertiary hover:text-primary rounded-full relative"
+              className="p-2 text-secondary hover:text-primary rounded-full relative"
               aria-label="Select holidays to display"
             >
               <StarIcon />
