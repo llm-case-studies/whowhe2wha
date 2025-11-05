@@ -23,6 +23,12 @@ const projectColorStyles: Record<string, { bg: string, border: string, text: str
 };
 const defaultColorStyle = projectColorStyles.blue;
 
+// --- Layout Constants ---
+const TIMELINE_Y_OFFSET = '3rem'; // Distance of each bar from the vertical center
+const LANE_HEIGHT = 36;
+const LANE_START_OFFSET = 20; // Start lanes this many pixels away from the timeline bar
+const CATEGORY_GAP = 16; // Visual gap between categories in the sidebar
+
 const getIconForHoliday = (holiday: Holiday): string => {
   const category = holiday.category;
   switch (category) {
@@ -88,9 +94,6 @@ const PointEventMarker: React.FC<{event: EventNode, colorStyle: {bg: string, bor
     }
 }
 
-const LANE_HEIGHT = 36;
-const LANE_TOP_OFFSET = 45;
-const CATEGORY_GAP = 24;
 
 export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate }) => {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
@@ -102,41 +105,68 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   
   const projectColorMap = useMemo(() => new Map(projects.map(p => [p.id, p.color])), [projects]);
 
-  const { groupedProjects, laneInfo, totalLanes, categoryOffsets } = useMemo(() => {
-    const grouped = new Map<string, Project[]>();
-    for (const project of projects) {
-        if (selectedProjectCategories.includes(project.category)) {
-            if (!grouped.has(project.category)) {
-                grouped.set(project.category, []);
-            }
-            grouped.get(project.category)!.push(project);
-        }
-    }
-    const sortedGroupedProjects = new Map([...grouped.entries()].sort((a,b) => a[0].localeCompare(b[0])));
-
-    const info = new Map<number, { laneIndex: number, topOffset: number }>();
-    const catOffsets = new Map<string, { top: number, height: number }>();
-    let currentLane = 0;
+  const {
+    laneInfo,
+    categoryOffsets,
+    topCategories,
+    bottomCategories,
+    maxTopOffset,
+    maxBottomOffset,
+  } = useMemo(() => {
+    const TOP_TIER_CATEGORIES = ['Work', 'Health'];
+    const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
     
-    for (const [category, projectsInCategory] of sortedGroupedProjects.entries()) {
-        const categoryTop = LANE_TOP_OFFSET + currentLane * LANE_HEIGHT + (currentLane > 0 ? CATEGORY_GAP : 0);
+    const topTierProjects = visibleProjects.filter(p => TOP_TIER_CATEGORIES.includes(p.category));
+    const bottomTierProjects = visibleProjects.filter(p => !TOP_TIER_CATEGORIES.includes(p.category));
+
+    const generatedLaneInfo = new Map<number, { laneIndex: number, topOffset: number }>();
+    const generatedCatOffsets = new Map<string, { top: number, height: number }>();
+    const topCats = new Set<string>();
+    const bottomCats = new Set<string>();
+    let maxTop = 0;
+    let maxBottom = 0;
+
+    const process = (projectList: Project[], tier: 'top' | 'bottom') => {
+      const grouped = new Map<string, Project[]>();
+      projectList.forEach(p => {
+        (tier === 'top' ? topCats : bottomCats).add(p.category);
+        if (!grouped.has(p.category)) grouped.set(p.category, []);
+        grouped.get(p.category)!.push(p);
+      });
+
+      const sortedGrouped = new Map([...grouped.entries()].sort((a,b) => a[0].localeCompare(b[0])));
+      let currentLane = 0;
+      let categoryCount = 0;
+
+      for (const [category, projectsInCategory] of sortedGrouped.entries()) {
+        const categoryTop = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
         projectsInCategory.sort((a,b) => a.id - b.id);
-        
-        projectsInCategory.forEach(project => {
-            const topOffset = LANE_TOP_OFFSET + currentLane * LANE_HEIGHT + (currentLane > 0 ? CATEGORY_GAP : 0);
-            info.set(project.id, { laneIndex: currentLane, topOffset });
-            currentLane++;
-        });
-        
-        const categoryHeight = projectsInCategory.length * LANE_HEIGHT;
-        catOffsets.set(category, { top: categoryTop, height: categoryHeight });
 
-        if (projectsInCategory.length > 0) {
-            currentLane++; // Add a gap for the next category
-        }
-    }
+        projectsInCategory.forEach(project => {
+          const topOffset = LANE_START_OFFSET + currentLane * LANE_HEIGHT + categoryCount * CATEGORY_GAP;
+          generatedLaneInfo.set(project.id, { laneIndex: currentLane, topOffset });
+          if (tier === 'top') maxTop = Math.max(maxTop, topOffset);
+          else maxBottom = Math.max(maxBottom, topOffset);
+          currentLane++;
+        });
+
+        const categoryHeight = projectsInCategory.length * LANE_HEIGHT;
+        generatedCatOffsets.set(category, { top: categoryTop, height: categoryHeight });
+        if (projectsInCategory.length > 0) categoryCount++;
+      }
+    };
     
-    return { groupedProjects: sortedGroupedProjects, laneInfo: info, totalLanes: currentLane, categoryOffsets: catOffsets };
+    process(topTierProjects, 'top');
+    process(bottomTierProjects, 'bottom');
+
+    return {
+      laneInfo: generatedLaneInfo,
+      categoryOffsets: generatedCatOffsets,
+      topCategories: [...topCats].sort(),
+      bottomCategories: [...bottomCats].sort(),
+      maxTopOffset: maxTop,
+      maxBottomOffset: maxBottom,
+    };
   }, [projects, selectedProjectCategories]);
 
   const { startDate, endDate, totalDuration } = useMemo(() => {
@@ -210,7 +240,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
   const formatDate = (date: Date) => date.toLocaleDateString('en-US', { timeZone: 'UTC', month: '2-digit', day: '2-digit', year: 'numeric' });
   
-  const { periodEvents, pointEvents, religiousHolidays, civilHolidays } = useMemo(() => {
+  const { periodEvents, pointEvents, holidays } = useMemo(() => {
     const visibleEvents = events.filter(event => {
       if (!laneInfo.has(event.projectId)) return false;
       const eventDateMs = new Date(event.when.timestamp).getTime();
@@ -227,8 +257,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     return {
       periodEvents: visibleEvents.filter(e => e.what.whatType === WhatType.Period && e.endWhen),
       pointEvents: visibleEvents.filter(e => e.what.whatType !== WhatType.Period),
-      religiousHolidays: visibleHolidays.filter(h => h.type === 'religious'),
-      civilHolidays: visibleHolidays.filter(h => h.type === 'civil'),
+      holidays: visibleHolidays,
     };
   }, [events, laneInfo, selectedHolidayCategories, startDateMs, endDateMs]);
 
@@ -239,7 +268,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     </div>
   );
 
-  const containerHeight = 192 + totalLanes * LANE_HEIGHT + (groupedProjects.size -1) * CATEGORY_GAP;
+  const containerHeight = Math.max(250, 100 + maxTopOffset + maxBottomOffset);
+
+  const getProjectForEvent = (event: EventNode) => projects.find(p => p.id === event.projectId);
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-8 w-full mt-4">
@@ -253,29 +284,49 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
           >
             {isSidebarOpen ? <ChevronsLeftIcon /> : <ChevronsRightIcon />}
           </button>
-          <div className={`transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            {[...groupedProjects.entries()].map(([category, projectsInCategory]) => {
-                if (projectsInCategory.length === 0) return null;
+          
+          <div className={`transition-opacity duration-200 h-full relative ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+             {topCategories.map(category => {
+                const projectsInCategory = projects.filter(p => p.category === category);
                 const offsetInfo = categoryOffsets.get(category);
                 if (!offsetInfo) return null;
-                
+                const topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${offsetInfo.top}px + ${offsetInfo.height / 2}px)`;
+
                 return (
-                    <div key={category} className="absolute right-4 w-full text-right" style={{ top: `calc(50% - ${offsetInfo.top}px - ${offsetInfo.height/2}px)`, transform: 'translateY(-50%)'}}>
+                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
                          <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
                          {projectsInCategory.map(project => {
-                            const info = laneInfo.get(project.id);
-                            if (!info) return null;
-                            const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
-                            const top = (info.laneIndex - (laneInfo.get(projectsInCategory[0].id)?.laneIndex || 0)) * LANE_HEIGHT;
+                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
                              return(
-                                <div key={project.id} className="relative h-6 flex items-center justify-end" style={{ top: `${top}px` }}>
+                                <div key={project.id} className="relative h-6 flex items-center justify-end">
                                     <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
                                     <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
                                 </div>
                              )
                          })}
                     </div>
-                )
+                );
+            })}
+             {bottomCategories.map(category => {
+                const projectsInCategory = projects.filter(p => p.category === category);
+                const offsetInfo = categoryOffsets.get(category);
+                if (!offsetInfo) return null;
+                const topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${offsetInfo.top}px - ${offsetInfo.height / 2}px)`;
+
+                 return (
+                     <div key={category} className="absolute right-4 w-full text-right" style={{ top: topPosition, transform: 'translateY(-50%)' }}>
+                         <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">{category}</p>
+                         {projectsInCategory.map(project => {
+                             const colorStyle = projectColorStyles[project.color] || defaultColorStyle;
+                             return(
+                                <div key={project.id} className="relative h-6 flex items-center justify-end">
+                                    <p className="text-xs font-semibold text-primary truncate" title={project.name}>{project.name}</p>
+                                    <span className={`w-2 h-2 ${colorStyle.bg} rounded-full ml-2 flex-shrink-0`}></span>
+                                </div>
+                             )
+                         })}
+                    </div>
+                );
             })}
           </div>
         </div>
@@ -290,19 +341,39 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
           onMouseLeave={handleMouseUp}
         >
           {isTodayVisible && <div className="absolute top-0 bottom-0 w-px bg-wha-blue/70 z-0" style={{ left: `${todayPositionPercent}%` }} />}
-          <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" />
+          
+          {holidays.map(holiday => (
+              <div key={holiday.name} className="absolute top-0 bottom-0 w-px bg-secondary/50 z-0" style={{ left: `${getPositionPercent(holiday.date)}%` }} />
+          ))}
+
+          {/* Top timeline bar */}
+          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% - ${TIMELINE_Y_OFFSET})` }} />
+          
+          {/* Bottom timeline bar */}
+          <div className="absolute left-0 right-0 h-2.5 bg-wha-blue/50 rounded-full" style={{ top: `calc(50% + ${TIMELINE_Y_OFFSET})` }}/>
 
           <div className="absolute top-0 left-0 w-full h-full z-10">
               {periodEvents.map(event => {
+                  const project = getProjectForEvent(event);
+                  if (!project) return null;
                   const info = laneInfo.get(event.projectId);
                   if (!info) return null;
-
+                  
+                  const isTopTier = topCategories.includes(project.category);
                   const startPercent = getPositionPercent(new Date(event.when.timestamp));
                   const endPercent = getPositionPercent(new Date(event.endWhen!.timestamp));
                   const widthPercent = Math.max(0.5, endPercent - startPercent);
                   const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
-                  const topPosition = `calc(50% - ${info.topOffset}px)`;
                   const isHovered = activeTooltip === event.id;
+
+                  let topPosition: string, droplineStyle: React.CSSProperties;
+                  if (isTopTier) {
+                      topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${info.topOffset}px)`;
+                      droplineStyle = { bottom: '100%', height: `${info.topOffset}px`, left: '1px' };
+                  } else {
+                      topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${info.topOffset}px)`;
+                      droplineStyle = { top: '100%', height: `${info.topOffset}px`, left: '1px' };
+                  }
                   
                   return (
                       <div
@@ -316,18 +387,30 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                           <div className={`w-full h-full ${colorStyle.bg} opacity-70 hover:opacity-100 rounded flex items-center justify-start px-2 overflow-hidden transition-opacity`}>
                               <span className="text-white text-xs font-medium truncate">{event.what.name}</span>
                           </div>
-                          <div className="absolute top-full left-0 w-full h-px bg-tertiary" style={{ height: `${info.topOffset}px` }}/>
+                          <div className="absolute w-px bg-tertiary/70" style={droplineStyle} />
                       </div>
                   );
               })}
               {pointEvents.map(event => {
+                  const project = getProjectForEvent(event);
+                  if (!project) return null;
                   const info = laneInfo.get(event.projectId);
                   if (!info) return null;
 
+                  const isTopTier = topCategories.includes(project.category);
                   const position = getPositionPercent(new Date(event.when.timestamp));
                   const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
-                  const topPosition = `calc(50% - ${info.topOffset}px)`;
                   const isHovered = activeTooltip === event.id;
+
+                  let topPosition: string, droplineStyle: React.CSSProperties;
+                  if (isTopTier) {
+                      topPosition = `calc(50% - ${TIMELINE_Y_OFFSET} + ${info.topOffset}px)`;
+                      droplineStyle = { bottom: '50%', height: `${info.topOffset}px` };
+                  } else {
+                      topPosition = `calc(50% + ${TIMELINE_Y_OFFSET} - ${info.topOffset}px)`;
+                      droplineStyle = { top: '50%', height: `${info.topOffset}px` };
+                  }
+
                   return (
                       <div 
                           key={event.id}
@@ -338,29 +421,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                       >
                           {isHovered && renderTooltip(event)}
                           <PointEventMarker event={event} colorStyle={colorStyle} />
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-px bg-tertiary" style={{ height: `${info.topOffset}px` }}/>
+                          <div className="absolute left-1/2 -translate-x-1/2 w-px bg-tertiary/70" style={droplineStyle}/>
                       </div>
                   );
               })}
           </div>
 
-          {/* Holiday Tiers */}
-          {religiousHolidays.map(holiday => (
-            <div key={`${holiday.name}-rel`} className="absolute top-1/2 h-full" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-8 w-px bg-secondary" />
-              <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
-                <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
-                <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
-              </div>
-            </div>
-          ))}
-          {civilHolidays.map(holiday => (
-            <div key={`${holiday.name}-civ`} className="absolute top-1/2 h-full" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-20 w-px bg-secondary" />
-              <div className="absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
-                <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
-                <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
-              </div>
+          {/* Holiday Icons */}
+          {holidays.map(holiday => (
+            <div key={`${holiday.name}-icon`} className="absolute top-1/2 -translate-y-1/2" style={{ left: `${getPositionPercent(holiday.date)}%`, zIndex: 5 }}>
+                 <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 cursor-default" title={`${holiday.name}`}>
+                    <span className="text-lg leading-none">{getIconForHoliday(holiday)}</span>
+                    <span className="text-xs text-secondary whitespace-nowrap">{holiday.name}</span>
+                </div>
             </div>
           ))}
 
