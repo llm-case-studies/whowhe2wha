@@ -22,6 +22,10 @@ export const CalendarIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?:
     </svg>
 );
 
+export const BriefcaseIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2a2 2 0 00-2 2v1H6a2 2 0 00-2 2v7a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2V4a2 2 0 00-2-2zM8 4a1 1 0 011-1h2a1 1 0 011 1v1H8V4zM6 7h8v7H6V7z" clipRule="evenodd" /></svg>
+);
+
 export const MicrophoneIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93V17h-2v-2.07A8.001 8.001 0 012 8V7a1 1 0 012 0v1a6 6 0 1012 0V7a1 1 0 112 0v1a8.001 8.001 0 01-5 7.93z" clipRule="evenodd" /></svg>
 );

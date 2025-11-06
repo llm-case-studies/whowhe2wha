@@ -4,12 +4,14 @@ import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
 import { AddLocationModal } from './components/AddLocationModal';
+import { AddProjectModal } from './components/AddProjectModal';
+import { AddContactModal } from './components/AddContactModal';
 import { LocationDetailModal } from './components/LocationDetailModal';
 import { LocationSelectModal } from './components/LocationSelectModal';
 import { TimeMapModal } from './components/TimeMapModal';
 import { TierConfigModal } from './components/TierConfigModal';
 import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale, Tier, EntityType } from './types';
-import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, PROJECT_CATEGORIES } from './constants';
+import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS, PROJECT_CATEGORIES } from './constants';
 import { queryGraph } from './services/geminiService';
 import { ViewControls } from './components/ViewControls';
 
@@ -41,6 +43,7 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>(() => loadFromLocalStorage('whowhe2wha_projects', MOCK_PROJECTS));
   const [events, setEvents] = useState<EventNode[]>(() => loadFromLocalStorage('whowhe2wha_events', MOCK_EVENTS));
   const [locations, setLocations] = useState<Location[]>(() => loadFromLocalStorage('whowhe2wha_locations', MOCK_LOCATIONS));
+  const [contacts, setContacts] = useState<Contact[]>(() => loadFromLocalStorage('whowhe2wha_contacts', MOCK_CONTACTS));
 
   const [filteredEventIds, setFilteredEventIds] = useState<number[] | null>(null);
   
@@ -49,8 +52,13 @@ const App: React.FC = () => {
   
   const [isAddEventFormOpen, setIsAddEventFormOpen] = useState(false);
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
+
   const [isLocationSelectModalOpen, setIsLocationSelectModalOpen] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
+  const [locationModalSource, setLocationModalSource] = useState<'event' | 'direct'>('direct');
+
 
   const [locationDetailModalLocation, setLocationDetailModalLocation] = useState<Location | null>(null);
   const [timeMapModalWhen, setTimeMapModalWhen] = useState<When | null>(null);
@@ -85,6 +93,7 @@ const App: React.FC = () => {
   useEffect(() => saveToLocalStorage('whowhe2wha_projects', projects), [projects]);
   useEffect(() => saveToLocalStorage('whowhe2wha_events', events), [events]);
   useEffect(() => saveToLocalStorage('whowhe2wha_locations', locations), [locations]);
+  useEffect(() => saveToLocalStorage('whowhe2wha_contacts', contacts), [contacts]);
 
   const handleSearch = async (query: string) => {
     setIsLoading(true);
@@ -173,15 +182,36 @@ const App: React.FC = () => {
 
   const handleOpenLocationFinder = (query: string) => {
       setLocationQuery(query);
+      setLocationModalSource('event');
       setIsAddLocationModalOpen(true);
   };
 
   const handleSaveNewLocation = (newLocation: Location) => {
       setLocations(prev => [...prev, newLocation]);
       setIsAddLocationModalOpen(false);
-      // This is the key part: update the initial data for the still-open form
-      setAddEventInitialData(prev => ({ ...prev, where: newLocation.alias || newLocation.name }));
+      // If the location modal was opened from the event form, update the form's initial data.
+      if (locationModalSource === 'event') {
+        setAddEventInitialData(prev => ({ ...prev, where: newLocation.alias || newLocation.name }));
+      }
   };
+  
+  const handleSaveProject = (projectData: Omit<Project, 'id'>) => {
+        const newProject: Project = {
+            ...projectData,
+            id: Date.now(),
+        };
+        setProjects(prev => [...prev, newProject]);
+        setIsAddProjectModalOpen(false);
+    };
+
+    const handleSaveContact = (contactData: Omit<Contact, 'id'>) => {
+        const newContact: Contact = {
+            ...contactData,
+            id: `contact-${Date.now()}`,
+        };
+        setContacts(prev => [...prev, newContact]);
+        setIsAddContactModalOpen(false);
+    };
 
   const handleOpenLocationSelect = () => {
     setIsLocationSelectModalOpen(true);
@@ -194,13 +224,15 @@ const App: React.FC = () => {
 
   const handleAddNewLocationFromSelect = () => {
     setIsLocationSelectModalOpen(false);
-    // Open the finder modal, but don't pre-fill the query, let the user type.
-    handleOpenLocationFinder('');
+    setLocationQuery('');
+    setLocationModalSource('direct');
+    setIsAddLocationModalOpen(true);
   };
 
   const handleUrlSubmitFromSelect = (url: string) => {
     setIsLocationSelectModalOpen(false);
     setLocationQuery(url);
+    setLocationModalSource('direct');
     setIsAddLocationModalOpen(true);
   };
 
@@ -223,6 +255,9 @@ const App: React.FC = () => {
           timelineDate={timelineDate}
           setTimelineDate={setTimelineDate}
           onAddEventClick={() => setIsAddEventFormOpen(true)}
+          onAddProjectClick={() => setIsAddProjectModalOpen(true)}
+          onAddContactClick={() => setIsAddContactModalOpen(true)}
+          onAddLocationClick={handleAddNewLocationFromSelect}
           selectedHolidayCategories={selectedHolidayCategories}
           setSelectedHolidayCategories={setSelectedHolidayCategories}
           selectedProjectCategories={selectedProjectCategories}
@@ -264,6 +299,21 @@ const App: React.FC = () => {
           onOpenLocationSelect={handleOpenLocationSelect}
         />
       )}
+      
+      {isAddProjectModalOpen && (
+        <AddProjectModal 
+            onSave={handleSaveProject} 
+            onClose={() => setIsAddProjectModalOpen(false)} 
+        />
+      )}
+
+      {isAddContactModalOpen && (
+        <AddContactModal 
+            locations={locations}
+            onSave={handleSaveContact} 
+            onClose={() => setIsAddContactModalOpen(false)} 
+        />
+      )}
 
       {isAddLocationModalOpen && (
           <AddLocationModal
@@ -296,6 +346,7 @@ const App: React.FC = () => {
             location={locationDetailModalLocation} 
             allEvents={events} 
             allLocations={locations}
+            contacts={contacts}
             onClose={() => setLocationDetailModalLocation(null)}
             onSchedule={handleScheduleFromContact}
         />

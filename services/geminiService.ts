@@ -164,38 +164,51 @@ export async function discoverPlaces(query: string): Promise<DiscoveredPlace[]> 
 }
 
 /**
- * Uses a two-step AI process to find a place from a Google Maps URL.
- * Step 1: Use Google Search tool to resolve the URL to a place name.
- * Step 2: Use Google Maps tool (via discoverPlaces) with the name to get structured data.
+ * Uses a more robust AI process to find a place from a Google Maps URL.
+ * It uses both Google Search and Google Maps tools to resolve the link.
  * @param url The Google Maps share link.
  * @returns A promise that resolves to an array of discovered places.
  */
 export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> {
     const aiInstance = getAI();
+    const prompt = `Find the place associated with this URL: ${url}`;
     
     try {
-        // Step 1: Use Google Search to get the name of the location from the URL.
-        const searchPrompt = `What is the name of the place or address pointed to by this Google Maps URL? Respond with only the name and address, for example: "Monroe Township, NJ, USA". URL: ${url}`;
-        
-        const searchResponse = await aiInstance.models.generateContent({
+        const response = await aiInstance.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: searchPrompt,
+            contents: prompt,
             config: {
-                tools: [{ googleSearch: {} }],
+                // Use both tools; the model will prioritize the best one for the task.
+                tools: [{ googleSearch: {} }, { googleMaps: {} }],
             },
         });
 
-        const locationName = searchResponse.text.trim();
-        
-        // Basic sanity check to avoid using a generic or incorrect response.
-        if (!locationName || locationName.toLowerCase().includes('mountain view')) {
-             console.warn('Google Search did not return a specific location name for the URL.', locationName);
-             return [];
+        // First, check for structured data from the Google Maps tool. This is the most reliable result.
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+        if (groundingChunks && Array.isArray(groundingChunks)) {
+            const places: DiscoveredPlace[] = groundingChunks
+                .filter(chunk => chunk.maps)
+                .map(chunk => ({
+                    title: chunk.maps.title,
+                    uri: chunk.maps.uri,
+                }));
+            
+            if (places.length > 0) {
+                return places;
+            }
         }
         
-        // Step 2: Now that we have a reliable name, use discoverPlaces to get the structured data.
-        // This uses the googleMaps tool, which is effective when given a clear name.
-        return await discoverPlaces(locationName);
+        // If no map data, fall back to the text response from the Google Search tool.
+        const locationName = response.text.trim();
+        
+        // Basic sanity check to avoid using a generic or incorrect response.
+        if (locationName && !locationName.toLowerCase().includes('google maps') && !locationName.toLowerCase().includes('mountain view')) {
+            // Use the discovered name to perform a second, more precise search with the Maps tool.
+            return await discoverPlaces(locationName);
+        }
+
+        // If all else fails, return empty.
+        return [];
 
     } catch (error) {
         console.error("Error calling Gemini API to resolve URL:", error);

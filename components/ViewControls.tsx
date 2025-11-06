@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewMode, TimelineScale } from '../types';
-import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon } from './icons';
+import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon, CalendarIcon, BriefcaseIcon, UsersIcon, PinIcon } from './icons';
 import { HOLIDAY_CATEGORIES, PROJECT_CATEGORIES } from '../constants';
 
 interface ViewControlsProps {
@@ -11,6 +11,9 @@ interface ViewControlsProps {
   timelineDate: Date;
   setTimelineDate: (date: Date) => void;
   onAddEventClick: () => void;
+  onAddProjectClick: () => void;
+  onAddContactClick: () => void;
+  onAddLocationClick: () => void;
   selectedHolidayCategories: string[];
   setSelectedHolidayCategories: (categories: string[]) => void;
   selectedProjectCategories: string[];
@@ -62,6 +65,9 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   timelineDate,
   setTimelineDate,
   onAddEventClick,
+  onAddProjectClick,
+  onAddContactClick,
+  onAddLocationClick,
   selectedHolidayCategories,
   setSelectedHolidayCategories,
   selectedProjectCategories,
@@ -70,8 +76,11 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
 }) => {
   const [isHolidaySelectorOpen, setIsHolidaySelectorOpen] = useState(false);
   const [isProjectSelectorOpen, setIsProjectSelectorOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  
   const holidaySelectorRef = useRef<HTMLDivElement>(null);
   const projectSelectorRef = useRef<HTMLDivElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -80,6 +89,9 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
       }
       if (projectSelectorRef.current && !projectSelectorRef.current.contains(event.target as Node)) {
         setIsProjectSelectorOpen(false);
+      }
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
+        setIsAddMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -111,6 +123,11 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           setSelectedProjectCategories([]);
       }
   }
+
+  const handleAddMenuClick = (action: () => void) => {
+    action();
+    setIsAddMenuOpen(false);
+  };
 
   return (
     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -247,12 +264,26 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         </div>
       )}
 
-      <button
-        onClick={onAddEventClick}
-        className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
-      >
-        + Add Event
-      </button>
+      <div className="relative" ref={addMenuRef}>
+        <button
+          onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+          className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200 flex items-center"
+        >
+          Add...
+          <svg className={`w-4 h-4 ml-2 transform transition-transform duration-200 ${isAddMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        {isAddMenuOpen && (
+          <div className="absolute top-full right-0 mt-2 w-48 bg-secondary border border-primary rounded-lg shadow-xl z-20">
+            <ul className="p-1">
+              <li className="p-1"><button onClick={() => handleAddMenuClick(onAddEventClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><CalendarIcon className="w-4 h-4 mr-3 text-secondary"/>Event</button></li>
+              <li className="p-1"><button onClick={() => handleAddMenuClick(onAddProjectClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><BriefcaseIcon className="w-4 h-4 mr-3 text-secondary"/>Project</button></li>
+              <li className="p-1"><button onClick={() => handleAddMenuClick(onAddContactClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><UsersIcon className="w-4 h-4 mr-3 text-secondary"/>Contact/Partner</button></li>
+              <li className="p-1"><button onClick={() => handleAddMenuClick(onAddLocationClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><PinIcon className="w-4 h-4 mr-3 text-secondary"/>Location</button></li>
+            </ul>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

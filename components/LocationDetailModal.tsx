@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Location, EventNode, Contact } from '../types';
 import { EventCard } from './EventCard';
 import { PinIcon, CalendarIcon, UsersIcon, NavigateIcon, PhoneIcon, WebsiteIcon, LinkIcon, NotesIcon } from './icons';
-import { MOCK_CONTACTS } from '../constants';
 
 interface LocationDetailModalProps {
   location: Location;
   allEvents: EventNode[];
   allLocations: Location[];
+  contacts: Contact[];
   onClose: () => void;
   onSchedule: (contact: Contact) => void;
 }
@@ -37,13 +37,13 @@ const DetailRow: React.FC<{ icon: React.ReactNode, label: string, value: string 
 };
 
 
-export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({ location, allEvents, allLocations, onClose, onSchedule }) => {
+export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({ location, allEvents, allLocations, contacts, onClose, onSchedule }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('events');
 
   const relatedEvents = allEvents.filter(event => event.whereId === location.id)
     .sort((a,b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime());
 
-  const locationContacts = MOCK_CONTACTS.filter(
+  const locationContacts = contacts.filter(
     contact => contact.locationId === location.id
   );
 
