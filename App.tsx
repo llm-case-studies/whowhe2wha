@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
@@ -11,8 +12,9 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
 import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_PROJECT_TEMPLATES } from './constants';
-import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType, ProjectTemplate, EntityType, When } from './types';
+import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType, ProjectTemplate, EntityType, When, WhatType } from './types';
 import { queryGraph } from './services/geminiService';
+import { parseTemplateEventDuration } from './utils/templateUtils';
 
 const MAX_HISTORY_LENGTH = 20;
 
@@ -139,21 +141,53 @@ const App: React.FC = () => {
         const template = projectTemplates.find(t => t.id === templateId);
         const newEvents: EventNode[] = [];
 
-        if (template) {
-            const baseDate = startDate ? new Date(startDate) : null;
-            template.events.forEach((te, index) => {
-                let when: When | undefined = undefined;
-                if (baseDate) {
-                    const eventDate = new Date(baseDate.getTime());
-                    eventDate.setDate(baseDate.getDate() + index);
-                    when = {
-                        id: `when-${Date.now() + Math.random()}`,
-                        name: eventDate.toLocaleString(),
-                        timestamp: eventDate.toISOString(),
-                        display: eventDate.toLocaleString(),
-                        type: EntityType.When,
+        if (template && startDate) {
+            const baseDate = new Date(startDate);
+            baseDate.setHours(8, 0, 0, 0); // Use a consistent start time to avoid timezone issues.
+            let sequentialOffset = 0;
+
+            template.events.forEach((te) => {
+                const durationInfo = parseTemplateEventDuration(te.whatName);
+                let eventStartDate: Date;
+                let durationDays = 1;
+
+                if (durationInfo) {
+                    eventStartDate = new Date(baseDate.getTime());
+                    eventStartDate.setDate(baseDate.getDate() + durationInfo.startOffsetDays);
+                    durationDays = durationInfo.durationDays;
+                } else {
+                    eventStartDate = new Date(baseDate.getTime());
+                    eventStartDate.setDate(baseDate.getDate() + sequentialOffset);
+                }
+                
+                const formatOptionsPoint: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: '2-digit' };
+                const formatOptionsPeriod: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+
+                // Fix: Add missing 'name' property to When object. The name and display values are the same.
+                const whenDisplay = te.whatType === WhatType.Period ? eventStartDate.toLocaleDateString([], formatOptionsPeriod) : eventStartDate.toLocaleString([], formatOptionsPoint);
+                const when: When = {
+                    id: `when-${Date.now() + Math.random()}`,
+                    name: whenDisplay,
+                    timestamp: eventStartDate.toISOString(),
+                    display: whenDisplay,
+                    type: EntityType.When,
+                };
+                
+                let endWhen: When | undefined = undefined;
+                if (durationDays > 1 && te.whatType === WhatType.Period) {
+                    const eventEndDate = new Date(eventStartDate.getTime());
+                    eventEndDate.setDate(eventStartDate.getDate() + durationDays - 1);
+                    // Fix: Add missing 'name' property to When object. The name and display values are the same.
+                    const endWhenDisplay = eventEndDate.toLocaleDateString([], formatOptionsPeriod);
+                    endWhen = {
+                         id: `endwhen-${Date.now() + Math.random()}`,
+                         name: endWhenDisplay,
+                         timestamp: eventEndDate.toISOString(),
+                         display: endWhenDisplay,
+                         type: EntityType.When,
                     };
                 }
+
                 newEvents.push({
                     id: Date.now() + Math.random(),
                     projectId: project.id,
@@ -166,7 +200,12 @@ const App: React.FC = () => {
                     },
                     who: [],
                     when: when,
+                    endWhen: endWhen,
                 });
+                
+                if (!durationInfo) {
+                    sequentialOffset += durationDays;
+                }
             });
         }
 
@@ -345,9 +384,9 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-background-primary text-primary min-h-screen font-sans">
+    <div className="bg-background-primary text-primary min-h-screen font-sans flex flex-col h-screen">
       <Header theme={theme} setTheme={setTheme} onToggleHistory={() => setIsHistoryPanelOpen(p => !p)} />
-      <main className="container mx-auto px-4 pb-12">
+      <main className="container mx-auto px-4 flex flex-col flex-grow min-h-0">
         <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
         <Dashboard
           events={displayEvents}
