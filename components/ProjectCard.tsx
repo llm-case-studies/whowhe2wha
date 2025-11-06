@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Project } from '../types';
-import { PencilIcon, TrashIcon } from './icons';
+import { PencilIcon, TrashIcon, CalendarPlusIcon } from './icons';
 
 interface ProjectCardProps {
   project: Project;
@@ -9,6 +8,7 @@ interface ProjectCardProps {
   onClick: () => void;
   onEdit: (project: Project) => void;
   onDelete: (projectId: number) => void;
+  onAddEvent: () => void;
 }
 
 const colorClasses: Record<string, string> = {
@@ -26,7 +26,7 @@ const statusClasses: Record<string, string> = {
     'Completed': 'bg-gray-500',
 };
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isSelected, onClick, onEdit, onDelete }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isSelected, onClick, onEdit, onDelete, onAddEvent }) => {
   const colorClass = colorClasses[project.color] || colorClasses['blue'];
   const statusClass = statusClasses[project.status] || statusClasses['Completed'];
   const selectedClass = isSelected ? 'ring-2 ring-wha-blue shadow-lg' : 'hover:shadow-md';
@@ -39,6 +39,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isSelected, o
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(project.id);
+  };
+  
+  const handleAddEvent = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddEvent();
   };
 
   return (
@@ -55,6 +60,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isSelected, o
       </div>
        <p className="text-sm text-secondary mt-1">{project.description}</p>
        <div className="flex justify-end items-center space-x-1 mt-2">
+          {isSelected && (
+            <button onClick={handleAddEvent} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-green-400 transition-colors duration-200" title="Add Event to this Project">
+                <CalendarPlusIcon className="h-4 w-4" />
+            </button>
+          )}
           <button onClick={handleEdit} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-primary transition-colors duration-200" title="Edit Project">
               <PencilIcon className="h-4 w-4" />
           </button>

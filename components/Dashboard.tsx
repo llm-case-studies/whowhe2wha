@@ -15,7 +15,7 @@ interface DashboardProps {
   projects: Project[];
   locations: Location[];
   contacts: Contact[];
-  onAddEvent: () => void;
+  onAddEvent: (projectId?: number) => void;
   onEditEvent: (event: EventNode) => void;
   onDeleteEvent: (eventId: number) => void;
   onAddProject: () => void;
@@ -74,7 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         setTimelineScale={setTimelineScale}
         timelineDate={timelineDate}
         setTimelineDate={setTimelineDate}
-        onAddEventClick={onAddEvent}
+        onAddEventClick={() => onAddEvent()}
         onAddProjectClick={onAddProject}
         onAddContactClick={onAddContact}
         onAddLocationClick={() => onAddLocation('')}
@@ -126,6 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                 onClick={() => onProjectSelect(project.id)}
                 onEdit={onEditProject}
                 onDelete={onDeleteProject}
+                onAddEvent={() => onAddEvent(project.id)}
               />
             ))}
           </div>

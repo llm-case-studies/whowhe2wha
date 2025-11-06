@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
@@ -35,6 +34,8 @@ const App: React.FC = () => {
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [addLocationQuery, setAddLocationQuery] = useState('');
+  
+  const [preselectedProjectId, setPreselectedProjectId] = useState<number | null>(null);
 
   const [editingEvent, setEditingEvent] = useState<EventNode | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -86,6 +87,14 @@ const App: React.FC = () => {
       setFilteredEventIds(null);
       setSelectedProjectId(prevId => prevId === projectId ? null : projectId);
   }
+  
+  const handleOpenAddEventModal = (projectId: number | null = null) => {
+    setEditingEvent(null); // Ensure we are not in edit mode
+    if (projectId) {
+      setPreselectedProjectId(projectId);
+    }
+    setIsAddEventModalOpen(true);
+  };
 
   // Event Handlers
   const handleSaveEvent = (event: EventNode) => {
@@ -277,7 +286,7 @@ const App: React.FC = () => {
           projects={projects}
           locations={locations}
           contacts={contacts}
-          onAddEvent={() => setIsAddEventModalOpen(true)}
+          onAddEvent={handleOpenAddEventModal}
           onEditEvent={handleEditEvent}
           onDeleteEvent={handleDeleteEvent}
           onAddProject={() => setIsAddProjectModalOpen(true)}
@@ -294,7 +303,7 @@ const App: React.FC = () => {
         />
       </main>
 
-      {isAddEventModalOpen && <AddEventModal projects={projects} locations={locations} contacts={contacts} eventToEdit={editingEvent} onClose={() => { setIsAddEventModalOpen(false); setEditingEvent(null); }} onSave={handleSaveEvent} />}
+      {isAddEventModalOpen && <AddEventModal projects={projects} locations={locations} contacts={contacts} eventToEdit={editingEvent} preselectedProjectId={preselectedProjectId} onClose={() => { setIsAddEventModalOpen(false); setEditingEvent(null); setPreselectedProjectId(null); }} onSave={handleSaveEvent} />}
       {isAddProjectModalOpen && <AddProjectModal projectToEdit={editingProject} onClose={() => { setIsAddProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} />}
       {isAddContactModalOpen && <AddContactModal locations={locations} contactToEdit={editingContact} onClose={() => { setIsAddContactModalOpen(false); setEditingContact(null); }} onSave={handleSaveContact} />}
       {isAddLocationModalOpen && <AddLocationModal initialQuery={addLocationQuery} onClose={() => setIsAddLocationModalOpen(false)} onSave={handleSaveLocation} />}

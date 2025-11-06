@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Project, Location, Contact, EventNode, WhatType, EntityType } from '../types';
 import { LocationSelectModal } from './LocationSelectModal';
@@ -8,11 +7,12 @@ interface AddEventModalProps {
   locations: Location[];
   contacts: Contact[];
   eventToEdit?: EventNode | null;
+  preselectedProjectId?: number | null;
   onClose: () => void;
   onSave: (event: EventNode) => void;
 }
 
-export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, locations, contacts, eventToEdit, onClose, onSave }) => {
+export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, locations, contacts, eventToEdit, preselectedProjectId, onClose, onSave }) => {
   const [whatName, setWhatName] = useState('');
   const [description, setDescription] = useState('');
   const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
@@ -35,10 +35,12 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
       // FIX: The original ID parsing was brittle and caused a type error.
       // Switched to a more robust name-based lookup to find the correct contact IDs.
       setWhoIds(eventToEdit.who.map(w => contacts.find(c => c.name === w.name)?.id).filter(Boolean) as string[]);
+    } else if (preselectedProjectId) {
+        setProjectId(preselectedProjectId);
     } else if (projects.length > 0) {
         setProjectId(projects[0].id)
     }
-  }, [eventToEdit, projects, contacts]);
+  }, [eventToEdit, preselectedProjectId, projects, contacts]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
