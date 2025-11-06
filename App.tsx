@@ -198,6 +198,12 @@ const App: React.FC = () => {
     handleOpenLocationFinder('');
   };
 
+  const handleUrlSubmitFromSelect = (url: string) => {
+    setIsLocationSelectModalOpen(false);
+    setLocationQuery(url);
+    setIsAddLocationModalOpen(true);
+  };
+
 
   const displayedEvents = filteredEventIds !== null
     ? events.filter(event => filteredEventIds.includes(event.id))
@@ -273,6 +279,7 @@ const App: React.FC = () => {
             onSelect={handleSelectKnownLocation}
             onAddNew={handleAddNewLocationFromSelect}
             onClose={() => setIsLocationSelectModalOpen(false)}
+            onUrlSubmit={handleUrlSubmitFromSelect}
           />
       )}
 

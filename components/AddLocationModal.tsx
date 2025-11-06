@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Location, DiscoveredPlace, EntityType } from '../types';
-import { discoverPlaces, geocodeLocation, extractPlaceFromUrl } from '../services/geminiService';
+import { discoverPlaces, geocodeLocation, findPlaceFromUrl } from '../services/geminiService';
 import { SpinnerIcon, PinIcon } from './icons';
 
 interface AddLocationModalProps {
@@ -61,9 +61,11 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         setError(null);
         setResults([]);
         try {
-            const placeName = await extractPlaceFromUrl(url);
-            if (placeName) {
-                setSelectedPlace({ title: placeName, uri: url });
+            const places = await findPlaceFromUrl(url);
+            if (places.length > 0) {
+                // The API should return one specific place for a direct URL.
+                // Go directly to confirmation with the first result.
+                setSelectedPlace(places[0]);
             } else {
                 setError('Could not extract location data from that URL. Please try searching by name.');
             }

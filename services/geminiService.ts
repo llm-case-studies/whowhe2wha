@@ -126,8 +126,7 @@ export async function geocodeLocation(query: string): Promise<{ name: string; la
 }
 
 /**
- * Uses the Gemini API with Google Maps grounding to discover real-world places.
- * This function is for finding potential locations, which can then be enriched with geocodeLocation.
+ * Uses the Gemini API with Google Maps grounding to discover real-world places from a text query.
  * @param query The user's search query for a place (e.g., "library downtown").
  * @returns A promise that resolves to an array of discovered places.
  */
@@ -165,36 +164,41 @@ export async function discoverPlaces(query: string): Promise<DiscoveredPlace[]> 
 }
 
 /**
- * Uses the Gemini API to extract a place name/address from a Google Maps URL.
+ * Uses a two-step AI process to find a place from a Google Maps URL.
+ * Step 1: Use Google Search tool to resolve the URL to a place name.
+ * Step 2: Use Google Maps tool (via discoverPlaces) with the name to get structured data.
  * @param url The Google Maps share link.
- * @returns A promise that resolves to the extracted place name string.
+ * @returns A promise that resolves to an array of discovered places.
  */
-export async function extractPlaceFromUrl(url: string): Promise<string | null> {
-  const aiInstance = getAI();
-  const prompt = `
-    Analyze the following Google Maps URL and extract the canonical name and/or full address of the location it points to.
-    Return ONLY the name and/or address as a single, clean string. Do not add any extra explanation, formatting, or quotation marks.
-
-    For example, if the URL points to "1600 Amphitheatre Parkway, Mountain View, CA", you should return "1600 Amphitheatre Parkway, Mountain View, CA".
-    If it points to "The British Museum", you should return "The British Museum".
-
-    URL: "${url}"
-  `;
-
-  try {
-    const response = await aiInstance.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> {
+    const aiInstance = getAI();
     
-    const textResponse = response.text.trim();
-    if (textResponse && textResponse.length > 3 && !textResponse.includes('http')) {
-      return textResponse;
+    try {
+        // Step 1: Use Google Search to get the name of the location from the URL.
+        const searchPrompt = `What is the name of the place or address pointed to by this Google Maps URL? Respond with only the name and address, for example: "Monroe Township, NJ, USA". URL: ${url}`;
+        
+        const searchResponse = await aiInstance.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: searchPrompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            },
+        });
+
+        const locationName = searchResponse.text.trim();
+        
+        // Basic sanity check to avoid using a generic or incorrect response.
+        if (!locationName || locationName.toLowerCase().includes('mountain view')) {
+             console.warn('Google Search did not return a specific location name for the URL.', locationName);
+             return [];
+        }
+        
+        // Step 2: Now that we have a reliable name, use discoverPlaces to get the structured data.
+        // This uses the googleMaps tool, which is effective when given a clear name.
+        return await discoverPlaces(locationName);
+
+    } catch (error) {
+        console.error("Error calling Gemini API to resolve URL:", error);
+        throw new Error("Failed to find place from URL with AI.");
     }
-    console.warn('Could not extract a valid place name from the URL.');
-    return null;
-  } catch (error) {
-    console.error("Error extracting place from URL with Gemini:", error);
-    return null;
-  }
 }

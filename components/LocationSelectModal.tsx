@@ -7,9 +7,12 @@ interface LocationSelectModalProps {
     onSelect: (location: Location) => void;
     onAddNew: () => void;
     onClose: () => void;
+    onUrlSubmit: (url: string) => void;
 }
 
-export const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ locations, onSelect, onAddNew, onClose }) => {
+const URL_REGEX = /(https?:\/\/(?:maps\.app\.goo\.gl\/[a-zA-Z0-9]+|www\.google\.com\/maps\/[^\s]+))/;
+
+export const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ locations, onSelect, onAddNew, onClose, onUrlSubmit }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredLocations = useMemo(() => {
@@ -23,6 +26,15 @@ export const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ locati
         );
     }, [searchTerm, locations]);
 
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newSearchTerm = e.target.value;
+        setSearchTerm(newSearchTerm);
+        const match = newSearchTerm.match(URL_REGEX);
+        if (match) {
+            onUrlSubmit(match[0]);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="location-select-title">
             <div className="bg-secondary border border-primary rounded-lg p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
@@ -35,9 +47,9 @@ export const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ locati
                     <input
                         type="text"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={handleSearchChange}
                         className="flex-grow px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
-                        placeholder="Search saved locations..."
+                        placeholder="Search or paste Google Maps link..."
                     />
                     <button onClick={onAddNew} className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition">
                         + Add New
