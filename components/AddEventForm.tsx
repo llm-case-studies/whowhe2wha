@@ -17,14 +17,20 @@ interface AddEventFormProps {
   voiceStatus: VoiceStatus;
   initialData?: { who?: string, where?: string } | null;
   onOpenLocationFinder: (query: string) => void;
+  onOpenLocationSelect: () => void;
 }
 
 const whatTypeOptions = Object.values(WhatType).map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
 
-const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, onSearchClick = null, ...props }) => {
+const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, onSearchClick = null, onSelectClick = null, ...props }) => {
     const showSearchButton = id === 'where' && onSearchClick;
-    const showMicButton = hasMicSupport && !showSearchButton;
-    const showMicDisabled = hasMicSupport === false && !showSearchButton;
+    const showSelectButton = id === 'where' && onSelectClick;
+    
+    // Prioritize search button for unmatched, then select button, then mic
+    const showMicButton = hasMicSupport && !showSearchButton && !showSelectButton;
+    const showMicDisabled = hasMicSupport === false && !showSearchButton && !showSelectButton;
+    
+    const hasRightButtons = showSearchButton || showSelectButton || showMicButton || showMicDisabled;
 
     return (
         <div>
@@ -32,38 +38,52 @@ const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasM
             <div className="relative">
                 <input
                     id={id}
-                    className={`w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasMicSupport || id === 'where' ? 'pr-10' : ''}`}
+                    className={`w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasRightButtons ? 'pr-20' : ''}`}
                     {...props}
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                    {showSearchButton && (
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                    {showSelectButton && (
                         <button
                             type="button"
-                            onClick={onSearchClick}
-                            className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
-                            aria-label="Find Location"
-                            title="Find Location"
+                            onClick={onSelectClick}
+                            className="h-full px-3 text-secondary hover:text-primary transition-colors duration-200"
+                            aria-label="Select from saved locations"
+                            title="Select from saved locations"
                         >
-                            <SearchIcon className="h-5 w-5" />
+                            <PinIcon className="h-5 w-5" />
                         </button>
                     )}
                     
-                    {showMicButton && (
-                         <button
-                            type="button"
-                            onClick={onMicClick}
-                            className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
-                            aria-label={`Dictate ${label}`}
-                            title={`Dictate ${label}`}
-                        >
-                            <MicrophoneIcon className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
-                        </button>
-                    )}
-                    {showMicDisabled && (
-                       <div title="Speech recognition not supported or permission denied">
-                          <MicrophoneSlashIcon className="h-5 w-5 text-tertiary" />
-                       </div>
-                    )}
+                    <div className="h-full w-10 flex items-center justify-center">
+                      {showSearchButton && (
+                          <button
+                              type="button"
+                              onClick={onSearchClick}
+                              className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
+                              aria-label="Find New Location"
+                              title="Find New Location"
+                          >
+                              <SearchIcon className="h-5 w-5" />
+                          </button>
+                      )}
+                      
+                      {showMicButton && (
+                          <button
+                              type="button"
+                              onClick={onMicClick}
+                              className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
+                              aria-label={`Dictate ${label}`}
+                              title={`Dictate ${label}`}
+                          >
+                              <MicrophoneIcon className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
+                          </button>
+                      )}
+                      {showMicDisabled && (
+                        <div title="Speech recognition not supported or permission denied">
+                            <MicrophoneSlashIcon className="h-5 w-5 text-tertiary" />
+                        </div>
+                      )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,7 +116,7 @@ const FormSelect = ({ label, id, ...props }) => (
 );
 
 
-export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData, onOpenLocationFinder }) => {
+export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData, onOpenLocationFinder, onOpenLocationSelect }) => {
     const [whatName, setWhatName] = useState('');
     const [whatDesc, setWhatDesc] = useState('');
     const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
@@ -121,7 +141,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
     const showMics = voiceStatus === 'supported';
 
     useEffect(() => {
-        // If the App component passes a new `where` value (e.g., from the location finder modal),
+        // If the App component passes a new `where` value (e.g., from a modal),
         // update this form's state to reflect it.
         if (initialData?.where && initialData.where !== where) {
             setWhere(initialData.where);
@@ -198,7 +218,6 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
         );
 
         if (!existingLocation) {
-            // This should ideally not happen if the flow is followed, but as a fallback:
             onOpenLocationFinder(where.trim());
             return;
         }
@@ -341,6 +360,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
                                 isListening={isListening && listeningField === 'where'}
                                 hasMicSupport={showMics}
                                 onSearchClick={isWhereUnmatched ? () => onOpenLocationFinder(where) : null}
+                                onSelectClick={!isWhereUnmatched ? onOpenLocationSelect : null}
                                 required
                             />
                             {isWhereUnmatched && (

@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
 import { AddLocationModal } from './components/AddLocationModal';
 import { LocationDetailModal } from './components/LocationDetailModal';
+import { LocationSelectModal } from './components/LocationSelectModal';
 import { TimeMapModal } from './components/TimeMapModal';
 import { TierConfigModal } from './components/TierConfigModal';
 import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale, Tier, EntityType } from './types';
@@ -48,6 +49,7 @@ const App: React.FC = () => {
   
   const [isAddEventFormOpen, setIsAddEventFormOpen] = useState(false);
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [isLocationSelectModalOpen, setIsLocationSelectModalOpen] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
 
   const [locationDetailModalLocation, setLocationDetailModalLocation] = useState<Location | null>(null);
@@ -181,6 +183,22 @@ const App: React.FC = () => {
       setAddEventInitialData(prev => ({ ...prev, where: newLocation.alias || newLocation.name }));
   };
 
+  const handleOpenLocationSelect = () => {
+    setIsLocationSelectModalOpen(true);
+  };
+
+  const handleSelectKnownLocation = (location: Location) => {
+    setAddEventInitialData(prev => ({ ...prev, where: location.alias || location.name }));
+    setIsLocationSelectModalOpen(false);
+  };
+
+  const handleAddNewLocationFromSelect = () => {
+    setIsLocationSelectModalOpen(false);
+    // Open the finder modal, but don't pre-fill the query, let the user type.
+    handleOpenLocationFinder('');
+  };
+
+
   const displayedEvents = filteredEventIds !== null
     ? events.filter(event => filteredEventIds.includes(event.id))
     : events;
@@ -237,6 +255,7 @@ const App: React.FC = () => {
           voiceStatus={voiceStatus}
           initialData={addEventInitialData}
           onOpenLocationFinder={handleOpenLocationFinder}
+          onOpenLocationSelect={handleOpenLocationSelect}
         />
       )}
 
@@ -245,6 +264,15 @@ const App: React.FC = () => {
             initialQuery={locationQuery}
             onSave={handleSaveNewLocation}
             onClose={() => setIsAddLocationModalOpen(false)}
+          />
+      )}
+      
+      {isLocationSelectModalOpen && (
+          <LocationSelectModal
+            locations={locations}
+            onSelect={handleSelectKnownLocation}
+            onAddNew={handleAddNewLocationFromSelect}
+            onClose={() => setIsLocationSelectModalOpen(false)}
           />
       )}
 
