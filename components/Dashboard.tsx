@@ -82,7 +82,6 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         onAddProjectClick={onAddProject}
         onAddContactClick={onAddContact}
         onAddLocationClick={() => onAddLocation('')}
-        // Fix: Pass handler for opening project templates modal to ViewControls
         onOpenTemplatesClick={onOpenProjectTemplates}
         selectedHolidayCategories={selectedHolidayCategories}
         setSelectedHolidayCategories={setSelectedHolidayCategories}
@@ -98,34 +97,42 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
               <div className="mb-10">
                  <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
                  <div className="space-y-4">
-                    {unscheduledEvents.map(event => (
-                      <EventCard 
-                        key={event.id} 
-                        event={event} 
-                        locations={locations} 
-                        onLocationClick={setLocationDetailModal} 
-                        onWhenClick={(w) => setTimeMapModalWhen(w)} 
-                        onEdit={onEditEvent}
-                        onDelete={onDeleteEvent}
-                      />
-                    ))}
+                    {unscheduledEvents.map(event => {
+                      const project = projects.find(p => p.id === event.projectId);
+                      return (
+                        <EventCard 
+                          key={event.id} 
+                          event={event} 
+                          project={project}
+                          locations={locations} 
+                          onLocationClick={setLocationDetailModal} 
+                          onWhenClick={(w) => setTimeMapModalWhen(w)} 
+                          onEdit={onEditEvent}
+                          onDelete={onDeleteEvent}
+                        />
+                      );
+                    })}
                  </div>
               </div>
             )}
             
             <h2 className="text-xl font-bold text-primary">Event Stream</h2>
             {scheduledEvents.length > 0 ? (
-                scheduledEvents.map(event => (
-                  <EventCard 
-                    key={event.id} 
-                    event={event} 
-                    locations={locations} 
-                    onLocationClick={setLocationDetailModal} 
-                    onWhenClick={(w) => setTimeMapModalWhen(w)} 
-                    onEdit={onEditEvent}
-                    onDelete={onDeleteEvent}
-                  />
-                ))
+                scheduledEvents.map(event => {
+                  const project = projects.find(p => p.id === event.projectId);
+                  return (
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      project={project}
+                      locations={locations} 
+                      onLocationClick={setLocationDetailModal} 
+                      onWhenClick={(w) => setTimeMapModalWhen(w)} 
+                      onEdit={onEditEvent}
+                      onDelete={onDeleteEvent}
+                    />
+                  );
+                })
             ) : (
               <div className="text-center py-16 px-6 bg-secondary rounded-lg">
                   <h3 className="text-lg font-semibold text-primary">No Scheduled Events Found</h3>

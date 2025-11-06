@@ -6,7 +6,7 @@ interface AddProjectModalProps {
   projectToEdit?: Project | null;
   projectTemplates: ProjectTemplate[];
   onClose: () => void;
-  onSave: (project: Project, templateId?: number) => void;
+  onSave: (project: Project, templateId?: number, startDate?: string) => void;
 }
 
 const colorOptions = ['blue', 'purple', 'orange', 'yellow', 'green', 'pink'];
@@ -18,6 +18,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
   const [color, setColor] = useState('blue');
   const [status, setStatus] = useState<'Active' | 'On Hold' | 'Completed'>('Active');
   const [templateId, setTemplateId] = useState<string>('');
+  const [startDate, setStartDate] = useState('');
 
 
   useEffect(() => {
@@ -40,6 +41,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
               setDescription(template.description);
               setCategory(template.category);
           }
+      } else {
+          // Clear start date if "Start from scratch" is chosen
+          setStartDate('');
       }
   }
 
@@ -55,7 +59,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
       color,
       status,
     };
-    onSave(newProject, templateId ? Number(templateId) : undefined);
+    onSave(newProject, templateId ? Number(templateId) : undefined, startDate);
   };
 
   return (
@@ -74,6 +78,13 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
                         <option value="">Start from scratch</option>
                         {projectTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
+                </div>
+            )}
+             {templateId && !projectToEdit && (
+                <div>
+                    <label htmlFor="startDate" className="block text-sm font-medium text-secondary mb-1">Project Start Date</label>
+                    <input type="datetime-local" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
+                    <p className="text-xs text-secondary mt-1">Events will be scheduled sequentially starting from this date.</p>
                 </div>
             )}
             <div>

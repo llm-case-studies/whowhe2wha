@@ -1,10 +1,12 @@
 import React from 'react';
-import { EventNode, Location, EntityType, WhatType } from '../types';
+import { EventNode, Location, EntityType, WhatType, Project } from '../types';
 import { EntityTag } from './EntityTag';
 import { PinIcon, ClockIcon, UsersIcon, MilestoneIcon, DeadlineIcon, PeriodIcon, CheckpointIcon, AppointmentIcon, PencilIcon, TrashIcon } from './icons';
+import { PROJECT_COLOR_CLASSES } from '../constants';
 
 interface EventCardProps {
   event: EventNode;
+  project?: Project;
   locations: Location[];
   onLocationClick: (location: Location) => void;
   onWhenClick: (when: EventNode['when']) => void;
@@ -26,8 +28,9 @@ const WhatIcon: React.FC<{whatType: WhatType}> = ({ whatType }) => {
 }
 
 
-export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocationClick, onWhenClick, onEdit, onDelete }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, project, locations, onLocationClick, onWhenClick, onEdit, onDelete }) => {
   const location = locations.find(l => l.id === event.whereId);
+  const projectColorClass = project ? (PROJECT_COLOR_CLASSES[project.color] || PROJECT_COLOR_CLASSES['blue']) : '';
 
   return (
     <div className="bg-secondary border border-primary rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -39,7 +42,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocati
             <div className="flex justify-between items-start">
                 <div>
                     <h3 className="text-lg font-bold text-primary">{event.what.name}</h3>
-                    {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
+                    <div className="flex items-center space-x-2 mt-1">
+                      {project && (
+                          <div className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block ${projectColorClass}`}>
+                              {project.name}
+                          </div>
+                      )}
+                    </div>
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
                     <button onClick={() => onEdit(event)} className="p-1.5 rounded-full text-secondary hover:bg-tertiary hover:text-primary transition-colors duration-200" title="Edit Event">
@@ -50,6 +59,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocati
                     </button>
                 </div>
             </div>
+            {event.what.description && <p className="text-sm text-secondary mt-2">{event.what.description}</p>}
             
             <div className="mt-4 space-y-3">
                 {/* When */}

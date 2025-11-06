@@ -11,7 +11,7 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
 import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_PROJECT_TEMPLATES } from './constants';
-import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType, ProjectTemplate, EntityType } from './types';
+import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType, ProjectTemplate, EntityType, When } from './types';
 import { queryGraph } from './services/geminiService';
 
 const MAX_HISTORY_LENGTH = 20;
@@ -129,7 +129,7 @@ const App: React.FC = () => {
   }
   
   // Project Handlers
-  const handleSaveProject = (project: Project, templateId?: number) => {
+  const handleSaveProject = (project: Project, templateId?: number, startDate?: string) => {
     const isEditing = projects.some(p => p.id === project.id);
     if (isEditing) {
         const previousState = projects.find(p => p.id === project.id)!;
@@ -137,18 +137,38 @@ const App: React.FC = () => {
         setProjects(prev => prev.map(p => p.id === project.id ? project : p));
     } else {
         const template = projectTemplates.find(t => t.id === templateId);
-        const newEvents: EventNode[] = template ? template.events.map(te => ({
-            id: Date.now() + Math.random(),
-            projectId: project.id,
-            what: {
-                id: `what-${Date.now() + Math.random()}`,
-                name: te.whatName,
-                description: te.whatDescription,
-                type: EntityType.What,
-                whatType: te.whatType,
-            },
-            who: [],
-        })) : [];
+        const newEvents: EventNode[] = [];
+
+        if (template) {
+            const baseDate = startDate ? new Date(startDate) : null;
+            template.events.forEach((te, index) => {
+                let when: When | undefined = undefined;
+                if (baseDate) {
+                    const eventDate = new Date(baseDate.getTime());
+                    eventDate.setDate(baseDate.getDate() + index);
+                    when = {
+                        id: `when-${Date.now() + Math.random()}`,
+                        name: eventDate.toLocaleString(),
+                        timestamp: eventDate.toISOString(),
+                        display: eventDate.toLocaleString(),
+                        type: EntityType.When,
+                    };
+                }
+                newEvents.push({
+                    id: Date.now() + Math.random(),
+                    projectId: project.id,
+                    what: {
+                        id: `what-${Date.now() + Math.random()}`,
+                        name: te.whatName,
+                        description: te.whatDescription,
+                        type: EntityType.What,
+                        whatType: te.whatType,
+                    },
+                    who: [],
+                    when: when,
+                });
+            });
+        }
 
         const eventIds = newEvents.map(e => e.id);
         const historyDescription = template 

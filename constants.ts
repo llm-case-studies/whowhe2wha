@@ -7,6 +7,15 @@ export const COLORS: { [key in EntityType]: string } = {
   [EntityType.When]: 'bg-wha-blue',
 };
 
+export const PROJECT_COLOR_CLASSES: Record<string, string> = {
+  blue: 'bg-blue-500/20 text-blue-300 border-blue-400',
+  purple: 'bg-purple-500/20 text-purple-300 border-purple-400',
+  orange: 'bg-orange-500/20 text-orange-300 border-orange-400',
+  yellow: 'bg-yellow-500/20 text-yellow-300 border-yellow-400',
+  green: 'bg-green-500/20 text-green-300 border-green-400',
+  pink: 'bg-pink-500/20 text-pink-300 border-pink-400',
+};
+
 export const HOLIDAY_CATEGORIES = [
   { id: 'US', label: 'United States' },
   { id: 'Canada', label: 'Canada' },
