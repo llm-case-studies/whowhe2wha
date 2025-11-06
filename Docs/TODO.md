@@ -26,12 +26,12 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **Dynamic Timeline Layout:** Implemented a configurable, multi-tier (swimlane) timeline layout.
 -   [x] **PWA Functionality:** Made the app installable with offline support via a service worker and web manifest.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
+-   [x] **Undo History:** Implemented a functional undo history for all major data-modifying actions, including templates.
 
 ## Planned Features & Enhancements 🚀
 
 ### Tier 1: Core Functionality
 
--   [ ] **Undo/Redo History:** Make the history panel functional, allowing users to undo and redo actions.
 -   [ ] **Dedicated Contact Management View:** Create a dedicated screen for viewing and managing all contacts, separate from the main dashboard.
 -   [ ] **Data Import/Export:** Add functionality to export all user data to a standard format (JSON, CSV) and import events from `.ics` files.
 -   [ ] **Recurring Events:** Add support for creating events that repeat daily, weekly, or monthly.
@@ -46,9 +46,9 @@ This document tracks the development progress of the **whowhe2wha** application,
 
 ### Tier 3: Feature Expansion
 
+-   [ ] **Sharing & Collaboration:** Introduce the ability to share a read-only or collaborative version of a project with another user.
 -   [ ] **File Attachments:** Allow users to attach documents, images, or links to events (e.g., receipts, tickets, meeting agendas).
 -   [ ] **Notifications & Reminders:** Implement browser-based notifications for upcoming events.
--   [ ] **Sharing & Collaboration:** Introduce the ability to share a read-only or collaborative version of a project with another user.
 -   [ ] **External Calendar Integration:** Add options to sync with Google Calendar, Outlook, or other calendar services.
 
 ### Tier 4: UI/UX Polish
