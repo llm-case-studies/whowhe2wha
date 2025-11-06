@@ -26,6 +26,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const [isGeocoding, setIsGeocoding] = useState(false);
     const [geocodedData, setGeocodedData] = useState<GeocodedData | null>(null);
     const [alias, setAlias] = useState('');
+    const [notes, setNotes] = useState('');
     const [finalName, setFinalName] = useState('');
 
 
@@ -88,7 +89,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
             type: EntityType.Where,
             latitude: geocodedData?.latitude,
             longitude: geocodedData?.longitude,
-            notes: `Original query: ${query}`,
+            notes: notes.trim() || undefined,
         };
         onSave(newLocation);
     }
@@ -112,14 +113,23 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         <>
             {renderSearchBar()}
             {error && <p className="text-red-400">{error}</p>}
-            <div className="space-y-2 overflow-y-auto max-h-64">
+            <div className="space-y-2 overflow-y-auto max-h-64 pr-2">
                 {results.length > 0 ? (
                     results.map((place, index) => (
-                        <button key={index} onClick={() => setSelectedPlace(place)} className="w-full text-left p-3 rounded-md bg-tertiary hover:bg-wha-blue/20 transition">
-                            <p className="font-semibold text-primary">{place.title}</p>
-                            <a href={place.uri} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline" onClick={(e) => e.stopPropagation()}>
-                                View on Google Maps
-                            </a>
+                        <button 
+                            key={index} 
+                            onClick={() => setSelectedPlace(place)} 
+                            className="w-full text-left p-3 rounded-md bg-tertiary hover:bg-wha-blue/20 transition flex items-start space-x-3"
+                        >
+                            <div className="pt-1 text-secondary">
+                                <PinIcon className="h-5 w-5"/>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-primary">{place.title}</p>
+                                <a href={place.uri} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline" onClick={(e) => e.stopPropagation()}>
+                                    View on Google Maps
+                                </a>
+                            </div>
                         </button>
                     ))
                 ) : (
@@ -162,6 +172,16 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                 </div>
                 {geocodedData && <p className="text-xs text-secondary mt-1">Lat: {geocodedData.latitude.toFixed(4)}, Lng: {geocodedData.longitude.toFixed(4)}</p>}
             </div>
+            <div>
+                 <label className="block text-sm font-medium text-secondary mb-1">Notes / Description</label>
+                 <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 bg-input border border-primary rounded-lg"
+                    placeholder="e.g., Use the back entrance, suite 210."
+                />
+            </div>
         </div>
     );
     
@@ -175,6 +195,16 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                     value={finalName}
                     onChange={e => setFinalName(e.target.value)}
                     className="w-full px-3 py-2 bg-input border border-primary rounded-lg"
+                />
+            </div>
+             <div>
+                 <label className="block text-sm font-medium text-secondary mb-1">Notes / Description</label>
+                 <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 bg-input border border-primary rounded-lg"
+                    placeholder="e.g., The conference room in the basement."
                 />
             </div>
         </div>

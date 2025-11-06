@@ -169,18 +169,6 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
             startListening();
         }
     };
-    
-    const handleWhereBlur = () => {
-        if (!where.trim()) return;
-        const existingLocation = locations.find(l => 
-            l.name.toLowerCase() === where.trim().toLowerCase() || 
-            l.alias?.toLowerCase() === where.trim().toLowerCase()
-        );
-
-        if (!existingLocation) {
-            onOpenLocationFinder(where.trim());
-        }
-    };
 
     const isFormValid = whatName && where && when && projectName && (whatType !== WhatType.Period || endWhen);
 
@@ -348,7 +336,6 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
                                 list="locations-list"
                                 value={where}
                                 onChange={(e) => setWhere(e.target.value)}
-                                onBlur={handleWhereBlur}
                                 placeholder="e.g., Springfield Clinic"
                                 onMicClick={() => handleMicClick('where')}
                                 isListening={isListening && listeningField === 'where'}
@@ -357,7 +344,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
                                 required
                             />
                             {isWhereUnmatched && (
-                                <p className="text-xs text-amber-400 mt-1">This is a new location. Find it to add details.</p>
+                                <p className="text-xs text-amber-400 mt-1">New location. Click the search icon to find and verify it.</p>
                             )}
                         </div>
                         <datalist id="locations-list">
