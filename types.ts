@@ -90,3 +90,8 @@ export interface Tier {
   categories: string[];
 }
 export type TierConfig = Tier[];
+
+export interface DiscoveredPlace {
+    title: string;
+    uri: string;
+}

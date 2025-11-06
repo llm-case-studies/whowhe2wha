@@ -12,7 +12,7 @@ The UI is broken down into a tree of reusable React components located in the `s
 
 -   **`App.tsx` (Root Component):** This is the central hub of the application. It is responsible for:
     -   Managing the primary application state (lists of all projects, events, and locations; theme, view mode, timeline settings, tier configuration).
-    -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`).
+    -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`, `AddLocationModal`).
     -   Orchestrating the data flow between its child components. It passes down state and callback functions as props.
 
 -   **UI Components:**
@@ -27,6 +27,7 @@ The UI is broken down into a tree of reusable React components located in the `s
 
 -   **Modal Components:**
     -   `AddEventForm.tsx`: A stateful component for creating new events.
+    -   `AddLocationModal.tsx`: A multi-step modal that uses the AI service to find, verify, and create new real-world locations.
     -   `MapModal.tsx`: Displays the single-location map view.
     -   `TimeMapModal.tsx`: Displays the multi-location itinerary and route map.
     -   `TierConfigModal.tsx`: Allows users to create, edit, and assign project categories to timeline tiers.
@@ -46,6 +47,7 @@ To separate business logic and external communication from the UI components, we
 
 -   **`services/geminiService.ts`:** This file acts as an abstraction layer over the Google Gemini API. It encapsulates all the logic for making API calls, including prompt engineering and response parsing.
     -   `queryGraph()`: Takes a user query and the data context, communicates with Gemini, and returns a list of event IDs.
+    -   `discoverPlaces()`: Uses the `googleMaps` grounding tool to find a list of candidate real-world places from a fuzzy text query.
     -   `geocodeLocation()`: Takes a location string, uses Gemini, and returns structured coordinate data.
 -   **`services/geoService.ts`:** Contains pure, stateless utility functions for performing geographical calculations.
 -   **`utils/dateUtils.ts`:** Contains a set of pure functions for handling date calculations (e.g., getting the start/end of a week or month), which are crucial for the `TimelineView`.
@@ -62,12 +64,14 @@ The application follows a predictable, unidirectional data flow.
     5.  `App.tsx` updates the `filteredEventIds` state and switches the `viewMode` to 'stream'.
     6.  React re-renders the `Dashboard` with the filtered results.
 
--   **Write/Creation Flow:**
-    1.  User fills out and submits the `AddEventForm`.
-    2.  `AddEventForm` calls the `onSave` prop function, passing the new event data and location info.
-    3.  `App.tsx` receives the data. If a new location is needed, it creates a `Location` object and adds it to the `locations` state array.
-    4.  `App.tsx` creates the final event object with the correct `whereId` and adds it to the `events` state array.
-    5.  React re-renders the `Dashboard`, which now includes the new event in the appropriate view.
+-   **Write/Creation Flow (with Location Discovery):**
+    1.  User fills out the `AddEventForm`. In the "Where" field, they type a new location name and blur the input.
+    2.  `AddEventForm` sees no existing match and calls the `onOpenLocationFinder` prop passed from `App.tsx`.
+    3.  `App.tsx` opens the `AddLocationModal`.
+    4.  Inside `AddLocationModal`, `discoverPlaces` is called. The user selects a result, which is then enriched using `geocodeLocation`.
+    5.  The user confirms and saves the new location. `AddLocationModal` calls its `onSave` prop.
+    6.  `App.tsx` receives the new `Location` object, adds it to the global `locations` state, and updates the `addEventInitialData` state to push the new location name back to the `AddEventForm`.
+    7.  The user can now submit the `AddEventForm`, which saves the new event linked to the newly created location.
 
 ## 6. Progressive Web App (PWA) Features
 

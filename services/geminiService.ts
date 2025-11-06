@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { EventNode, Project, Location } from '../types';
+import { EventNode, Project, Location, DiscoveredPlace } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -76,8 +76,6 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
   }
 }
 
-// FIX: Refactored geocodeLocation to use responseSchema for reliable JSON output instead of parsing a text response.
-// This is more robust and aligns with Gemini API best practices for structured data.
 export async function geocodeLocation(query: string): Promise<{ name: string; latitude: number; longitude: number; } | null> {
   const aiInstance = getAI();
   const prompt = `
@@ -125,4 +123,43 @@ export async function geocodeLocation(query: string): Promise<{ name: string; la
     console.error("Error during geocoding with Gemini:", error);
     return null;
   }
+}
+
+/**
+ * Uses the Gemini API with Google Maps grounding to discover real-world places.
+ * This function is for finding potential locations, which can then be enriched with geocodeLocation.
+ * @param query The user's search query for a place (e.g., "library downtown").
+ * @returns A promise that resolves to an array of discovered places.
+ */
+export async function discoverPlaces(query: string): Promise<DiscoveredPlace[]> {
+    const aiInstance = getAI();
+    const prompt = `List business or public places that match the query: "${query}".`;
+
+    try {
+        const response = await aiInstance.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleMaps: {} }],
+            },
+        });
+
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+        
+        if (groundingChunks && Array.isArray(groundingChunks)) {
+            const places: DiscoveredPlace[] = groundingChunks
+                .filter(chunk => chunk.maps)
+                .map(chunk => ({
+                    title: chunk.maps.title,
+                    uri: chunk.maps.uri,
+                }));
+            return places;
+        }
+
+        return [];
+
+    } catch (error) {
+        console.error("Error calling Gemini API with Maps Grounding:", error);
+        throw new Error("Failed to discover places with AI.");
+    }
 }

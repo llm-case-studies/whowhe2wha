@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
+import { AddLocationModal } from './components/AddLocationModal';
 import { MapModal } from './components/MapModal';
 import { TimeMapModal } from './components/TimeMapModal';
 import { TierConfigModal } from './components/TierConfigModal';
@@ -46,6 +47,9 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [isAddEventFormOpen, setIsAddEventFormOpen] = useState(false);
+  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [locationQuery, setLocationQuery] = useState('');
+
   const [mapModalLocation, setMapModalLocation] = useState<Location | null>(null);
   const [timeMapModalWhen, setTimeMapModalWhen] = useState<When | null>(null);
   const [addEventInitialData, setAddEventInitialData] = useState<{ who?: string; where?: string } | null>(null);
@@ -122,6 +126,7 @@ const App: React.FC = () => {
     }
 
     let targetLocationId = whereInfo.id;
+    // This part is now mostly handled by the AddLocationModal
     if (!targetLocationId) {
         const newLocation: Location = {
             id: `where-${Date.now()}`,
@@ -163,6 +168,18 @@ const App: React.FC = () => {
     setTierConfig(newConfig);
     setIsTierConfigModalOpen(false);
   }
+
+  const handleOpenLocationFinder = (query: string) => {
+      setLocationQuery(query);
+      setIsAddLocationModalOpen(true);
+  };
+
+  const handleSaveNewLocation = (newLocation: Location) => {
+      setLocations(prev => [...prev, newLocation]);
+      setIsAddLocationModalOpen(false);
+      // This is the key part: update the initial data for the still-open form
+      setAddEventInitialData(prev => ({ ...prev, where: newLocation.alias || newLocation.name }));
+  };
 
   const displayedEvents = filteredEventIds !== null
     ? events.filter(event => filteredEventIds.includes(event.id))
@@ -219,7 +236,16 @@ const App: React.FC = () => {
           }}
           voiceStatus={voiceStatus}
           initialData={addEventInitialData}
+          onOpenLocationFinder={handleOpenLocationFinder}
         />
+      )}
+
+      {isAddLocationModalOpen && (
+          <AddLocationModal
+            initialQuery={locationQuery}
+            onSave={handleSaveNewLocation}
+            onClose={() => setIsAddLocationModalOpen(false)}
+          />
       )}
 
       {isTierConfigModalOpen && (

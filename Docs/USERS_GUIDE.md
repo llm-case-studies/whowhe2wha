@@ -28,7 +28,11 @@ This is the primary way to input data into your context graph.
 ### Special Features of the Form
 
 -   **Voice Dictation:** For some fields, you can click the **microphone icon** to dictate your entry using your voice.
--   **Automatic Geocoding:** When you type a location in the "Where" field and click away, the app will automatically look up its precise address and coordinates. A **green pin icon** will appear to confirm success. This powers the map features.
+-   **AI-Powered Location Discovery:** When you type a new place in the "Where" field (one that isn't already in your locations list), a **search icon** will appear. Clicking it (or leaving the field) opens the **Location Finder**.
+    1.  The app uses AI to search for real-world places matching your query.
+    2.  Select the correct place from the list of results.
+    3.  Confirm the details. You can add a friendly alias (e.g., "Main St. Starbucks") for the official address.
+    4.  Click "Save Location." The verified location is now added to your system and pre-filled in the form. This ensures your map data is accurate.
 
 ## 3. Summoning Context: The Search Bar
 

@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { EventNode, EntityType, Participant, When, Project, Location, WhatType } from '../types';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
-import { MicrophoneIcon, MicrophoneSlashIcon, SpinnerIcon, PinIcon } from './icons';
-import { geocodeLocation } from '../services/geminiService';
+import { MicrophoneIcon, MicrophoneSlashIcon, SpinnerIcon, PinIcon, SearchIcon } from './icons';
 
 type VoiceStatus = 'checking' | 'supported' | 'unsupported';
-type GeocodingStatus = 'idle' | 'loading' | 'success' | 'error';
-type GeocodedData = { name: string; latitude: number; longitude: number; };
 
 interface AddEventFormProps {
   projects: Project[];
@@ -14,19 +11,20 @@ interface AddEventFormProps {
   onSave: (
     event: Omit<EventNode, 'id' | 'projectId' | 'whereId'>, 
     projectInfo: {id: number | null, name: string, category: string},
-    whereInfo: { id: string | null, name: string, geocodedData: GeocodedData | null }
+    whereInfo: { id: string | null, name: string }
   ) => void;
   onClose: () => void;
   voiceStatus: VoiceStatus;
   initialData?: { who?: string, where?: string } | null;
+  onOpenLocationFinder: (query: string) => void;
 }
 
 const whatTypeOptions = Object.values(WhatType).map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
 
-const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, geocodingStatus = 'idle', ...props }) => {
-    const showGeoIcon = id === 'where' && (geocodingStatus === 'loading' || geocodingStatus === 'success');
-    const showMicButton = hasMicSupport && !showGeoIcon;
-    const showMicDisabled = hasMicSupport === false && !showGeoIcon;
+const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, onSearchClick = null, ...props }) => {
+    const showSearchButton = id === 'where' && onSearchClick;
+    const showMicButton = hasMicSupport && !showSearchButton;
+    const showMicDisabled = hasMicSupport === false && !showSearchButton;
 
     return (
         <div>
@@ -38,8 +36,17 @@ const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasM
                     {...props}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                    {showGeoIcon && geocodingStatus === 'loading' && <SpinnerIcon className="h-5 w-5 animate-spin text-secondary" />}
-                    {showGeoIcon && geocodingStatus === 'success' && <div title={`Geocoded: ${props.value}`}><PinIcon className="h-5 w-5 text-green-500" /></div>}
+                    {showSearchButton && (
+                        <button
+                            type="button"
+                            onClick={onSearchClick}
+                            className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
+                            aria-label="Find Location"
+                            title="Find Location"
+                        >
+                            <SearchIcon className="h-5 w-5" />
+                        </button>
+                    )}
                     
                     {showMicButton && (
                          <button
@@ -89,7 +96,7 @@ const FormSelect = ({ label, id, ...props }) => (
 );
 
 
-export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData }) => {
+export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData, onOpenLocationFinder }) => {
     const [whatName, setWhatName] = useState('');
     const [whatDesc, setWhatDesc] = useState('');
     const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
@@ -102,9 +109,6 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
     const [listeningField, setListeningField] = useState<string | null>(null);
     const [recognitionError, setRecognitionError] = useState<string | null>(null);
     
-    const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>('idle');
-    const [geocodedData, setGeocodedData] = useState<GeocodedData | null>(null);
-
     const {
         transcript,
         isListening,
@@ -115,6 +119,15 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
     } = useSpeechRecognition();
     
     const showMics = voiceStatus === 'supported';
+
+    useEffect(() => {
+        // If the App component passes a new `where` value (e.g., from the location finder modal),
+        // update this form's state to reflect it.
+        if (initialData?.where && initialData.where !== where) {
+            setWhere(initialData.where);
+        }
+    }, [initialData?.where]);
+
 
     useEffect(() => {
         if (error) {
@@ -157,24 +170,15 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
         }
     };
     
-    const handleWhereBlur = async () => {
-        const existingLocation = locations.find(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
-        if (!where.trim() || existingLocation || where === geocodedData?.name) {
-            return;
-        }
-        setGeocodingStatus('loading');
-        setGeocodedData(null);
-        try {
-            const result = await geocodeLocation(where);
-            if (result) {
-                setGeocodedData(result);
-                setWhere(result.name);
-                setGeocodingStatus('success');
-            } else {
-                setGeocodingStatus('error');
-            }
-        } catch(e) {
-            setGeocodingStatus('error');
+    const handleWhereBlur = () => {
+        if (!where.trim()) return;
+        const existingLocation = locations.find(l => 
+            l.name.toLowerCase() === where.trim().toLowerCase() || 
+            l.alias?.toLowerCase() === where.trim().toLowerCase()
+        );
+
+        if (!existingLocation) {
+            onOpenLocationFinder(where.trim());
         }
     };
 
@@ -200,7 +204,16 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
         if (!isFormValid) return;
         
         const existingProject = projects.find(p => p.name.toLowerCase() === projectName.trim().toLowerCase());
-        const existingLocation = locations.find(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
+        const existingLocation = locations.find(l => 
+            l.name.toLowerCase() === where.trim().toLowerCase() || 
+            l.alias?.toLowerCase() === where.trim().toLowerCase()
+        );
+
+        if (!existingLocation) {
+            // This should ideally not happen if the flow is followed, but as a fallback:
+            onOpenLocationFinder(where.trim());
+            return;
+        }
 
         const whoArray: Participant[] = who.split(',').map(name => name.trim()).filter(name => name).map((name, index) => ({
             id: `new-who-${Date.now()}-${index}`,
@@ -228,13 +241,14 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
         };
 
         const whereInfo = {
-            id: existingLocation ? existingLocation.id : null,
+            id: existingLocation.id,
             name: where.trim(),
-            geocodedData: geocodedData,
         };
 
         onSave(newEventData, projectInfo, whereInfo);
     };
+
+    const isWhereUnmatched = where.trim() && !locations.some(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
 
     return (
         <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
@@ -326,27 +340,26 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
                             onChange={(e) => setWho(e.target.value)}
                             placeholder="e.g., Dr. Smith"
                         />
-                        <FormInput
-                            label="Where (Select or Create New)"
-                            id="where"
-                            type="text"
-                            list="locations-list"
-                            value={where}
-                            onChange={(e) => {
-                                setWhere(e.target.value);
-                                if (geocodingStatus !== 'loading') {
-                                    setGeocodingStatus('idle');
-                                    setGeocodedData(null);
-                                }
-                            }}
-                            onBlur={handleWhereBlur}
-                            placeholder="e.g., Springfield Clinic"
-                            onMicClick={() => handleMicClick('where')}
-                            isListening={isListening && listeningField === 'where'}
-                            hasMicSupport={showMics}
-                            geocodingStatus={geocodingStatus}
-                            required
-                        />
+                        <div>
+                            <FormInput
+                                label="Where (Select or Find New)"
+                                id="where"
+                                type="text"
+                                list="locations-list"
+                                value={where}
+                                onChange={(e) => setWhere(e.target.value)}
+                                onBlur={handleWhereBlur}
+                                placeholder="e.g., Springfield Clinic"
+                                onMicClick={() => handleMicClick('where')}
+                                isListening={isListening && listeningField === 'where'}
+                                hasMicSupport={showMics}
+                                onSearchClick={isWhereUnmatched ? () => onOpenLocationFinder(where) : null}
+                                required
+                            />
+                            {isWhereUnmatched && (
+                                <p className="text-xs text-amber-400 mt-1">This is a new location. Find it to add details.</p>
+                            )}
+                        </div>
                         <datalist id="locations-list">
                             {locations.map(l => <option key={l.id} value={l.alias && l.alias !== l.name ? l.alias : l.name} />)}
                         </datalist>
@@ -357,7 +370,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations,
                         </button>
                         <button
                             type="submit"
-                            disabled={!isFormValid}
+                            disabled={!isFormValid || isWhereUnmatched}
                             className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary disabled:cursor-not-allowed"
                         >
                             Save Event
