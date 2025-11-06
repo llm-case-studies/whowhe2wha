@@ -1,4 +1,3 @@
-
 const CACHE_NAME = 'whowhe2wha-v1';
 const URLS_TO_CACHE = [
   '/',
