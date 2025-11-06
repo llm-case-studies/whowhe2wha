@@ -5,6 +5,7 @@ import { PersonIcon, PinIcon, CalendarIcon, MilestoneIcon, DeadlineIcon, Checkpo
 
 interface EventCardProps {
   event: EventNode;
+  locations: Location[];
   onLocationClick: (location: Location) => void;
   onWhenClick: (when: When) => void;
 }
@@ -24,8 +25,18 @@ const WhatTypeIcon: React.FC<{ type: WhatType, className?: string }> = ({ type, 
     }
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onLocationClick, onWhenClick }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocationClick, onWhenClick }) => {
   const isPeriod = event.what.whatType === WhatType.Period && event.endWhen;
+  const location = locations.find(l => l.id === event.whereId);
+
+  if (!location) {
+    // Handle case where location might not be found
+    return (
+        <div className="bg-secondary/70 border border-red-700 rounded-lg p-5">
+            <p className="text-red-300">Error: Location data missing for this event.</p>
+        </div>
+    );
+  }
 
   return (
     <div className="bg-secondary/70 border border-primary rounded-lg p-5 transition-all duration-300 hover:border-wha-blue hover:shadow-lg hover:shadow-wha-blue/10">
@@ -49,9 +60,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onLocationClick, on
                 <div className="w-6 text-secondary pt-1"><PinIcon/></div>
                 <div className="flex flex-wrap gap-2">
                     <EntityTag 
-                      label={event.where.name} 
+                      label={location.alias || location.name} 
                       type={EntityType.Where} 
-                      onClick={event.where.latitude && event.where.longitude ? () => onLocationClick(event.where) : undefined}
+                      onClick={location.latitude && location.longitude ? () => onLocationClick(location) : undefined}
                     />
                 </div>
             </div>

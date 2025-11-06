@@ -5,6 +5,7 @@ import { CalendarIcon, NavigateIcon } from './icons';
 interface TimeMapModalProps {
   when: When;
   allEvents: EventNode[];
+  allLocations: Location[];
   onClose: () => void;
 }
 
@@ -14,7 +15,7 @@ const formatDate = (date: Date) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onClose }) => {
+export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, allLocations, onClose }) => {
   const centerDate = new Date(when.timestamp);
   
   const startDate = new Date(centerDate);
@@ -32,8 +33,8 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onC
   
   const getMapUrl = (): string => {
     const locationsWithCoords = eventsInWindow
-      .map(e => e.where)
-      .filter((w): w is Location & { latitude: number, longitude: number } => !!w.latitude && !!w.longitude);
+      .map(e => allLocations.find(l => l.id === e.whereId))
+      .filter((w): w is Location & { latitude: number, longitude: number } => !!w && w.latitude !== undefined && w.longitude !== undefined);
       
     if (locationsWithCoords.length === 0) {
       // Generic map of the US, no key needed
@@ -98,26 +99,30 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, onC
           </h3>
            {eventsInWindow.length > 0 ? (
                 <div className="divide-y divide-primary">
-                  {eventsInWindow.map(event => (
-                    <div key={event.id} className="flex items-center justify-between py-3">
-                      <div>
-                        <p className="font-semibold text-primary">{event.what.name}</p>
-                        <p className="text-sm text-secondary">{event.when.display}</p>
-                        <p className="text-sm text-primary font-medium">@ {event.where.name}</p>
-                      </div>
-                      {event.where.latitude && event.where.longitude && (
-                         <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${event.where.latitude},${event.where.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-tertiary hover:bg-green-600 hover:text-white transition-colors duration-200"
-                            title={`Navigate to ${event.where.name}`}
-                         >
-                             <NavigateIcon className="h-5 w-5" />
-                         </a>
-                      )}
-                    </div>
-                  ))}
+                  {eventsInWindow.map(event => {
+                    const location = allLocations.find(l => l.id === event.whereId);
+                    if (!location) return null;
+                    return (
+                        <div key={event.id} className="flex items-center justify-between py-3">
+                          <div>
+                            <p className="font-semibold text-primary">{event.what.name}</p>
+                            <p className="text-sm text-secondary">{event.when.display}</p>
+                            <p className="text-sm text-primary font-medium">@ {location.alias || location.name}</p>
+                          </div>
+                          {location.latitude && location.longitude && (
+                             <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-full bg-tertiary hover:bg-green-600 hover:text-white transition-colors duration-200"
+                                title={`Navigate to ${location.name}`}
+                             >
+                                 <NavigateIcon className="h-5 w-5" />
+                             </a>
+                          )}
+                        </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-tertiary">No events scheduled in this time window.</p>

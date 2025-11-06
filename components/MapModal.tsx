@@ -8,32 +8,35 @@ import { MOCK_CONTACTS } from '../constants';
 interface MapModalProps {
   location: Location;
   allEvents: EventNode[];
+  allLocations: Location[];
   onClose: () => void;
-  onSchedule: (contact: Contact, location: Location) => void;
+  onSchedule: (contact: Contact) => void;
 }
 
 const NEARBY_RADIUS_MILES = 5;
 
 type ActiveTab = 'events' | 'contacts';
 
-export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose, onSchedule }) => {
+export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLocations, onClose, onSchedule }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('events');
 
   const nearbyEvents = allEvents.filter(event => {
-    if (event.where.id === location.id) return false;
-    if (location.latitude && location.longitude && event.where.latitude && event.where.longitude) {
-      const distance = getDistanceInMiles(location.latitude, location.longitude, event.where.latitude, event.where.longitude);
+    if (event.whereId === location.id) return false;
+    const eventLocation = allLocations.find(l => l.id === event.whereId);
+    if (!eventLocation) return false;
+
+    if (location.latitude && location.longitude && eventLocation.latitude && eventLocation.longitude) {
+      const distance = getDistanceInMiles(location.latitude, location.longitude, eventLocation.latitude, eventLocation.longitude);
       return distance <= NEARBY_RADIUS_MILES;
     }
     return false;
   });
 
   const locationContacts = MOCK_CONTACTS.filter(
-    contact => contact.locationName.toLowerCase() === location.name.toLowerCase()
+    contact => contact.locationId === location.id
   );
 
   const handleLocationClick = () => {};
-  // FIX: Add a dummy handler for onWhenClick to satisfy EventCard's required prop.
   const handleWhenClick = () => {};
 
   const mapSrc = `https://maps.google.com/maps?q=${location.latitude},${location.longitude}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
@@ -103,7 +106,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
               {nearbyEvents.length > 0 ? (
                 <div className="space-y-4">
                   {nearbyEvents.map(event => (
-                    <EventCard key={event.id} event={event} onLocationClick={handleLocationClick} onWhenClick={handleWhenClick} />
+                    <EventCard key={event.id} event={event} locations={allLocations} onLocationClick={handleLocationClick} onWhenClick={handleWhenClick} />
                   ))}
                 </div>
               ) : (
@@ -125,7 +128,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, onClose
                         <p className="text-sm text-secondary">{contact.role}</p>
                       </div>
                       <button 
-                        onClick={() => onSchedule(contact, location)}
+                        onClick={() => onSchedule(contact)}
                         className="px-4 py-1.5 text-sm font-semibold bg-to-orange text-white rounded-md hover:bg-orange-500 transition-colors duration-200"
                       >
                         Schedule

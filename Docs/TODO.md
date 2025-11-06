@@ -17,16 +17,17 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **Dynamic Timeline Layout:** Implemented a configurable, multi-tier (swimlane) timeline layout.
 -   [x] **PWA Functionality:** Made the app installable on mobile and desktop devices with offline support via a service worker and web manifest.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
+-   [x] **Location Intelligence (Phase 1):** Reworked data model to treat Locations as first-class entities. Updated event creation and all related components to use the new location-centric architecture.
 
 ## Planned Features & Enhancements 🚀
 
 ### Tier 1: Core Functionality
 
 -   [ ] **Location Intelligence & Management (New Epic):**
-    -   [ ] **Phase 1: First-Class Locations:**
-        -   [ ] Rework data model to have a dedicated `locations` state with rich fields (alias, phone, website, portalUrl, notes).
-        -   [ ] Update `EventNode` to use `locationId` instead of embedding location data.
-        -   [ ] Convert "Where" input in `AddEventForm` to a searchable dropdown for existing locations, with a "+ New Location" button.
+    -   [x] **Phase 1: First-Class Locations:**
+        -   [x] Rework data model to have a dedicated `locations` state with rich fields.
+        -   [x] Update `EventNode` to use `locationId` instead of embedding location data.
+        -   [x] Convert "Where" input in `AddEventForm` to a searchable dropdown for existing locations, with a "+ New Location" button.
     -   [ ] **Phase 2: AI-Powered Location Discovery:**
         -   [ ] Create a "New Location" modal flow.
         -   [ ] Implement a `geminiService` function using **Google Maps Grounding** to search for real-world places from a fuzzy query.

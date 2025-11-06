@@ -7,6 +7,7 @@ import { TimelineView } from './TimelineView';
 interface DashboardProps {
   projects: Project[];
   events: EventNode[];
+  locations: Location[];
   isLoading: boolean;
   error: string | null;
   isSearched: boolean;
@@ -22,7 +23,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  projects, events, isLoading, error, isSearched, onLocationClick, onWhenClick,
+  projects, events, locations, isLoading, error, isSearched, onLocationClick, onWhenClick,
   viewMode, timelineDate, timelineScale, setTimelineDate, selectedHolidayCategories,
   selectedProjectCategories, tierConfig
 }) => {
@@ -64,19 +65,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         );
       }
-      return events.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
+      return events.map(event => <EventCard key={event.id} event={event} locations={locations} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
     }
 
     if (projects.length === 0 && events.length > 0) {
       // Handle case where search results might only contain events without their projects
-       return events.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
+       return events.map(event => <EventCard key={event.id} event={event} locations={locations} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />);
     }
 
     return projects
       .sort((a,b) => a.id - b.id)
       .map(project => {
         const projectEvents = events.filter(e => e.projectId === project.id);
-        return <ProjectCard key={project.id} project={project} events={projectEvents} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />;
+        return <ProjectCard key={project.id} project={project} events={projectEvents} locations={locations} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />;
       });
   };
 

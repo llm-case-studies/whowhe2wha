@@ -5,6 +5,7 @@ import { EventCard } from './EventCard';
 interface ProjectCardProps {
   project: Project;
   events: EventNode[];
+  locations: Location[];
   onLocationClick: (location: Location) => void;
   onWhenClick: (when: When) => void;
 }
@@ -22,7 +23,7 @@ const ChevronDownIcon = ({ className = '' }: { className?: string }) => (
 );
 
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project, events, onLocationClick, onWhenClick }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, events, locations, onLocationClick, onWhenClick }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
     const sortedEvents = [...events].sort((a,b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime());
@@ -50,7 +51,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, events, onLoc
             {isExpanded && (
                 <div id={`project-events-${project.id}`} className="p-4 space-y-4">
                     {sortedEvents.length > 0 ? (
-                        sortedEvents.map(event => <EventCard key={event.id} event={event} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />)
+                        sortedEvents.map(event => <EventCard key={event.id} event={event} locations={locations} onLocationClick={onLocationClick} onWhenClick={onWhenClick} />)
                     ) : (
                         <div className="text-center text-tertiary py-4">No events in this project yet.</div>
                     )}

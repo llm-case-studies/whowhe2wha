@@ -11,7 +11,7 @@ This document provides a high-level overview of the `whowhe2wha` application's s
 The UI is broken down into a tree of reusable React components located in the `src/components` directory.
 
 -   **`App.tsx` (Root Component):** This is the central hub of the application. It is responsible for:
-    -   Managing the primary application state (lists of all projects and events, theme, view mode, timeline settings, tier configuration).
+    -   Managing the primary application state (lists of all projects, events, and locations; theme, view mode, timeline settings, tier configuration).
     -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`).
     -   Orchestrating the data flow between its child components. It passes down state and callback functions as props.
 
@@ -35,10 +35,10 @@ The UI is broken down into a tree of reusable React components located in the `s
 
 State management is handled using React's built-in hooks, following a "lifted state" pattern.
 
--   **Global State:** The master lists of `events` and `projects`, as well as UI state like `theme`, `viewMode`, `timelineScale`, `timelineDate`, `selectedHolidayCategories`, and `tierConfig` are held in the top-level `App.tsx` component. This serves as the single source of truth.
+-   **Global State:** The master lists of `projects`, `events`, and `locations`, as well as UI state like `theme`, `viewMode`, `timelineScale`, `timelineDate`, `selectedHolidayCategories`, and `tierConfig` are held in the top-level `App.tsx` component. This serves as the single source of truth.
 -   **Local State:** Individual components manage their own UI-specific state. For example, `AddEventForm` manages the state of its input fields.
 -   **Props Drilling:** State and update functions are passed down through the component tree via props. For an application of this scale, this is a straightforward and effective approach.
--   **Data Persistence:** The application's core data (`projects` and `events`) is persisted to the browser's `localStorage`. This is handled within the root `App.tsx` component. State is loaded from `localStorage` on initial application mount, and `useEffect` hooks automatically save any changes to the state back to `localStorage`, ensuring data continuity across sessions.
+-   **Data Persistence:** The application's core data (`projects`, `events`, and `locations`) is persisted to the browser's `localStorage`. This is handled within the root `App.tsx` component. State is loaded from `localStorage` on initial application mount, and `useEffect` hooks automatically save any changes to the state back to `localStorage`, ensuring data continuity across sessions.
 
 ## 4. Services & Utilities Layer
 
@@ -57,16 +57,17 @@ The application follows a predictable, unidirectional data flow.
 -   **Read/Query Flow:**
     1.  User types a query in `SearchBar`.
     2.  `SearchBar` calls the `onSearch` prop function passed down from `App.tsx`.
-    3.  `App.tsx` sets a loading state and calls `queryGraph` from `geminiService`.
+    3.  `App.tsx` sets a loading state and calls `queryGraph` from `geminiService` with the full data context (`projects`, `events`, `locations`).
     4.  The response (a list of IDs) is returned to `App.tsx`.
     5.  `App.tsx` updates the `filteredEventIds` state and switches the `viewMode` to 'stream'.
     6.  React re-renders the `Dashboard` with the filtered results.
 
 -   **Write/Creation Flow:**
     1.  User fills out and submits the `AddEventForm`.
-    2.  `AddEventForm` calls the `onSave` prop function, passing the new event data.
-    3.  `App.tsx` receives the data, creates a new event object with a unique ID, and adds it to the `events` state array.
-    4.  React re-renders the `Dashboard`, which now includes the new event in the appropriate view.
+    2.  `AddEventForm` calls the `onSave` prop function, passing the new event data and location info.
+    3.  `App.tsx` receives the data. If a new location is needed, it creates a `Location` object and adds it to the `locations` state array.
+    4.  `App.tsx` creates the final event object with the correct `whereId` and adds it to the `events` state array.
+    5.  React re-renders the `Dashboard`, which now includes the new event in the appropriate view.
 
 ## 6. Progressive Web App (PWA) Features
 

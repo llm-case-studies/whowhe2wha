@@ -6,10 +6,16 @@ import { geocodeLocation } from '../services/geminiService';
 
 type VoiceStatus = 'checking' | 'supported' | 'unsupported';
 type GeocodingStatus = 'idle' | 'loading' | 'success' | 'error';
+type GeocodedData = { name: string; latitude: number; longitude: number; };
 
 interface AddEventFormProps {
   projects: Project[];
-  onSave: (event: Omit<EventNode, 'id' | 'projectId'>, projectInfo: {id: number | null, name: string}) => void;
+  locations: Location[];
+  onSave: (
+    event: Omit<EventNode, 'id' | 'projectId' | 'whereId'>, 
+    projectInfo: {id: number | null, name: string, category: string},
+    whereInfo: { id: string | null, name: string, geocodedData: GeocodedData | null }
+  ) => void;
   onClose: () => void;
   voiceStatus: VoiceStatus;
   initialData?: { who?: string, where?: string } | null;
@@ -83,7 +89,7 @@ const FormSelect = ({ label, id, ...props }) => (
 );
 
 
-export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, onClose, voiceStatus, initialData }) => {
+export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData }) => {
     const [whatName, setWhatName] = useState('');
     const [whatDesc, setWhatDesc] = useState('');
     const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
@@ -97,7 +103,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
     const [recognitionError, setRecognitionError] = useState<string | null>(null);
     
     const [geocodingStatus, setGeocodingStatus] = useState<GeocodingStatus>('idle');
-    const [geocodedData, setGeocodedData] = useState<{name: string, latitude: number, longitude: number} | null>(null);
+    const [geocodedData, setGeocodedData] = useState<GeocodedData | null>(null);
 
     const {
         transcript,
@@ -114,7 +120,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
         if (error) {
             const message = `Speech recognition error: ${error}. Please check your network connection and microphone permissions.`;
             setRecognitionError(message);
-            const timer = setTimeout(() => setRecognitionError(null), 5000); // Clear after 5s
+            const timer = setTimeout(() => setRecognitionError(null), 5000);
             return () => clearTimeout(timer);
         }
     }, [error]);
@@ -135,7 +141,6 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                     setEndWhen(transcript);
                     break;
             }
-             // Stop listening after transcript is processed
             stopListening();
             setListeningField(null);
         }
@@ -153,7 +158,8 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
     };
     
     const handleWhereBlur = async () => {
-        if (!where.trim() || where === geocodedData?.name) {
+        const existingLocation = locations.find(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
+        if (!where.trim() || existingLocation || where === geocodedData?.name) {
             return;
         }
         setGeocodingStatus('loading');
@@ -194,6 +200,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
         if (!isFormValid) return;
         
         const existingProject = projects.find(p => p.name.toLowerCase() === projectName.trim().toLowerCase());
+        const existingLocation = locations.find(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
 
         const whoArray: Participant[] = who.split(',').map(name => name.trim()).filter(name => name).map((name, index) => ({
             id: `new-who-${Date.now()}-${index}`,
@@ -201,7 +208,7 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
             type: EntityType.Who,
         }));
         
-        const newEventData: Omit<EventNode, 'id' | 'projectId'> = {
+        const newEventData: Omit<EventNode, 'id' | 'projectId' | 'whereId'> = {
             what: {
                 id: `new-what-${Date.now()}`,
                 name: whatName,
@@ -212,21 +219,21 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
             when: createWhenObject(when),
             endWhen: (whatType === WhatType.Period && endWhen) ? createWhenObject(endWhen) : undefined,
             who: whoArray,
-            where: {
-                id: `new-where-${Date.now()}`,
-                name: where,
-                type: EntityType.Where,
-                latitude: geocodedData?.latitude,
-                longitude: geocodedData?.longitude,
-            },
         };
         
         const projectInfo = {
             id: existingProject ? existingProject.id : null,
-            name: projectName.trim()
+            name: projectName.trim(),
+            category: existingProject?.category || 'Personal'
         };
 
-        onSave(newEventData, projectInfo);
+        const whereInfo = {
+            id: existingLocation ? existingLocation.id : null,
+            name: where.trim(),
+            geocodedData: geocodedData,
+        };
+
+        onSave(newEventData, projectInfo, whereInfo);
     };
 
     return (
@@ -320,9 +327,10 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                             placeholder="e.g., Dr. Smith"
                         />
                         <FormInput
-                            label="Where"
+                            label="Where (Select or Create New)"
                             id="where"
                             type="text"
+                            list="locations-list"
                             value={where}
                             onChange={(e) => {
                                 setWhere(e.target.value);
@@ -339,6 +347,9 @@ export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, onSave, on
                             geocodingStatus={geocodingStatus}
                             required
                         />
+                        <datalist id="locations-list">
+                            {locations.map(l => <option key={l.id} value={l.alias && l.alias !== l.name ? l.alias : l.name} />)}
+                        </datalist>
                     </div>
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-primary hover:bg-tertiary transition">

@@ -130,14 +130,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Manually construct a full, absolute URL to the service worker.
-          // This is more robust than using new URL() in sandboxed environments
-          // and prevents both TypeErrors and origin mismatch errors.
-          const path = window.location.pathname;
-          const scope = path.substring(0, path.lastIndexOf('/') + 1);
-          const swUrl = `${scope}service-worker.js`;
-
-          navigator.serviceWorker.register(swUrl)
+          navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
               console.log('ServiceWorker registration successful with scope: ', registration.scope);
             })

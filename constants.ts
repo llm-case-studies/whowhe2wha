@@ -1,5 +1,5 @@
 
-import { EventNode, EntityType, Project, Contact, Holiday, WhatType } from './types';
+import { EventNode, EntityType, Project, Contact, Holiday, WhatType, Location } from './types';
 
 export const COLORS: { [key in EntityType]: string } = {
   [EntityType.Who]: 'bg-who-pink',
@@ -68,7 +68,6 @@ export const HOLIDAY_DATA: Record<string, Holiday[]> = {
     { name: 'Labour Day', date: new Date('2025-05-01T12:00:00Z'), type: 'civil', category: 'EU' },
     { name: 'Europe Day', date: new Date('2025-05-09T12:00:00Z'), type: 'civil', category: 'EU' },
     { name: 'Ascension Day', date: new Date('2025-05-29T12:00:00Z'), type: 'civil', category: 'EU' },
-// FIX: Corrected a typo in the date definition for 'Assumption of Mary'.
     { name: 'Assumption of Mary', date: new Date('2025-08-15T12:00:00Z'), type: 'civil', category: 'EU' },
     { name: "All Saints' Day", date: new Date('2025-11-01T12:00:00Z'), type: 'civil', category: 'EU' },
   ],
@@ -158,6 +157,14 @@ export const MOCK_PROJECTS: Project[] = [
   }
 ];
 
+export const MOCK_LOCATIONS: Location[] = [
+    { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    { id: 'where-2', name: 'Zoom Room', type: EntityType.Where },
+    { id: 'where-3', name: 'Home', type: EntityType.Where, latitude: 39.7480, longitude: -89.6050, alias: 'Home Office' },
+    { id: 'where-4', name: 'Downtown Library', type: EntityType.Where, latitude: 39.7984, longitude: -89.6449 },
+    { id: 'where-6', name: 'National Park', type: EntityType.Where },
+];
+
 export const MOCK_EVENTS: EventNode[] = [
   {
     id: 1,
@@ -165,7 +172,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-1', name: 'Initial Consultation & Scan', description: 'Discuss implant procedure and get 3D scan.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-1', name: 'Nov 15, 2025, 3:00 PM', timestamp: '2025-11-15T15:00:00Z', display: 'Nov 15, 2025, 3:00 PM', type: EntityType.When },
     who: [{ id: 'who-1', name: 'Dr. Smith', type: EntityType.Who }],
-    where: { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    whereId: 'where-1',
   },
   {
     id: 5,
@@ -173,7 +180,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-5', name: 'Pick up library books', description: 'Reserved books are ready.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-5', name: 'Nov 15, 2025, 4:30 PM', timestamp: '2025-11-15T16:30:00Z', display: 'Nov 15, 2025, 4:30 PM', type: EntityType.When },
     who: [],
-    where: { id: 'where-4', name: 'Downtown Library', type: EntityType.Where, latitude: 39.7984, longitude: -89.6449 },
+    whereId: 'where-4',
   },
   {
     id: 2,
@@ -184,7 +191,7 @@ export const MOCK_EVENTS: EventNode[] = [
         { id: 'who-2', name: 'Sarah (Founder)', type: EntityType.Who },
         { id: 'who-3', name: 'VC Firm Mentors', type: EntityType.Who }
     ],
-    where: { id: 'where-2', name: 'Zoom Room', type: EntityType.Where },
+    whereId: 'where-2',
   },
   {
     id: 7,
@@ -192,7 +199,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-7', name: 'Pre-Op Appointment', description: 'Final check-up before surgery.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-7', name: 'Nov 26, 2025, 2:00 PM', timestamp: '2025-11-26T14:00:00Z', display: 'Nov 26, 2025, 2:00 PM', type: EntityType.When },
     who: [{ id: 'who-1', name: 'Dr. Smith', type: EntityType.Who }],
-    where: { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    whereId: 'where-1',
   },
   {
     id: 3,
@@ -200,7 +207,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-3', name: 'Implant Surgery', description: 'Placement of the titanium implant.', type: EntityType.What, whatType: WhatType.Milestone },
     when: { id: 'when-3', name: 'Nov 29, 2025, 11:30 AM', timestamp: '2025-11-29T11:30:00Z', display: 'Nov 29, 2025, 11:30 AM', type: EntityType.When },
     who: [{ id: 'who-1', name: 'Dr. Smith', type: EntityType.Who }],
-    where: { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    whereId: 'where-1',
   },
   {
     id: 8,
@@ -208,7 +215,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-8', name: 'Project Kickoff', description: 'Initial meeting with the contractor.', type: EntityType.What, whatType: WhatType.Milestone },
     when: { id: 'when-8', name: 'Dec 2, 2025, 9:00 AM', timestamp: '2025-12-02T09:00:00Z', display: 'Dec 2, 2025, 9:00 AM', type: EntityType.When },
     who: [{ id: 'who-6', name: 'J.A. Contractors', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home Office', type: EntityType.Where, latitude: 39.7480, longitude: -89.6050 },
+    whereId: 'where-3',
   },
   {
     id: 4,
@@ -216,7 +223,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-4', name: 'Gather Tax Documents', description: 'Collect all W2s, 1099s, and receipts.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-4', name: 'Dec 5, 2025, 9:00 AM', timestamp: '2025-12-05T09:00:00Z', display: 'Dec 5, 2025, 9:00 AM', type: EntityType.When },
     who: [{ id: 'who-4', name: 'Accountant', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home Office', type: EntityType.Where, latitude: 39.7480, longitude: -89.6050 },
+    whereId: 'where-3',
   },
    {
     id: 9,
@@ -224,7 +231,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-9', name: 'Finalize Pitch Deck', description: 'Submit final version of the pitch deck for review.', type: EntityType.What, whatType: WhatType.Deadline },
     when: { id: 'when-9', name: 'Dec 10, 2025, 5:00 PM', timestamp: '2025-12-10T17:00:00Z', display: 'Dec 10, 2025, 5:00 PM', type: EntityType.When },
     who: [{ id: 'who-2', name: 'Sarah (Founder)', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home Office', type: EntityType.Where },
+    whereId: 'where-3',
   },
   {
     id: 6,
@@ -232,7 +239,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-6', name: 'Post-Op Check-up', description: 'Follow-up to ensure healing is on track.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-6', name: 'Dec 13, 2025, 10:00 AM', timestamp: '2025-12-13T10:00:00Z', display: 'Dec 13, 2025, 10:00 AM', type: EntityType.When },
     who: [{ id: 'who-1', name: 'Dr. Smith', type: EntityType.Who }],
-    where: { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    whereId: 'where-1',
   },
   {
     id: 10,
@@ -241,7 +248,7 @@ export const MOCK_EVENTS: EventNode[] = [
     when: { id: 'when-10', name: 'Dec 15, 2025', timestamp: '2025-12-15T08:00:00Z', display: 'Dec 15, 2025', type: EntityType.When },
     endWhen: { id: 'endwhen-10', name: 'Dec 19, 2025', timestamp: '2025-12-19T17:00:00Z', display: 'Dec 19, 2025', type: EntityType.When },
     who: [{ id: 'who-6', name: 'J.A. Contractors', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home', type: EntityType.Where },
+    whereId: 'where-3',
   },
   {
     id: 11,
@@ -249,7 +256,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-11', name: 'Weekly Progress Check', description: 'Review weekly progress with contractor.', type: EntityType.What, whatType: WhatType.Checkpoint },
     when: { id: 'when-11', name: 'Dec 22, 2025, 8:00 AM', timestamp: '2025-12-22T08:00:00Z', display: 'Dec 22, 2025, 8:00 AM', type: EntityType.When },
     who: [{ id: 'who-6', name: 'J.A. Contractors', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home', type: EntityType.Where },
+    whereId: 'where-3',
   },
   {
     id: 12,
@@ -257,7 +264,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-12', name: 'EOY Financial Review', description: 'Review end-of-year finances with accountant.', type: EntityType.What, whatType: WhatType.Appointment },
     when: { id: 'when-12', name: 'Jan 15, 2026, 2:00 PM', timestamp: '2026-01-15T14:00:00Z', display: 'Jan 15, 2026, 2:00 PM', type: EntityType.When },
     who: [{ id: 'who-4', name: 'Accountant', type: EntityType.Who }],
-    where: { id: 'where-2', name: 'Zoom Room', type: EntityType.Where },
+    whereId: 'where-2',
   },
   {
     id: 13,
@@ -265,7 +272,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-13', name: 'Crown Placement', description: 'Final step of the implant process.', type: EntityType.What, whatType: WhatType.Milestone },
     when: { id: 'when-13', name: 'Feb 5, 2026, 4:00 PM', timestamp: '2026-02-05T16:00:00Z', display: 'Feb 5, 2026, 4:00 PM', type: EntityType.When },
     who: [{ id: 'who-1', name: 'Dr. Smith', type: EntityType.Who }],
-    where: { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    whereId: 'where-1',
   },
   {
     id: 14,
@@ -273,7 +280,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-14', name: 'Book Flights', description: 'Book flights for summer vacation.', type: EntityType.What, whatType: WhatType.Deadline },
     when: { id: 'when-14', name: 'Feb 28, 2026, 11:59 PM', timestamp: '2026-02-28T23:59:00Z', display: 'Feb 28, 2026, 11:59 PM', type: EntityType.When },
     who: [],
-    where: { id: 'where-3', name: 'Home', type: EntityType.Where },
+    whereId: 'where-3',
   },
   {
     id: 15,
@@ -281,7 +288,7 @@ export const MOCK_EVENTS: EventNode[] = [
     what: { id: 'what-15', name: 'File Taxes', description: 'Deadline to file personal income taxes.', type: EntityType.What, whatType: WhatType.Deadline },
     when: { id: 'when-15', name: 'Apr 15, 2026, 11:59 PM', timestamp: '2026-04-15T23:59:00Z', display: 'Apr 15, 2026, 11:59 PM', type: EntityType.When },
     who: [{ id: 'who-4', name: 'Accountant', type: EntityType.Who }],
-    where: { id: 'where-3', name: 'Home', type: EntityType.Where },
+    whereId: 'where-3',
   },
   {
     id: 16,
@@ -290,13 +297,13 @@ export const MOCK_EVENTS: EventNode[] = [
     when: { id: 'when-16', name: 'Jun 20, 2026', timestamp: '2026-06-20T00:00:00Z', display: 'Jun 20, 2026', type: EntityType.When },
     endWhen: { id: 'endwhen-16', name: 'Jun 28, 2026', timestamp: '2026-06-28T23:59:59Z', display: 'Jun 28, 2026', type: EntityType.When },
     who: [],
-    where: { id: 'where-6', name: 'National Park', type: EntityType.Where },
+    whereId: 'where-6',
   }
 ];
 
 export const MOCK_CONTACTS: Contact[] = [
-    { id: 'contact-1', name: 'Dr. Smith', role: 'Lead Dentist', locationName: 'Springfield Clinic' },
-    { id: 'contact-2', name: 'Clinic Reception', role: 'Administration', locationName: 'Springfield Clinic' },
-    { id: 'contact-3', name: 'Accountant', role: 'Tax Advisor', locationName: 'Home Office' },
-    { id: 'contact-4', name: 'Head Librarian', role: 'Staff', locationName: 'Downtown Library' }
+    { id: 'contact-1', name: 'Dr. Smith', role: 'Lead Dentist', locationId: 'where-1' },
+    { id: 'contact-2', name: 'Clinic Reception', role: 'Administration', locationId: 'where-1' },
+    { id: 'contact-3', name: 'Accountant', role: 'Tax Advisor', locationId: 'where-3' },
+    { id: 'contact-4', name: 'Head Librarian', role: 'Staff', locationId: 'where-4' }
 ];

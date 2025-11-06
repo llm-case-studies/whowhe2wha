@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { EventNode, Project } from '../types';
+import { EventNode, Project, Location } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -14,24 +14,25 @@ const getAI = () => {
 };
 
 
-export async function queryGraph(userQuery: string, data: { projects: Project[], events: EventNode[] }): Promise<number[]> {
+export async function queryGraph(userQuery: string, data: { projects: Project[], events: EventNode[], locations: Location[] }): Promise<number[]> {
   const aiInstance = getAI();
 
   const prompt = `
     You are a powerful query engine for a personal context graph app called 'whowhe2wha'.
     Your task is to analyze the user's natural language query and return the IDs of all matching events from the provided JSON data.
 
-    The data model consists of 'projects' and 'events'. Events are steps or appointments that belong to a project, linked by 'projectId'.
-    - A 'project' is a high-level goal or activity (e.g., "Dental Implant Treatment").
-    - An 'event' is a specific action within that project (e.g., "Initial Consultation").
+    The data model consists of 'projects', 'events', and 'locations'. 
+    - A 'project' is a high-level goal (e.g., "Dental Implant Treatment").
+    - An 'event' is a specific action within a project (e.g., "Initial Consultation").
+    - Events are linked to projects by 'projectId' and to locations by 'whereId'.
 
     Analyze the user's query for keywords, names, places, activities, dates, or project names.
-    Match these against the events and their parent projects in the JSON data.
+    Match these against the events, their parent projects, and their locations in the JSON data.
     Return a valid JSON array of numbers, where each number is the 'id' of a matching event.
 
     - If the query refers to a project (e.g., "dental work", "taxation"), find ALL events that belong to the relevant project(s).
     - If the query mentions a person (e.g., "Dr. Smith"), find all events they are involved in.
-    - If the query mentions a place (e.g., "downtown" or "clinic"), find all events at that location.
+    - If the query mentions a place (e.g., "downtown" or "clinic"), find all events at that location. To do this, look up the location name in the 'locations' array to find its 'id', and then find all events with that matching 'whereId'.
     - If the query combines concepts (e.g., "errands downtown"), find events that match both.
 
     If no events match the query, return an empty array [].

@@ -31,8 +31,13 @@ export interface What extends Entity {
 
 export interface Location extends Entity {
   type: EntityType.Where;
+  alias?: string; // User-defined friendly name
   latitude?: number;
   longitude?: number;
+  phone?: string;
+  website?: string;
+  portalUrl?: string;
+  notes?: string;
 }
 
 export interface When extends Entity {
@@ -48,7 +53,7 @@ export interface EventNode {
   when: When;
   endWhen?: When;
   who: Participant[];
-  where: Location;
+  whereId: string;
 }
 
 export interface Project {
@@ -64,7 +69,7 @@ export interface Contact {
     id: string;
     name: string;
     role: string;
-    locationName: string;
+    locationId: string;
 }
 
 export interface Holiday {
