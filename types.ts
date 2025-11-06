@@ -1,4 +1,3 @@
-
 export enum EntityType {
     Who = 'who',
     Where = 'where',
@@ -97,7 +96,7 @@ export interface DiscoveredPlace {
 }
 
 export interface Tier {
-    id: string;
+    id:string;
     name: string;
     categories: string[];
 }
@@ -109,4 +108,23 @@ export interface ConfirmationState {
   message: React.ReactNode;
   onConfirm: () => void;
   confirmText?: string;
+}
+
+// --- History / Undo Types ---
+export type HistoryActionType = 'CREATE' | 'UPDATE' | 'DELETE';
+export type HistoryEntityType = 'Event' | 'Project' | 'Contact' | 'Location';
+
+export interface HistoryEntry {
+    id: number;
+    timestamp: number;
+    action: HistoryActionType;
+    entity: HistoryEntityType;
+    description: string;
+    // Data needed to reverse the action
+    undoData: {
+        id?: number | string; // For CREATE undo
+        previousState?: Project | EventNode | Contact | Location; // For UPDATE undo
+        deletedState?: Project | EventNode | Contact | Location; // For DELETE undo
+        deletedEvents?: EventNode[]; // For Project DELETE undo
+    };
 }
