@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Location, DiscoveredPlace, EntityType } from '../types';
-import { discoverPlaces, geocodeLocation } from '../services/geminiService';
+import { discoverPlaces, geocodeLocation, extractPlaceFromUrl } from '../services/geminiService';
 import { SpinnerIcon, PinIcon } from './icons';
 
 interface AddLocationModalProps {
@@ -12,12 +12,15 @@ interface AddLocationModalProps {
 type GeocodedData = { name: string; latitude: number; longitude: number; };
 type View = 'search' | 'confirm' | 'manual';
 
+const URL_REGEX = /(https?:\/\/(?:maps\.app\.goo\.gl\/[a-zA-Z0-9]+|www\.google\.com\/maps\/[^\s]+))/;
+
 export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery, onSave, onClose }) => {
     const [query, setQuery] = useState(initialQuery);
     const [view, setView] = useState<View>('search');
 
     // Search state
     const [isLoading, setIsLoading] = useState(false);
+    const [isProcessingUrl, setIsProcessingUrl] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [results, setResults] = useState<DiscoveredPlace[]>([]);
     
@@ -29,15 +32,20 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const [notes, setNotes] = useState('');
     const [finalName, setFinalName] = useState('');
 
-
     useEffect(() => {
-        handleSearch();
+        // Run initial action on mount
+        const match = query.match(URL_REGEX);
+        if (match) {
+            handleUrlProcessing(match[0]);
+        } else if(query) {
+            handleSearch();
+        }
     }, []);
     
     useEffect(() => {
         if (selectedPlace) {
             handleGeocode(selectedPlace.title);
-            setAlias(initialQuery);
+            setAlias(selectedPlace.title);
             setView('confirm');
         }
     }, [selectedPlace]);
@@ -48,9 +56,36 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         }
     }, [geocodedData]);
 
+    const handleUrlProcessing = async (url: string) => {
+        setIsProcessingUrl(true);
+        setError(null);
+        setResults([]);
+        try {
+            const placeName = await extractPlaceFromUrl(url);
+            if (placeName) {
+                setSelectedPlace({ title: placeName, uri: url });
+            } else {
+                setError('Could not extract location data from that URL. Please try searching by name.');
+            }
+        } catch (err) {
+            setError('An error occurred while processing the URL. Please try again.');
+        } finally {
+            setIsProcessingUrl(false);
+        }
+    };
+
+    const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newQuery = e.target.value;
+        setQuery(newQuery);
+        const match = newQuery.match(URL_REGEX);
+        if (match) {
+            handleUrlProcessing(match[0]);
+        }
+    };
+
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!query) return;
+        if (!query || isProcessingUrl) return;
 
         setIsLoading(true);
         setError(null);
@@ -99,12 +134,12 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
             <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={handleQueryChange}
                 className="flex-grow px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
-                placeholder="Search for a place..."
+                placeholder="Search for a place or paste a Google Maps link..."
             />
-            <button type="submit" disabled={isLoading} className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary">
-                {isLoading ? <SpinnerIcon className="h-5 w-5 animate-spin"/> : 'Search'}
+            <button type="submit" disabled={isLoading || isProcessingUrl} className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary">
+                {isLoading || isProcessingUrl ? <SpinnerIcon className="h-5 w-5 animate-spin"/> : 'Search'}
             </button>
         </form>
     );
@@ -112,7 +147,15 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const renderSearchView = () => (
         <>
             {renderSearchBar()}
-            {error && <p className="text-red-400">{error}</p>}
+            {error && <p className="text-red-400 text-center text-sm">{error}</p>}
+            
+            {isProcessingUrl && (
+                 <div className="text-center py-4">
+                    <SpinnerIcon className="h-8 w-8 animate-spin mx-auto text-wha-blue" />
+                    <p className="text-secondary mt-2">Analyzing Google Maps link...</p>
+                </div>
+            )}
+            
             <div className="space-y-2 overflow-y-auto max-h-64 pr-2">
                 {results.length > 0 ? (
                     results.map((place, index) => (
@@ -133,7 +176,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                         </button>
                     ))
                 ) : (
-                    !isLoading && <p className="text-secondary text-center py-4">No results found.</p>
+                    !isLoading && !isProcessingUrl && !error && <p className="text-secondary text-center py-4">No results found.</p>
                 )}
             </div>
             <div className="border-t border-primary mt-4 pt-4 text-center">

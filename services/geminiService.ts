@@ -163,3 +163,38 @@ export async function discoverPlaces(query: string): Promise<DiscoveredPlace[]> 
         throw new Error("Failed to discover places with AI.");
     }
 }
+
+/**
+ * Uses the Gemini API to extract a place name/address from a Google Maps URL.
+ * @param url The Google Maps share link.
+ * @returns A promise that resolves to the extracted place name string.
+ */
+export async function extractPlaceFromUrl(url: string): Promise<string | null> {
+  const aiInstance = getAI();
+  const prompt = `
+    Analyze the following Google Maps URL and extract the canonical name and/or full address of the location it points to.
+    Return ONLY the name and/or address as a single, clean string. Do not add any extra explanation, formatting, or quotation marks.
+
+    For example, if the URL points to "1600 Amphitheatre Parkway, Mountain View, CA", you should return "1600 Amphitheatre Parkway, Mountain View, CA".
+    If it points to "The British Museum", you should return "The British Museum".
+
+    URL: "${url}"
+  `;
+
+  try {
+    const response = await aiInstance.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    
+    const textResponse = response.text.trim();
+    if (textResponse && textResponse.length > 3 && !textResponse.includes('http')) {
+      return textResponse;
+    }
+    console.warn('Could not extract a valid place name from the URL.');
+    return null;
+  } catch (error) {
+    console.error("Error extracting place from URL with Gemini:", error);
+    return null;
+  }
+}
