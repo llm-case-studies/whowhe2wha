@@ -1,390 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { EventNode, EntityType, Participant, When, Project, Location, WhatType } from '../types';
-import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
-import { MicrophoneIcon, MicrophoneSlashIcon, SpinnerIcon, PinIcon, SearchIcon } from './icons';
 
-type VoiceStatus = 'checking' | 'supported' | 'unsupported';
+import React, { useState } from 'react';
+import { Project, Location, Contact, EventNode, WhatType, EntityType } from '../types';
+import { LocationSelectModal } from './LocationSelectModal';
 
-interface AddEventFormProps {
+interface AddEventModalProps {
   projects: Project[];
   locations: Location[];
-  onSave: (
-    event: Omit<EventNode, 'id' | 'projectId' | 'whereId'>, 
-    projectInfo: {id: number | null, name: string, category: string},
-    whereInfo: { id: string | null, name: string }
-  ) => void;
+  contacts: Contact[];
+  initialContact?: Contact | null;
   onClose: () => void;
-  voiceStatus: VoiceStatus;
-  initialData?: { who?: string, where?: string } | null;
-  onOpenLocationFinder: (query: string) => void;
-  onOpenLocationSelect: () => void;
+  onSave: (newEvent: EventNode) => void;
 }
 
-const whatTypeOptions = Object.values(WhatType).map(v => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
+export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, locations, contacts, initialContact, onClose, onSave }) => {
+  const [whatName, setWhatName] = useState('');
+  const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
+  const [projectId, setProjectId] = useState<number | ''>(projects.length > 0 ? projects[0].id : '');
+  const [when, setWhen] = useState('');
+  const [whoIds, setWhoIds] = useState<string[]>(initialContact ? [initialContact.id] : []);
+  const [whereId, setWhereId] = useState<string | ''>('');
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
-const FormInput = ({ label, id, onMicClick = () => {}, isListening = false, hasMicSupport = undefined, onSearchClick = null, onSelectClick = null, ...props }) => {
-    const showSearchButton = id === 'where' && onSearchClick;
-    const showSelectButton = id === 'where' && onSelectClick;
-    
-    // Prioritize search button for unmatched, then select button, then mic
-    const showMicButton = hasMicSupport && !showSearchButton && !showSelectButton;
-    const showMicDisabled = hasMicSupport === false && !showSearchButton && !showSelectButton;
-    
-    const hasRightButtons = showSearchButton || showSelectButton || showMicButton || showMicDisabled;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whatName || !projectId || !when || !whereId) return;
 
-    return (
-        <div>
-            <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
-            <div className="relative">
-                <input
-                    id={id}
-                    className={`w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200 ${hasRightButtons ? 'pr-20' : ''}`}
-                    {...props}
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center">
-                    {showSelectButton && (
-                        <button
-                            type="button"
-                            onClick={onSelectClick}
-                            className="h-full px-3 text-secondary hover:text-primary transition-colors duration-200"
-                            aria-label="Select from saved locations"
-                            title="Select from saved locations"
-                        >
-                            <PinIcon className="h-5 w-5" />
-                        </button>
-                    )}
-                    
-                    <div className="h-full w-10 flex items-center justify-center">
-                      {showSearchButton && (
-                          <button
-                              type="button"
-                              onClick={onSearchClick}
-                              className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
-                              aria-label="Find New Location"
-                              title="Find New Location"
-                          >
-                              <SearchIcon className="h-5 w-5" />
-                          </button>
-                      )}
-                      
-                      {showMicButton && (
-                          <button
-                              type="button"
-                              onClick={onMicClick}
-                              className="w-full h-full flex items-center justify-center text-secondary hover:text-primary transition-colors duration-200"
-                              aria-label={`Dictate ${label}`}
-                              title={`Dictate ${label}`}
-                          >
-                              <MicrophoneIcon className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
-                          </button>
-                      )}
-                      {showMicDisabled && (
-                        <div title="Speech recognition not supported or permission denied">
-                            <MicrophoneSlashIcon className="h-5 w-5 text-tertiary" />
-                        </div>
-                      )}
-                    </div>
-                </div>
+    const newEvent: EventNode = {
+      id: Date.now(),
+      projectId: projectId,
+      what: { id: `what-${Date.now()}`, name: whatName, type: EntityType.What, whatType: whatType },
+      when: { id: `when-${Date.now()}`, name: new Date(when).toLocaleString(), timestamp: new Date(when).toISOString(), display: new Date(when).toLocaleString(), type: EntityType.When },
+      who: whoIds.map(id => {
+          const contact = contacts.find(c => c.id === id);
+          return { id: `who-${id}`, name: contact?.name || 'Unknown', type: EntityType.Who };
+      }),
+      whereId: whereId,
+    };
+    onSave(newEvent);
+  };
+  
+  const handleLocationSelect = (location: Location) => {
+      setWhereId(location.id);
+      setIsLocationModalOpen(false);
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
+        <form onSubmit={handleSubmit} className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 id="add-event-title" className="text-2xl font-bold">Add New Event</h2>
+            <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="whatName" className="block text-sm font-medium text-secondary mb-1">What is happening?</label>
+              <input type="text" id="whatName" value={whatName} onChange={(e) => setWhatName(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
             </div>
-        </div>
-    );
-};
-
-const FormTextArea = ({ label, id, ...props }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
-        <textarea
-            id={id}
-            rows={2}
-            className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200"
-            {...props}
-        />
-    </div>
-);
-
-const FormSelect = ({ label, id, ...props }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-secondary mb-1">{label}</label>
-        <select
-            id={id}
-            className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none transition duration-200"
-            {...props}
-        >
-            {whatTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-        </select>
-    </div>
-);
-
-
-export const AddEventForm: React.FC<AddEventFormProps> = ({ projects, locations, onSave, onClose, voiceStatus, initialData, onOpenLocationFinder, onOpenLocationSelect }) => {
-    const [whatName, setWhatName] = useState('');
-    const [whatDesc, setWhatDesc] = useState('');
-    const [whatType, setWhatType] = useState<WhatType>(WhatType.Appointment);
-    const [projectName, setProjectName] = useState('');
-    const [who, setWho] = useState(initialData?.who || '');
-    const [where, setWhere] = useState(initialData?.where || '');
-    const [when, setWhen] = useState('');
-    const [endWhen, setEndWhen] = useState('');
-
-    const [listeningField, setListeningField] = useState<string | null>(null);
-    const [recognitionError, setRecognitionError] = useState<string | null>(null);
-    
-    const {
-        transcript,
-        isListening,
-        startListening,
-        stopListening,
-        hasRecognitionSupport,
-        error,
-    } = useSpeechRecognition();
-    
-    const showMics = voiceStatus === 'supported';
-
-    useEffect(() => {
-        // If the App component passes a new `where` value (e.g., from a modal),
-        // update this form's state to reflect it.
-        if (initialData?.where && initialData.where !== where) {
-            setWhere(initialData.where);
-        }
-    }, [initialData?.where]);
-
-
-    useEffect(() => {
-        if (error) {
-            const message = `Speech recognition error: ${error}. Please check your network connection and microphone permissions.`;
-            setRecognitionError(message);
-            const timer = setTimeout(() => setRecognitionError(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
-    useEffect(() => {
-        if (transcript && listeningField) {
-            switch (listeningField) {
-                case 'whatName':
-                    setWhatName(transcript);
-                    break;
-                case 'where':
-                    setWhere(transcript);
-                    break;
-                case 'when':
-                    setWhen(transcript);
-                    break;
-                 case 'endWhen':
-                    setEndWhen(transcript);
-                    break;
-            }
-            stopListening();
-            setListeningField(null);
-        }
-    }, [transcript, listeningField, stopListening]);
-
-
-    const handleMicClick = (field: string) => {
-        if (isListening) {
-            stopListening();
-            setListeningField(null);
-        } else {
-            setListeningField(field);
-            startListening();
-        }
-    };
-
-    const isFormValid = whatName && where && when && projectName && (whatType !== WhatType.Period || endWhen);
-
-    const createWhenObject = (datetimeString: string): When => {
-        const date = new Date(datetimeString);
-        const displayString = date.toLocaleString([], {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: 'numeric', minute: '2-digit', hour12: true
-        }).replace(',', '');
-        return {
-            id: `new-when-${Date.now()}-${Math.random()}`,
-            name: displayString,
-            timestamp: date.toISOString(),
-            display: displayString,
-            type: EntityType.When,
-        };
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!isFormValid) return;
-        
-        const existingProject = projects.find(p => p.name.toLowerCase() === projectName.trim().toLowerCase());
-        const existingLocation = locations.find(l => 
-            l.name.toLowerCase() === where.trim().toLowerCase() || 
-            l.alias?.toLowerCase() === where.trim().toLowerCase()
-        );
-
-        if (!existingLocation) {
-            onOpenLocationFinder(where.trim());
-            return;
-        }
-
-        const whoArray: Participant[] = who.split(',').map(name => name.trim()).filter(name => name).map((name, index) => ({
-            id: `new-who-${Date.now()}-${index}`,
-            name,
-            type: EntityType.Who,
-        }));
-        
-        const newEventData: Omit<EventNode, 'id' | 'projectId' | 'whereId'> = {
-            what: {
-                id: `new-what-${Date.now()}`,
-                name: whatName,
-                description: whatDesc,
-                type: EntityType.What,
-                whatType: whatType,
-            },
-            when: createWhenObject(when),
-            endWhen: (whatType === WhatType.Period && endWhen) ? createWhenObject(endWhen) : undefined,
-            who: whoArray,
-        };
-        
-        const projectInfo = {
-            id: existingProject ? existingProject.id : null,
-            name: projectName.trim(),
-            category: existingProject?.category || 'Personal'
-        };
-
-        const whereInfo = {
-            id: existingLocation.id,
-            name: where.trim(),
-        };
-
-        onSave(newEventData, projectInfo, whereInfo);
-    };
-
-    const isWhereUnmatched = where.trim() && !locations.some(l => l.name.toLowerCase() === where.trim().toLowerCase() || l.alias?.toLowerCase() === where.trim().toLowerCase());
-
-    return (
-        <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
-            <div className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 id="add-event-title" className="text-2xl font-bold">Add New Event</h2>
-                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
-                </div>
-                {recognitionError && (
-                  <div className="bg-red-900/50 border border-red-700 text-red-300 text-sm rounded-md p-3 mb-4" role="alert">
-                      {recognitionError}
-                  </div>
-                )}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
-                             <FormInput
-                                label="What (Event/Step Name)"
-                                id="whatName"
-                                type="text"
-                                value={whatName}
-                                onChange={(e) => setWhatName(e.target.value)}
-                                placeholder="e.g., Implant Surgery"
-                                onMicClick={() => handleMicClick('whatName')}
-                                isListening={isListening && listeningField === 'whatName'}
-                                hasMicSupport={showMics}
-                                required
-                            />
-                        </div>
-                        <FormSelect
-                            label="Event Type"
-                            id="whatType"
-                            value={whatType}
-                            onChange={(e) => setWhatType(e.target.value as WhatType)}
-                        />
-                    </div>
-                    <FormTextArea
-                        label="Description"
-                        id="whatDesc"
-                        value={whatDesc}
-                        onChange={(e) => setWhatDesc(e.target.value)}
-                        placeholder="e.g., Placement of the titanium implant."
-                    />
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormInput
-                            label="Project (Select or Create New)"
-                            id="project"
-                            type="text"
-                            list="projects-list"
-                            value={projectName}
-                            onChange={(e) => setProjectName(e.target.value)}
-                            placeholder="e.g., Dental Implant Treatment"
-                            required
-                        />
-                        <datalist id="projects-list">
-                            {projects.map(p => <option key={p.id} value={p.name} />)}
-                        </datalist>
-                         <FormInput
-                            label={whatType === WhatType.Period ? "Start Date" : "When"}
-                            id="when"
-                            type="datetime-local"
-                            value={when}
-                            onChange={(e) => setWhen(e.target.value)}
-                            onMicClick={() => handleMicClick('when')}
-                            isListening={isListening && listeningField === 'when'}
-                            hasMicSupport={showMics}
-                            required
-                        />
-                    </div>
-                    {whatType === WhatType.Period && (
-                        <FormInput
-                            label="End Date"
-                            id="endWhen"
-                            type="datetime-local"
-                            value={endWhen}
-                            onChange={(e) => setEndWhen(e.target.value)}
-                            onMicClick={() => handleMicClick('endWhen')}
-                            isListening={isListening && listeningField === 'endWhen'}
-                            hasMicSupport={showMics}
-                            required
-                        />
-                    )}
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormInput
-                            label="Who (comma-separated)"
-                            id="who"
-                            type="text"
-                            value={who}
-                            onChange={(e) => setWho(e.target.value)}
-                            placeholder="e.g., Dr. Smith"
-                        />
-                        <div>
-                            <FormInput
-                                label="Where (Select or Find New)"
-                                id="where"
-                                type="text"
-                                list="locations-list"
-                                value={where}
-                                onChange={(e) => setWhere(e.target.value)}
-                                placeholder="e.g., Springfield Clinic"
-                                onMicClick={() => handleMicClick('where')}
-                                isListening={isListening && listeningField === 'where'}
-                                hasMicSupport={showMics}
-                                onSearchClick={isWhereUnmatched ? () => onOpenLocationFinder(where) : null}
-                                onSelectClick={!isWhereUnmatched ? onOpenLocationSelect : null}
-                                required
-                            />
-                            {isWhereUnmatched && (
-                                <p className="text-xs text-amber-400 mt-1">New location. Click the search icon to find and verify it.</p>
-                            )}
-                        </div>
-                        <datalist id="locations-list">
-                            {locations.map(l => <option key={l.id} value={l.alias && l.alias !== l.name ? l.alias : l.name} />)}
-                        </datalist>
-                    </div>
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-primary hover:bg-tertiary transition">
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={!isFormValid || isWhereUnmatched}
-                            className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary disabled:cursor-not-allowed"
-                        >
-                            Save Event
-                        </button>
-                    </div>
-                </form>
+             <div>
+              <label htmlFor="whatType" className="block text-sm font-medium text-secondary mb-1">Event Type</label>
+              <select id="whatType" value={whatType} onChange={(e) => setWhatType(e.target.value as WhatType)} className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
+                  {Object.values(WhatType).map(type => <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>)}
+              </select>
             </div>
-        </div>
-    );
+            <div>
+              <label htmlFor="projectId" className="block text-sm font-medium text-secondary mb-1">Project</label>
+              <select id="projectId" value={projectId} onChange={(e) => setProjectId(Number(e.target.value))} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
+                <option value="" disabled>Select a project</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="when" className="block text-sm font-medium text-secondary mb-1">When?</label>
+              <input type="datetime-local" id="when" value={when} onChange={(e) => setWhen(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
+            </div>
+            <div>
+              <label htmlFor="where" className="block text-sm font-medium text-secondary mb-1">Where?</label>
+              <button type="button" onClick={() => setIsLocationModalOpen(true)} className="w-full text-left px-3 py-2 bg-input border border-primary rounded-lg">
+                  {whereId ? locations.find(l=>l.id === whereId)?.name : 'Select a location...'}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-6">
+            <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-primary hover:bg-tertiary transition">Cancel</button>
+            <button type="submit" className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition">Save Event</button>
+          </div>
+        </form>
+      </div>
+      {isLocationModalOpen && <LocationSelectModal locations={locations} onClose={() => setIsLocationModalOpen(false)} onSelect={handleLocationSelect} onAddNew={() => {}} onUrlSubmit={() => {}} />}
+    </>
+  );
 };

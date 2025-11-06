@@ -1,79 +1,72 @@
 
 export enum EntityType {
-  Who = 'who',
-  Where = 'where',
-  What = 'what',
-  When = 'when',
+    Who = 'who',
+    Where = 'where',
+    What = 'what',
+    When = 'when',
 }
 
 export enum WhatType {
-  Appointment = 'appointment',
-  Period = 'period',
-  Deadline = 'deadline',
-  Milestone = 'milestone',
-  Checkpoint = 'checkpoint',
+    Appointment = 'appointment',
+    Milestone = 'milestone',
+    Deadline = 'deadline',
+    Period = 'period',
+    Checkpoint = 'checkpoint',
 }
 
-export interface Entity {
-  id: string;
-  name: string;
-  type: EntityType;
+export interface BaseNode {
+    id: string | number;
+    name: string;
+    type: EntityType;
 }
 
-export interface Participant extends Entity {
-  type: EntityType.Who;
+export interface Who extends BaseNode {
+    type: EntityType.Who;
 }
 
-export interface What extends Entity {
-  type: EntityType.What;
-  description?: string;
-  whatType: WhatType;
+export interface What extends BaseNode {
+    id: string;
+    type: EntityType.What;
+    description?: string;
+    whatType: WhatType;
 }
 
-export interface Location extends Entity {
-  type: EntityType.Where;
-  alias?: string; // User-defined friendly name
-  latitude?: number;
-  longitude?: number;
-  phone?: string;
-  website?: string;
-  portalUrl?: string;
-  notes?: string;
+export interface When extends BaseNode {
+    id: string;
+    type: EntityType.When;
+    timestamp: string;
+    display: string;
 }
 
-export interface When extends Entity {
-  type: EntityType.When;
-  timestamp: string; // ISO 8601
-  display: string;
+export interface Location extends BaseNode {
+    id: string;
+    type: EntityType.Where;
+    latitude?: number;
+    longitude?: number;
+    alias?: string;
+    phone?: string;
+    website?: string;
+    portalUrl?: string;
+    notes?: string;
 }
 
 export interface EventNode {
-  id: number;
-  projectId: number;
-  what: What;
-  when: When;
-  endWhen?: When;
-  who: Participant[];
-  whereId: string;
+    id: number;
+    projectId: number;
+    what: What;
+    when: When;
+    endWhen?: When;
+    who: Who[];
+    whereId: string;
 }
 
 export interface Project {
-  id: number;
-  name: string;
-  description: string;
-  status: 'Active' | 'On Hold' | 'Completed';
-  color: string;
-  category: string;
-}
-
-export interface Contact {
-    id: string;
+    id: number;
     name: string;
-    role?: string;
-    locationId?: string;
-    email?: string;
-    phone?: string;
-    messenger?: string;
+    description: string;
+    status: 'Active' | 'On Hold' | 'Completed';
+    color: string;
+    category: string;
 }
 
 export interface Holiday {
@@ -83,19 +76,30 @@ export interface Holiday {
     category: string;
 }
 
+export interface Contact {
+    id: string;
+    name: string;
+    role?: string;
+    locationId?: string;
+    phone?: string;
+    email?: string;
+    messenger?: string;
+}
+
 export type Theme = 'light' | 'dark' | 'focus';
+
 export type ViewMode = 'stream' | 'timeline';
 export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
-
-// New types for dynamic timeline tiers
-export interface Tier {
-  id: string;
-  name: string;
-  categories: string[];
-}
-export type TierConfig = Tier[];
 
 export interface DiscoveredPlace {
     title: string;
     uri: string;
 }
+
+export interface Tier {
+    id: string;
+    name: string;
+    categories: string[];
+}
+
+export type TierConfig = Tier[];

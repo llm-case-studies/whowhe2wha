@@ -1,144 +1,92 @@
 
 import React from 'react';
 
-const iconProps = {
-  xmlns: "http://www.w3.org/2000/svg",
-  viewBox: "0 0 20 20",
-  fill: "currentColor",
-};
+type IconProps = React.SVGProps<SVGSVGElement>;
 
-export const PersonIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+export const SunIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
 );
 
-export const PinIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 21l-4.95-6.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+export const MoonIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
 );
 
-// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
-export const CalendarIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'} {...props}>
-        {title && <title>{title}</title>}
-        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm-2 5a1 1 0 011-1h12a1 1 0 110 2H5a1 1 0 01-1-1zm1 3a1 1 0 000 2h.01a1 1 0 100-2H5zm2 0a1 1 0 000 2h.01a1 1 0 100-2H7zm2 0a1 1 0 000 2h.01a1 1 0 100-2H9zm2 0a1 1 0 000 2h.01a1 1 0 100-2H11zm2 0a1 1 0 000 2h.01a1 1 0 100-2H13zm2 0a1 1 0 000 2h.01a1 1 0 100-2H15z" clipRule="evenodd" />
-    </svg>
+export const BrainIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 8h6m-3-4v4m-3 8v3m0-3h.01M12 16h.01M12 12h.01M6 12h.01M9 12h.01M15 12h.01M18 12h.01M12 21a9 9 0 110-18 9 9 0 010 18z" /></svg>
 );
 
-export const BriefcaseIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2a2 2 0 00-2 2v1H6a2 2 0 00-2 2v7a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2V4a2 2 0 00-2-2zM8 4a1 1 0 011-1h2a1 1 0 011 1v1H8V4zM6 7h8v7H6V7z" clipRule="evenodd" /></svg>
+export const PinIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
 );
 
-export const MicrophoneIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93V17h-2v-2.07A8.001 8.001 0 012 8V7a1 1 0 012 0v1a6 6 0 1012 0V7a1 1 0 112 0v1a8.001 8.001 0 01-5 7.93z" clipRule="evenodd" /></svg>
+export const CalendarIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
 );
 
-export const MicrophoneSlashIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M15.42 16.85a.75.75 0 10-1.06-1.06L5.65 4.08a.75.75 0 00-1.06 1.06L15.42 16.85zM8 4a3 3 0 013 3v2.17l-3-3V4zm-3 4a3 3 0 003 3v.83l-3-3V8zm7.93 5.07A8.001 8.001 0 012 8V7a1 1 0 012 0v1a6 6 0 005.13 5.93l1.8 1.8z" clipRule="evenodd" /></svg>
+export const UsersIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm6-11a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
 );
 
-export const SpinnerIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg fill="none" viewBox="0 0 24 24" className={className || 'h-5 w-5'}><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+export const NavigateIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" {...props}><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
 );
 
-export const UsersIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0117 18h.59a2.5 2.5 0 100-1H17a5 5 0 01-5.07-5.28A6.97 6.97 0 0012 11c-.34 0-.673.024-1 .07V12a5 5 0 01-5 5H4.41a2.5 2.5 0 100 1H6a5 5 0 014.33-2.5A6.97 6.97 0 0011 16c0 .34-.024.673-.07 1h2z" /></svg>
+export const StreamIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
 );
 
-export const SunIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-2.172 4.243a1 1 0 01-1.414 0l-.707-.707a1 1 0 111.414-1.414l.707.707a1 1 0 010 1.414zM10 18a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zM4.464 4.05a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414L4.464 5.464a1 1 0 010-1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clipRule="evenodd" /></svg>
+export const TimelineIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
 );
 
-export const MoonIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+export const StarIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.539 1.118l-3.975-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.539-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
 );
 
-export const BrainIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM3 10a7 7 0 1114 0 7 7 0 01-14 0z" clipRule="evenodd" /><path d="M7 10a3 3 0 116 0 3 3 0 01-6 0z" /></svg>
+export const FilterIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" /></svg>
 );
 
-export const StreamIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+export const LayersIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
 );
 
-export const TimelineIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+export const BriefcaseIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v1h-2v-1a1 1 0 00-1-1H7a1 1 0 00-1 1v1H4V4zm10 2H6a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2z" clipRule="evenodd" /></svg>
 );
 
-export const StarIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 2.5l2.121 4.293 4.737.688-3.428 3.34.81 4.72L10 13.25l-4.24 2.29.81-4.72-3.428-3.34 4.737-.688L10 2.5z" clipRule="evenodd" /></svg>
+export const MilestoneIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM5 10a1 1 0 011-1h2a1 1 0 110 2H6a1 1 0 01-1-1zm3 0a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm3 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
 );
 
-// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
-export const MilestoneIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
-    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
-        {title && <title>{title}</title>}
-        <path d="M10 0L17 7L10 14L3 7Z" />
-    </svg>
+export const DeadlineIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
 );
 
-// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
-export const DeadlineIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
-    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
-        {title && <title>{title}</title>}
-        <path d="M2 2v18h2v-8h14l-4-4 4-4H4V2H2z" />
-    </svg>
+export const CheckpointIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
 );
 
-// FIX: Update icon to render title prop as a <title> element to resolve typing errors.
-export const CheckpointIcon: React.FC<React.SVGProps<SVGSVGElement> & {className?: string; title?: string}> = ({className, title, ...props}) => (
-    <svg viewBox="0 0 20 20" fill="currentColor" className={className || 'h-5 w-5'} {...props}>
-        {title && <title>{title}</title>}
-        <circle cx="10" cy="10" r="4" />
-    </svg>
+export const ChevronsLeftIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
 );
 
-export const FilterIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 12.414V17a1 1 0 01-1.447.894l-2-1A1 1 0 018 16v-3.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" /></svg>
+export const ChevronsRightIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
 );
 
-export const ChevronsLeftIcon: React.FC<{className?: string}> = ({className}) => (
-  <svg {...iconProps} className={className || 'h-5 w-5'}>
-    <path fillRule="evenodd" d="M13.293 15.293a1 1 0 010-1.414L9.414 10l3.879-3.879a1 1 0 00-1.414-1.414l-4.5 4.5a1 1 0 000 1.414l4.5 4.5a1 1 0 001.414 0zm-4-1.414L5.414 10l3.879-3.879a1 1 0 00-1.414-1.414l-4.5 4.5a1 1 0 000 1.414l4.5 4.5a1 1 0 001.414 0z" clipRule="evenodd" />
-  </svg>
+export const SpinnerIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" {...props}><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
 );
 
-export const ChevronsRightIcon: React.FC<{className?: string}> = ({className}) => (
-  <svg {...iconProps} className={className || 'h-5 w-5'}>
-    <path fillRule="evenodd" d="M6.707 4.707a1 1 0 010 1.414L10.586 10l-3.879 3.879a1 1 0 011.414 1.414l4.5-4.5a1 1 0 010-1.414l-4.5-4.5a1 1 0 01-1.414 0zm4 1.414L14.586 10l-3.879 3.879a1 1 0 011.414 1.414l4.5-4.5a1 1 0 010-1.414l-4.5-4.5a1 1 0 01-1.414 0z" clipRule="evenodd" />
-  </svg>
+export const ClockIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
 
-export const LayersIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M3 6a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V6zm2-2a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1V6a1 1 0 00-1-1H5z" clipRule="evenodd" /><path d="M2.5 7.5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-1.5a.5.5 0 011 0V17a2 2 0 01-2 2H2a2 2 0 01-2-2V8a2 2 0 012-2h1.5a.5.5 0 010 1H2.5z" /></svg>
+export const PeriodIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2z" /></svg>
 );
 
-export const NavigateIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-);
-
-export const SearchIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
-);
-
-export const PhoneIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
-);
-
-export const WebsiteIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.72 7.97 5 10 5c2.03 0 3.488.72 4.756 1.321l.127.063a.993.993 0 11-.854 1.642l-.127-.063a4.011 4.011 0 00-3.1-1.321c-1.282 0-2.296.54-3.045 1.076a4.011 4.011 0 00-1.5 2.585v.353a.993.993 0 01-1.986 0v-.353z" clipRule="evenodd" /></svg>
-);
-
-export const LinkIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" /></svg>
-);
-
-export const NotesIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-);
-
-export const EmailIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-);
-
-export const ChatBubbleIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.94 8.94 0 01-4.417-1.213 1 1 0 00-1.3-.06l-2.433 1.825A1 1 0 01.65 16.25V6a1 1 0 011-1h14a1 1 0 011 1v4z" clipRule="evenodd" /></svg>
+export const AppointmentIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 );

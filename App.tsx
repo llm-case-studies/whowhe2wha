@@ -1,111 +1,49 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
-import { AddEventForm } from './components/AddEventForm';
-import { AddLocationModal } from './components/AddLocationModal';
+import { AddEventModal } from './components/AddEventForm';
 import { AddProjectModal } from './components/AddProjectModal';
 import { AddContactModal } from './components/AddContactModal';
-import { LocationDetailModal } from './components/LocationDetailModal';
-import { LocationSelectModal } from './components/LocationSelectModal';
-import { TimeMapModal } from './components/TimeMapModal';
-import { TierConfigModal } from './components/TierConfigModal';
-import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale, Tier, EntityType } from './types';
-import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS, PROJECT_CATEGORIES } from './constants';
+import { AddLocationModal } from './components/AddLocationModal';
+import { EditLocationModal } from './components/EditLocationModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
+import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS } from './constants';
+import { Project, EventNode, Location, Contact, Theme } from './types';
 import { queryGraph } from './services/geminiService';
-import { ViewControls } from './components/ViewControls';
-
-type GeocodedData = { name: string; latitude: number; longitude: number; };
-
-const loadFromLocalStorage = <T,>(key: string, fallback: T): T => {
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (error) {
-    console.error(`Failed to parse ${key} from localStorage`, error);
-  }
-  return fallback;
-};
-
-const saveToLocalStorage = <T,>(key: string, data: T) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error(`Failed to save ${key} to localStorage`, error);
-  }
-};
-
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [projects, setProjects] = useState<Project[]>(() => loadFromLocalStorage('whowhe2wha_projects', MOCK_PROJECTS));
-  const [events, setEvents] = useState<EventNode[]>(() => loadFromLocalStorage('whowhe2wha_events', MOCK_EVENTS));
-  const [locations, setLocations] = useState<Location[]>(() => loadFromLocalStorage('whowhe2wha_locations', MOCK_LOCATIONS));
-  const [contacts, setContacts] = useState<Contact[]>(() => loadFromLocalStorage('whowhe2wha_contacts', MOCK_CONTACTS));
+  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
+  const [events, setEvents] = useState<EventNode[]>(MOCK_EVENTS);
+  const [locations, setLocations] = useState<Location[]>(MOCK_LOCATIONS);
+  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
 
-  const [filteredEventIds, setFilteredEventIds] = useState<number[] | null>(null);
-  
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [isAddEventFormOpen, setIsAddEventFormOpen] = useState(false);
-  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [filteredEventIds, setFilteredEventIds] = useState<number[] | null>(null);
+
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
-
-  const [isLocationSelectModalOpen, setIsLocationSelectModalOpen] = useState(false);
-  const [locationQuery, setLocationQuery] = useState('');
-  const [locationModalSource, setLocationModalSource] = useState<'event' | 'direct'>('direct');
-
-
-  const [locationDetailModalLocation, setLocationDetailModalLocation] = useState<Location | null>(null);
-  const [timeMapModalWhen, setTimeMapModalWhen] = useState<When | null>(null);
-  const [addEventInitialData, setAddEventInitialData] = useState<{ who?: string; where?: string } | null>(null);
-
-  const [voiceStatus, setVoiceStatus] = useState<'checking' | 'supported' | 'unsupported'>('checking');
-  
-  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
-  const [timelineScale, setTimelineScale] = useState<TimelineScale>('year');
-  const [timelineDate, setTimelineDate] = useState(new Date('2025-11-04T12:00:00Z'));
-  const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US', 'Jewish']);
-  const [selectedProjectCategories, setSelectedProjectCategories] = useState<string[]>(PROJECT_CATEGORIES);
-
-  const initialTierConfig: Tier[] = [
-    { id: 'tier-1', name: 'Tier 1', categories: ['Home', 'Personal'] },
-    { id: 'tier-2', name: 'Tier 2', categories: ['Work', 'Health'] },
-    { id: 'tier-3', name: 'Tier 3', categories: ['Finance'] },
-  ];
-  const [tierConfig, setTierConfig] = useState<Tier[]>(initialTierConfig);
-  const [isTierConfigModalOpen, setIsTierConfigModalOpen] = useState(false);
-
-
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    setVoiceStatus(SpeechRecognition ? 'supported' : 'unsupported');
-  }, []);
+  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [addLocationQuery, setAddLocationQuery] = useState('');
 
   useEffect(() => {
     document.documentElement.className = theme;
   }, [theme]);
-  
-  useEffect(() => saveToLocalStorage('whowhe2wha_projects', projects), [projects]);
-  useEffect(() => saveToLocalStorage('whowhe2wha_events', events), [events]);
-  useEffect(() => saveToLocalStorage('whowhe2wha_locations', locations), [locations]);
-  useEffect(() => saveToLocalStorage('whowhe2wha_contacts', contacts), [contacts]);
 
   const handleSearch = async (query: string) => {
+    if (!query) {
+      setFilteredEventIds(null);
+      return;
+    }
     setIsLoading(true);
-    setError(null);
     try {
-      const data = { projects, events, locations };
-      const matchingIds = await queryGraph(query, data);
-      setFilteredEventIds(matchingIds);
-      setViewMode('stream'); 
-    } catch (e) {
-      setError('An error occurred while searching. Please try again.');
-      console.error(e);
+      const ids = await queryGraph(query, { projects, events, locations });
+      setFilteredEventIds(ids);
+    } catch (error) {
+      console.error("Search failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -113,253 +51,42 @@ const App: React.FC = () => {
 
   const handleClearSearch = () => {
     setFilteredEventIds(null);
-    setError(null);
   };
   
-  const handleSaveEvent = (
-    eventData: Omit<EventNode, 'id' | 'projectId' | 'whereId'>, 
-    projectInfo: {id: number | null, name: string, category: string},
-    whereInfo: { id: string | null, name: string, geocodedData: GeocodedData | null }
-  ) => {
-    let targetProjectId = projectInfo.id;
-
-    if (!targetProjectId) {
-      const newProject: Project = {
-        id: Date.now(),
-        name: projectInfo.name,
-        description: 'Newly created project.',
-        status: 'Active',
-        color: ['pink', 'purple', 'yellow', 'green'][Math.floor(Math.random() * 4)],
-        category: projectInfo.category || 'Personal'
-      };
-      setProjects(prev => [...prev, newProject]);
-      targetProjectId = newProject.id;
-    }
-
-    let targetLocationId = whereInfo.id;
-    // This part is now mostly handled by the AddLocationModal
-    if (!targetLocationId) {
-        const newLocation: Location = {
-            id: `where-${Date.now()}`,
-            name: whereInfo.geocodedData?.name || whereInfo.name,
-            alias: whereInfo.name,
-            type: EntityType.Where,
-            latitude: whereInfo.geocodedData?.latitude,
-            longitude: whereInfo.geocodedData?.longitude,
-        };
-        setLocations(prev => [...prev, newLocation]);
-        targetLocationId = newLocation.id;
-    }
-
-    const finalEvent: EventNode = {
-      ...eventData,
-      id: Date.now(),
-      projectId: targetProjectId,
-      whereId: targetLocationId,
-    };
-
-    setEvents(prev => [...prev, finalEvent].sort((a, b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime()));
-    setIsAddEventFormOpen(false);
-    setAddEventInitialData(null);
-  };
-
-  const handleScheduleFromContact = (contact: Contact) => {
-      const location = locations.find(l => l.id === contact.locationId);
-      if (!location) return;
-      
-      setLocationDetailModalLocation(null);
-      setAddEventInitialData({
-          who: contact.name,
-          where: location.alias || location.name,
-      });
-      setIsAddEventFormOpen(true);
-  };
-  
-  const handleSaveTierConfig = (newConfig: Tier[]) => {
-    setTierConfig(newConfig);
-    setIsTierConfigModalOpen(false);
+  const handleOpenAddLocation = (query: string) => {
+      setAddLocationQuery(query);
+      setIsAddLocationModalOpen(true);
   }
 
-  const handleOpenLocationFinder = (query: string) => {
-      setLocationQuery(query);
-      setLocationModalSource('event');
-      setIsAddLocationModalOpen(true);
-  };
-
-  const handleSaveNewLocation = (newLocation: Location) => {
+  const handleSaveLocation = (newLocation: Location) => {
       setLocations(prev => [...prev, newLocation]);
       setIsAddLocationModalOpen(false);
-      // If the location modal was opened from the event form, update the form's initial data.
-      if (locationModalSource === 'event') {
-        setAddEventInitialData(prev => ({ ...prev, where: newLocation.alias || newLocation.name }));
-      }
-  };
-  
-  const handleSaveProject = (projectData: Omit<Project, 'id'>) => {
-        const newProject: Project = {
-            ...projectData,
-            id: Date.now(),
-        };
-        setProjects(prev => [...prev, newProject]);
-        setIsAddProjectModalOpen(false);
-    };
+  }
 
-    const handleSaveContact = (contactData: Omit<Contact, 'id'>) => {
-        const newContact: Contact = {
-            ...contactData,
-            id: `contact-${Date.now()}`,
-        };
-        setContacts(prev => [...prev, newContact]);
-        setIsAddContactModalOpen(false);
-    };
-
-  const handleOpenLocationSelect = () => {
-    setIsLocationSelectModalOpen(true);
-  };
-
-  const handleSelectKnownLocation = (location: Location) => {
-    setAddEventInitialData(prev => ({ ...prev, where: location.alias || location.name }));
-    setIsLocationSelectModalOpen(false);
-  };
-
-  const handleAddNewLocationFromSelect = () => {
-    setIsLocationSelectModalOpen(false);
-    setLocationQuery('');
-    setLocationModalSource('direct');
-    setIsAddLocationModalOpen(true);
-  };
-
-  const handleUrlSubmitFromSelect = (url: string) => {
-    setIsLocationSelectModalOpen(false);
-    setLocationQuery(url);
-    setLocationModalSource('direct');
-    setIsAddLocationModalOpen(true);
-  };
-
-
-  const displayedEvents = filteredEventIds !== null
-    ? events.filter(event => filteredEventIds.includes(event.id))
-    : events;
+  const displayEvents = filteredEventIds !== null ? events.filter(e => filteredEventIds.includes(e.id)) : events;
 
   return (
-    <div className="bg-primary min-h-screen text-primary font-sans">
+    <div className="bg-background-primary text-primary min-h-screen font-sans">
       <Header theme={theme} setTheme={setTheme} />
-      <main className="container mx-auto px-4 pb-10">
+      <main className="container mx-auto px-4 pb-12">
         <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
-
-        <ViewControls
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          timelineScale={timelineScale}
-          setTimelineScale={setTimelineScale}
-          timelineDate={timelineDate}
-          setTimelineDate={setTimelineDate}
-          onAddEventClick={() => setIsAddEventFormOpen(true)}
-          onAddProjectClick={() => setIsAddProjectModalOpen(true)}
-          onAddContactClick={() => setIsAddContactModalOpen(true)}
-          onAddLocationClick={handleAddNewLocationFromSelect}
-          selectedHolidayCategories={selectedHolidayCategories}
-          setSelectedHolidayCategories={setSelectedHolidayCategories}
-          selectedProjectCategories={selectedProjectCategories}
-          setSelectedProjectCategories={setSelectedProjectCategories}
-          onConfigureTiersClick={() => setIsTierConfigModalOpen(true)}
-        />
-
         <Dashboard
+          events={displayEvents}
+          allEvents={events}
           projects={projects}
-          events={displayedEvents}
           locations={locations}
-          isLoading={isLoading}
-          error={error}
-          isSearched={filteredEventIds !== null}
-          onLocationClick={setLocationDetailModalLocation}
-          onWhenClick={setTimeMapModalWhen}
-          viewMode={viewMode}
-          timelineDate={timelineDate}
-          setTimelineDate={setTimelineDate}
-          timelineScale={timelineScale}
-          selectedHolidayCategories={selectedHolidayCategories}
-          selectedProjectCategories={selectedProjectCategories}
-          tierConfig={tierConfig}
+          contacts={contacts}
+          onAddEvent={() => setIsAddEventModalOpen(true)}
+          onAddProject={() => setIsAddProjectModalOpen(true)}
+          onAddContact={() => setIsAddContactModalOpen(true)}
+          onAddLocation={handleOpenAddLocation}
         />
       </main>
-      
-      {isAddEventFormOpen && (
-        <AddEventForm
-          projects={projects}
-          locations={locations}
-          onSave={handleSaveEvent}
-          onClose={() => {
-              setIsAddEventFormOpen(false);
-              setAddEventInitialData(null);
-          }}
-          voiceStatus={voiceStatus}
-          initialData={addEventInitialData}
-          onOpenLocationFinder={handleOpenLocationFinder}
-          onOpenLocationSelect={handleOpenLocationSelect}
-        />
-      )}
-      
-      {isAddProjectModalOpen && (
-        <AddProjectModal 
-            onSave={handleSaveProject} 
-            onClose={() => setIsAddProjectModalOpen(false)} 
-        />
-      )}
 
-      {isAddContactModalOpen && (
-        <AddContactModal 
-            locations={locations}
-            onSave={handleSaveContact} 
-            onClose={() => setIsAddContactModalOpen(false)} 
-        />
-      )}
-
-      {isAddLocationModalOpen && (
-          <AddLocationModal
-            initialQuery={locationQuery}
-            onSave={handleSaveNewLocation}
-            onClose={() => setIsAddLocationModalOpen(false)}
-          />
-      )}
-      
-      {isLocationSelectModalOpen && (
-          <LocationSelectModal
-            locations={locations}
-            onSelect={handleSelectKnownLocation}
-            onAddNew={handleAddNewLocationFromSelect}
-            onClose={() => setIsLocationSelectModalOpen(false)}
-            onUrlSubmit={handleUrlSubmitFromSelect}
-          />
-      )}
-
-      {isTierConfigModalOpen && (
-        <TierConfigModal
-          currentConfig={tierConfig}
-          onSave={handleSaveTierConfig}
-          onClose={() => setIsTierConfigModalOpen(false)}
-        />
-      )}
-
-      {locationDetailModalLocation && (
-        <LocationDetailModal 
-            location={locationDetailModalLocation} 
-            allEvents={events} 
-            allLocations={locations}
-            contacts={contacts}
-            onClose={() => setLocationDetailModalLocation(null)}
-            onSchedule={handleScheduleFromContact}
-        />
-      )}
-
-      {timeMapModalWhen && (
-        <TimeMapModal
-            when={timeMapModalWhen}
-            allEvents={events}
-            allLocations={locations}
-            onClose={() => setTimeMapModalWhen(null)}
-        />
-      )}
+      {isAddEventModalOpen && <AddEventModal projects={projects} locations={locations} contacts={contacts} onClose={() => setIsAddEventModalOpen(false)} onSave={(event) => { setEvents(prev => [...prev, event]); setIsAddEventModalOpen(false); }} />}
+      {isAddProjectModalOpen && <AddProjectModal onClose={() => setIsAddProjectModalOpen(false)} onSave={(project) => { setProjects(prev => [...prev, project]); setIsAddProjectModalOpen(false); }} />}
+      {isAddContactModalOpen && <AddContactModal locations={locations} onClose={() => setIsAddContactModalOpen(false)} onSave={(contact) => { setContacts(prev => [...prev, contact]); setIsAddContactModalOpen(false); }} />}
+      {isAddLocationModalOpen && <AddLocationModal initialQuery={addLocationQuery} onClose={() => setIsAddLocationModalOpen(false)} onSave={handleSaveLocation} />}
     </div>
   );
 };
