@@ -1,9 +1,10 @@
 import React from 'react';
-import { When, EventNode, Location } from '../types';
+// FIX: Renamed type 'When' to 'WhenNode' to match the exported type from 'types.ts'.
+import { WhenNode, EventNode, Location } from '../types';
 import { CalendarIcon, NavigateIcon } from './icons';
 
 interface TimeMapModalProps {
-  when: When;
+  when: WhenNode;
   allEvents: EventNode[];
   allLocations: Location[];
   onClose: () => void;

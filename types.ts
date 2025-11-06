@@ -1,16 +1,26 @@
+// Global types for the application
+
+export type Theme = 'light' | 'dark' | 'focus';
+
+export type ViewMode = 'stream' | 'timeline';
+
+export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
+
 export enum EntityType {
-    Who = 'who',
-    Where = 'where',
-    What = 'what',
-    When = 'when',
+    Project = "Project",
+    What = "What",
+    When = "When",
+    Who = "Who",
+    Where = "Where",
 }
 
 export enum WhatType {
-    Appointment = 'appointment',
-    Milestone = 'milestone',
-    Deadline = 'deadline',
-    Period = 'period',
-    Checkpoint = 'checkpoint',
+    Appointment = "appointment",
+    Milestone = "milestone",
+    Deadline = "deadline",
+    Checkpoint = "checkpoint",
+    Period = "period",
+    Task = "task",
 }
 
 export interface BaseNode {
@@ -19,60 +29,53 @@ export interface BaseNode {
     type: EntityType;
 }
 
-export interface Who extends BaseNode {
-    type: EntityType.Who;
-}
-
-export interface What extends BaseNode {
-    id: string;
+export interface WhatNode extends BaseNode {
     type: EntityType.What;
-    description?: string;
     whatType: WhatType;
+    description?: string;
 }
 
-export interface When extends BaseNode {
-    id: string;
+export interface WhenNode extends BaseNode {
     type: EntityType.When;
-    timestamp: string;
+    timestamp: string; // ISO 8601 format
     display: string;
 }
 
-export interface Location extends BaseNode {
-    id: string;
+export interface WhoNode extends BaseNode {
+    type: EntityType.Who;
+}
+
+export interface WhereNode extends BaseNode {
     type: EntityType.Where;
+    alias?: string;
     latitude?: number;
     longitude?: number;
-    alias?: string;
+    notes?: string;
+}
+
+export interface Location extends WhereNode {
+    id: string; // "where-" + timestamp
     phone?: string;
     website?: string;
-    portalUrl?: string;
-    notes?: string;
 }
 
 export interface EventNode {
     id: number;
     projectId: number;
-    what: What;
-    when?: When;
-    endWhen?: When;
-    who: Who[];
-    whereId?: string;
+    what: WhatNode;
+    when: WhenNode;
+    endWhen?: WhenNode; // For period events
+    who: WhoNode[];
+    whereId: string; // Location ID
 }
 
 export interface Project {
     id: number;
     name: string;
     description: string;
-    status: 'Active' | 'On Hold' | 'Completed';
+    category: string;
     color: string;
-    category: string;
-}
-
-export interface Holiday {
-    name: string;
-    date: Date;
-    type: 'civil' | 'religious';
-    category: string;
+    status: 'Active' | 'On Hold' | 'Completed';
 }
 
 export interface Contact {
@@ -85,63 +88,51 @@ export interface Contact {
     messenger?: string;
 }
 
-export type Theme = 'light' | 'dark' | 'focus';
-
-export type ViewMode = 'stream' | 'timeline';
-export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
-
 export interface DiscoveredPlace {
     title: string;
     uri: string;
 }
 
-export interface Tier {
-    id:string;
-    name: string;
-    categories: string[];
+export interface AppState {
+    events: EventNode[];
+    projects: Project[];
+    locations: Location[];
+    contacts: Contact[];
 }
 
-export type TierConfig = Tier[];
-
-export interface ConfirmationState {
-  title: string;
-  message: React.ReactNode;
-  onConfirm: () => void;
-  confirmText?: string;
+export interface HistoryEntry {
+    id: number;
+    description: string;
+    timestamp: number;
+    undo: (data: AppState) => AppState;
 }
 
-// --- Project Template Types ---
-export interface TemplateEvent {
+export interface ProjectTemplateEvent {
     whatName: string;
-    whatDescription?: string;
     whatType: WhatType;
+    description: string;
+    durationDays: number; // Duration from project start
+    sequence: number; // Order of events
 }
 
 export interface ProjectTemplate {
     id: number;
     name: string;
-    category: string;
     description: string;
-    events: TemplateEvent[];
+    category: string;
+    events: ProjectTemplateEvent[];
 }
 
 
-// --- History / Undo Types ---
-export type HistoryActionType = 'CREATE' | 'UPDATE' | 'DELETE';
-export type HistoryEntityType = 'Event' | 'Project' | 'Contact' | 'Location' | 'ProjectTemplate';
+export interface Tier {
+    id: string;
+    name: string;
+    categories: string[];
+}
+export type TierConfig = Tier[];
 
-export interface HistoryEntry {
-    id: number;
-    timestamp: number;
-    action: HistoryActionType;
-    entity: HistoryEntityType;
-    description: string;
-    // Data needed to reverse the action
-    undoData: {
-        id?: number | string; // For CREATE/DELETE undo
-        eventIds?: number[]; // For Project CREATE undo
-        previousState?: Project | EventNode | Contact | Location | ProjectTemplate; // For UPDATE undo
-        deletedState?: Project | EventNode | Contact | Location | ProjectTemplate; // For DELETE undo
-        deletedEvents?: EventNode[]; // For Project DELETE undo
-    };
+export interface Holiday {
+    name: string;
+    date: Date;
+    category: string;
 }

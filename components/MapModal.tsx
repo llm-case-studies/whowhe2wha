@@ -3,12 +3,12 @@ import { Location, EventNode, Contact } from '../types';
 import { getDistanceInMiles } from '../services/geoService';
 import { EventCard } from './EventCard';
 import { PinIcon, CalendarIcon, UsersIcon, NavigateIcon } from './icons';
-import { MOCK_CONTACTS } from '../constants';
 
 interface MapModalProps {
   location: Location;
   allEvents: EventNode[];
   allLocations: Location[];
+  contacts: Contact[];
   onClose: () => void;
   onSchedule: (contact: Contact) => void;
 }
@@ -17,7 +17,7 @@ const NEARBY_RADIUS_MILES = 5;
 
 type ActiveTab = 'events' | 'contacts';
 
-export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLocations, onClose, onSchedule }) => {
+export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLocations, contacts, onClose, onSchedule }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('events');
 
   const nearbyEvents = allEvents.filter(event => {
@@ -32,7 +32,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLoca
     return false;
   });
 
-  const locationContacts = MOCK_CONTACTS.filter(
+  const locationContacts = contacts.filter(
     contact => contact.locationId === location.id
   );
 
