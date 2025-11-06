@@ -314,8 +314,9 @@ export const MOCK_EVENTS: EventNode[] = [
 ];
 
 export const MOCK_CONTACTS: Contact[] = [
-    { id: 'contact-1', name: 'Dr. Smith', role: 'Lead Dentist', locationId: 'where-1' },
-    { id: 'contact-2', name: 'Clinic Reception', role: 'Administration', locationId: 'where-1' },
-    { id: 'contact-3', name: 'Accountant', role: 'Tax Advisor', locationId: 'where-3' },
-    { id: 'contact-4', name: 'Head Librarian', role: 'Staff', locationId: 'where-4' }
+    { id: 'contact-1', name: 'Dr. Smith', role: 'Lead Dentist', locationId: 'where-1', phone: '217-528-0000', email: 'dr.smith@springfield.clinic' },
+    { id: 'contact-2', name: 'Clinic Reception', role: 'Administration', locationId: 'where-1', phone: '217-528-0000' },
+    { id: 'contact-3', name: 'Accountant', role: 'Tax Advisor', email: 'taxes@cpa.com', phone: '555-123-4567' },
+    { id: 'contact-4', name: 'Head Librarian', role: 'Staff', locationId: 'where-4' },
+    { id: 'contact-5', name: 'Sarah (Founder)', role: 'Co-founder', messenger: '@sarahfounder' }
 ];

@@ -1,3 +1,4 @@
+
 export enum EntityType {
   Who = 'who',
   Where = 'where',
@@ -68,8 +69,11 @@ export interface Project {
 export interface Contact {
     id: string;
     name: string;
-    role: string;
-    locationId: string;
+    role?: string;
+    locationId?: string;
+    email?: string;
+    phone?: string;
+    messenger?: string;
 }
 
 export interface Holiday {

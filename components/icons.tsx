@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const iconProps = {
@@ -132,4 +133,12 @@ export const LinkIcon: React.FC<{className?: string}> = ({className}) => (
 
 export const NotesIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
+);
+
+export const EmailIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+);
+
+export const ChatBubbleIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.94 8.94 0 01-4.417-1.213 1 1 0 00-1.3-.06l-2.433 1.825A1 1 0 01.65 16.25V6a1 1 0 011-1h14a1 1 0 011 1v4z" clipRule="evenodd" /></svg>
 );

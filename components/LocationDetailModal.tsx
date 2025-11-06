@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Location, EventNode, Contact } from '../types';
 import { EventCard } from './EventCard';
-import { PinIcon, CalendarIcon, UsersIcon, NavigateIcon, PhoneIcon, WebsiteIcon, LinkIcon, NotesIcon } from './icons';
+import { PinIcon, CalendarIcon, UsersIcon, NavigateIcon, PhoneIcon, WebsiteIcon, LinkIcon, NotesIcon, EmailIcon, ChatBubbleIcon } from './icons';
 
 interface LocationDetailModalProps {
   location: Location;
@@ -148,17 +149,34 @@ export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({ locati
                       {locationContacts.length > 0 ? (
                         <div className="divide-y divide-primary">
                           {locationContacts.map(contact => (
-                            <div key={contact.id} className="flex items-center justify-between py-3">
-                              <div>
-                                <p className="font-semibold text-primary">{contact.name}</p>
-                                <p className="text-sm text-secondary">{contact.role}</p>
-                              </div>
-                              <button 
-                                onClick={() => onSchedule(contact)}
-                                className="px-4 py-1.5 text-sm font-semibold bg-to-orange text-white rounded-md hover:bg-orange-500 transition-colors duration-200"
-                              >
-                                Schedule
-                              </button>
+                            <div key={contact.id} className="flex items-start justify-between py-4">
+                                <div>
+                                    <p className="font-semibold text-primary">{contact.name}</p>
+                                    {contact.role && <p className="text-sm text-secondary">{contact.role}</p>}
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                                        {contact.phone && (
+                                            <a href={`tel:${contact.phone}`} className="flex items-center text-xs text-secondary hover:text-primary transition-colors duration-200">
+                                                <PhoneIcon className="w-3.5 h-3.5 mr-1.5" /> {contact.phone}
+                                            </a>
+                                        )}
+                                        {contact.email && (
+                                            <a href={`mailto:${contact.email}`} className="flex items-center text-xs text-secondary hover:text-primary transition-colors duration-200 break-all">
+                                                <EmailIcon className="w-3.5 h-3.5 mr-1.5" /> {contact.email}
+                                            </a>
+                                        )}
+                                        {contact.messenger && (
+                                            <span className="flex items-center text-xs text-secondary">
+                                                <ChatBubbleIcon className="w-3.5 h-3.5 mr-1.5" /> {contact.messenger}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => onSchedule(contact)}
+                                    className="px-4 py-1.5 text-sm font-semibold bg-to-orange text-white rounded-md hover:bg-orange-500 transition-colors duration-200 flex-shrink-0 ml-4"
+                                >
+                                    Schedule
+                                </button>
                             </div>
                           ))}
                         </div>
