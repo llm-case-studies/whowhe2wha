@@ -27,10 +27,12 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, all
   endDate.setDate(centerDate.getDate() + DAY_WINDOW);
   endDate.setHours(23, 59, 59, 999);
 
+  // FIX: Add a guard for event.when, as it can be optional for unscheduled events.
   const eventsInWindow = allEvents.filter(event => {
+      if (!event.when) return false;
       const eventDate = new Date(event.when.timestamp);
       return eventDate >= startDate && eventDate <= endDate;
-  }).sort((a,b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime());
+  }).sort((a,b) => new Date(a.when!.timestamp).getTime() - new Date(b.when!.timestamp).getTime());
   
   const getMapUrl = (): string => {
     const locationsWithCoords = eventsInWindow
@@ -102,7 +104,7 @@ export const TimeMapModal: React.FC<TimeMapModalProps> = ({ when, allEvents, all
                 <div className="divide-y divide-primary">
                   {eventsInWindow.map(event => {
                     const location = allLocations.find(l => l.id === event.whereId);
-                    if (!location) return null;
+                    if (!location || !event.when) return null;
                     return (
                         <div key={event.id} className="flex items-center justify-between py-3">
                           <div>

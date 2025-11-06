@@ -12,7 +12,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
 import { queryGraph } from './services/geminiService';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType } from './types';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('dark');
@@ -56,6 +56,41 @@ const App: React.FC = () => {
     useEffect(() => {
         document.documentElement.className = theme;
     }, [theme]);
+    
+    // --- History Management ---
+    const getCurrentAppState = (): AppState => ({
+        events: allEvents,
+        projects: allProjects,
+        locations: allLocations,
+        contacts: allContacts,
+        projectTemplates: projectTemplates,
+    });
+    
+    const addHistoryEntry = (description: string, beforeState: AppState) => {
+        const newEntry: HistoryEntry = {
+            id: Date.now(),
+            description,
+            timestamp: Date.now(),
+            undo: (_currentState: AppState) => beforeState,
+        };
+        setHistory(prev => [newEntry, ...prev]);
+    };
+
+    const handleUndo = (historyId: number) => {
+        const entryToUndo = history.find(h => h.id === historyId);
+        if (!entryToUndo) return;
+
+        const previousState = entryToUndo.undo(getCurrentAppState());
+        
+        setAllEvents(previousState.events);
+        setAllProjects(previousState.projects);
+        setAllLocations(previousState.locations);
+        setAllContacts(previousState.contacts);
+        setProjectTemplates(previousState.projectTemplates);
+
+        setHistory(prev => prev.filter(h => h.id !== historyId));
+    };
+
 
     const handleSearch = async (query: string) => {
         setIsLoading(true);
@@ -97,11 +132,14 @@ const App: React.FC = () => {
     }, [allEvents, filteredEventIds, selectedProjectId]);
 
 
-    // Generic CRUD handlers would go here
+    // --- CRUD Handlers ---
     const handleSaveEvent = (event: EventNode) => {
+        const beforeState = getCurrentAppState();
         if (eventToEdit) {
+            addHistoryEntry(`Edited event: "${event.what.name}"`, beforeState);
             setAllEvents(allEvents.map(e => e.id === event.id ? event : e));
         } else {
+            addHistoryEntry(`Added event: "${event.what.name}"`, beforeState);
             setAllEvents([...allEvents, event]);
         }
         setEventToEdit(null);
@@ -120,25 +158,90 @@ const App: React.FC = () => {
     };
 
     const handleDeleteEvent = (eventId: number) => {
+        const eventToDelete = allEvents.find(e => e.id === eventId);
+        if (!eventToDelete) return;
         setConfirmation({
             title: "Delete Event?",
             message: "Are you sure you want to permanently delete this event?",
             onConfirm: () => {
+                const beforeState = getCurrentAppState();
+                addHistoryEntry(`Deleted event: "${eventToDelete.what.name}"`, beforeState);
                 setAllEvents(allEvents.filter(e => e.id !== eventId));
                 setConfirmation(null);
             }
         });
     };
     
-    const handleSaveProject = (project: Project) => {
-        if(projectToEdit) {
+    const handleSaveProject = (project: Project, templateId?: number, startDate?: string) => {
+        const beforeState = getCurrentAppState();
+        
+        if (projectToEdit) {
+            // Editing an existing project
+            addHistoryEntry(`Edited project: "${project.name}"`, beforeState);
             setAllProjects(allProjects.map(p => p.id === project.id ? project : p));
         } else {
-            setAllProjects([...allProjects, project]);
+            // Adding a new project
+            const newProjectWithId = { ...project, id: Date.now() };
+            let newEventsFromTemplate: EventNode[] = [];
+            let historyDescription = `Added project: "${project.name}"`;
+
+            if (templateId && startDate) {
+                const template = projectTemplates.find(t => t.id === templateId);
+                const projectStartDate = new Date(startDate);
+                if (template) {
+                    historyDescription += ` from template "${template.name}"`;
+                    let cumulativeOffset = 0;
+                    newEventsFromTemplate = template.events
+                        .sort((a, b) => a.sequence - b.sequence)
+                        .map(templateEvent => {
+                            const eventStartDate = new Date(projectStartDate);
+                            eventStartDate.setDate(projectStartDate.getDate() + cumulativeOffset);
+
+                            const eventEndDate = new Date(eventStartDate);
+                            const duration = Math.max(1, templateEvent.durationDays);
+                            eventEndDate.setDate(eventStartDate.getDate() + duration - 1);
+                            
+                            cumulativeOffset += duration;
+
+                            return {
+                                id: Date.now() + Math.random(),
+                                projectId: newProjectWithId.id,
+                                what: {
+                                    id: `what-${Date.now() + Math.random()}`,
+                                    name: templateEvent.whatName,
+                                    description: templateEvent.description,
+                                    type: EntityType.What,
+                                    whatType: templateEvent.whatType,
+                                },
+                                when: {
+                                    id: `when-${Date.now() + Math.random()}`,
+                                    name: eventStartDate.toISOString(),
+                                    timestamp: eventStartDate.toISOString(),
+                                    display: eventStartDate.toLocaleString(),
+                                    type: EntityType.When,
+                                },
+                                endWhen: duration > 1 ? {
+                                    id: `endwhen-${Date.now() + Math.random()}`,
+                                    name: eventEndDate.toISOString(),
+                                    timestamp: eventEndDate.toISOString(),
+                                    display: eventEndDate.toLocaleString(),
+                                    type: EntityType.When,
+                                } : undefined,
+                                who: [],
+                                whereId: '', // Needs to be assigned by user later
+                            };
+                        });
+                }
+            }
+            
+            addHistoryEntry(historyDescription, beforeState);
+            setAllProjects([...allProjects, newProjectWithId]);
+            setAllEvents([...allEvents, ...newEventsFromTemplate]);
         }
+        
         setProjectToEdit(null);
         setIsAddProjectModalOpen(false);
-    }
+    };
     
     const handleAddProjectClick = () => {
         setProjectToEdit(null);
@@ -151,10 +254,14 @@ const App: React.FC = () => {
     };
     
     const handleDeleteProject = (projectId: number) => {
+        const projectToDelete = allProjects.find(p => p.id === projectId);
+        if (!projectToDelete) return;
          setConfirmation({
             title: "Delete Project?",
             message: "Are you sure? This will also delete all associated events.",
             onConfirm: () => {
+                const beforeState = getCurrentAppState();
+                addHistoryEntry(`Deleted project: "${projectToDelete.name}"`, beforeState);
                 setAllProjects(allProjects.filter(p => p.id !== projectId));
                 setAllEvents(allEvents.filter(e => e.projectId !== projectId));
                 setConfirmation(null);
@@ -163,9 +270,12 @@ const App: React.FC = () => {
     };
 
     const handleSaveContact = (contact: Contact) => {
+        const beforeState = getCurrentAppState();
         if(contactToEdit) {
+            addHistoryEntry(`Edited contact: "${contact.name}"`, beforeState);
             setAllContacts(allContacts.map(c => c.id === contact.id ? contact : c));
         } else {
+            addHistoryEntry(`Added contact: "${contact.name}"`, beforeState);
             setAllContacts([...allContacts, contact]);
         }
         setContactToEdit(null);
@@ -183,10 +293,14 @@ const App: React.FC = () => {
     };
 
     const handleDeleteContact = (contactId: string) => {
+        const contactToDelete = allContacts.find(c => c.id === contactId);
+        if (!contactToDelete) return;
          setConfirmation({
             title: "Delete Contact?",
             message: "Are you sure you want to delete this contact?",
             onConfirm: () => {
+                const beforeState = getCurrentAppState();
+                addHistoryEntry(`Deleted contact: "${contactToDelete.name}"`, beforeState);
                 setAllContacts(allContacts.filter(c => c.id !== contactId));
                 setConfirmation(null);
             }
@@ -194,10 +308,13 @@ const App: React.FC = () => {
     }
 
     const handleSaveLocation = (location: Location) => {
+        const beforeState = getCurrentAppState();
         if(locationToEdit) {
+            addHistoryEntry(`Edited location: "${location.alias || location.name}"`, beforeState);
             setAllLocations(allLocations.map(l => l.id === location.id ? location : l));
             setIsEditLocationModalOpen(false);
         } else {
+            addHistoryEntry(`Added location: "${location.alias || location.name}"`, beforeState);
             setAllLocations([...allLocations, location]);
             setIsAddLocationModalOpen(false);
         }
@@ -215,16 +332,48 @@ const App: React.FC = () => {
     };
 
     const handleDeleteLocation = (locationId: string) => {
+        const locationToDelete = allLocations.find(l => l.id === locationId);
+        if (!locationToDelete) return;
          setConfirmation({
             title: "Delete Location?",
             message: "You can only delete locations that have no events scheduled. Are you sure?",
             onConfirm: () => {
                 const isUsed = allEvents.some(e => e.whereId === locationId);
                 if (!isUsed) {
+                    const beforeState = getCurrentAppState();
+                    addHistoryEntry(`Deleted location: "${locationToDelete.alias || locationToDelete.name}"`, beforeState);
                     setAllLocations(allLocations.filter(l => l.id !== locationId));
                 } else {
                     alert("Cannot delete location as it is currently in use by one or more events.");
                 }
+                setConfirmation(null);
+            }
+        });
+    };
+
+    const handleSaveTemplate = (template: ProjectTemplate) => {
+        const beforeState = getCurrentAppState();
+        const existing = projectTemplates.some(t => t.id === template.id);
+        if (existing) {
+            addHistoryEntry(`Edited template: "${template.name}"`, beforeState);
+            setProjectTemplates(projectTemplates.map(pt => pt.id === template.id ? template : pt));
+        } else {
+            addHistoryEntry(`Added template: "${template.name}"`, beforeState);
+            setProjectTemplates([...projectTemplates, template]);
+        }
+    };
+
+    const handleDeleteTemplate = (templateId: number) => {
+        const templateToDelete = projectTemplates.find(t => t.id === templateId);
+        if (!templateToDelete) return;
+
+        setConfirmation({
+            title: "Delete Template?",
+            message: "Are you sure you want to permanently delete this project template?",
+            onConfirm: () => {
+                const beforeState = getCurrentAppState();
+                addHistoryEntry(`Deleted template: "${templateToDelete.name}"`, beforeState);
+                setProjectTemplates(projectTemplates.filter(pt => pt.id !== templateId));
                 setConfirmation(null);
             }
         });
@@ -307,8 +456,8 @@ const App: React.FC = () => {
                     isOpen={isTemplatesModalOpen}
                     onClose={() => setIsTemplatesModalOpen(false)}
                     templates={projectTemplates}
-                    onSave={(t) => setProjectTemplates(projectTemplates.map(pt => pt.id === t.id ? t : pt))}
-                    onDelete={(id) => setProjectTemplates(projectTemplates.filter(pt => pt.id !== id))}
+                    onSave={handleSaveTemplate}
+                    onDelete={handleDeleteTemplate}
                 />
             )}
 
@@ -324,7 +473,7 @@ const App: React.FC = () => {
                  <HistoryPanel
                     history={history}
                     onClose={() => setIsHistoryPanelOpen(false)}
-                    onUndo={(id) => console.log('Undo', id)}
+                    onUndo={handleUndo}
                     onClear={() => setHistory([])}
                 />
             )}
