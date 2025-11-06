@@ -9,8 +9,9 @@ import { AddLocationModal } from './components/AddLocationModal';
 import { EditLocationModal } from './components/EditLocationModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { HistoryPanel } from './components/HistoryPanel';
-import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS } from './constants';
-import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType } from './types';
+import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
+import { MOCK_PROJECTS, MOCK_EVENTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_PROJECT_TEMPLATES } from './constants';
+import { Project, EventNode, Location, Contact, Theme, ConfirmationState, HistoryEntry, HistoryActionType, HistoryEntityType, ProjectTemplate, EntityType } from './types';
 import { queryGraph } from './services/geminiService';
 
 const MAX_HISTORY_LENGTH = 20;
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<EventNode[]>(MOCK_EVENTS);
   const [locations, setLocations] = useState<Location[]>(MOCK_LOCATIONS);
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>(MOCK_PROJECT_TEMPLATES);
   
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
@@ -33,6 +35,7 @@ const App: React.FC = () => {
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [isProjectTemplatesModalOpen, setIsProjectTemplatesModalOpen] = useState(false);
   const [addLocationQuery, setAddLocationQuery] = useState('');
   
   const [preselectedProjectId, setPreselectedProjectId] = useState<number | null>(null);
@@ -126,15 +129,37 @@ const App: React.FC = () => {
   }
   
   // Project Handlers
-  const handleSaveProject = (project: Project) => {
+  const handleSaveProject = (project: Project, templateId?: number) => {
     const isEditing = projects.some(p => p.id === project.id);
     if (isEditing) {
         const previousState = projects.find(p => p.id === project.id)!;
         pushToHistory('UPDATE', 'Project', `Updated project: "${project.name}"`, { previousState: JSON.parse(JSON.stringify(previousState)) });
         setProjects(prev => prev.map(p => p.id === project.id ? project : p));
     } else {
-        pushToHistory('CREATE', 'Project', `Created project: "${project.name}"`, { id: project.id });
+        const template = projectTemplates.find(t => t.id === templateId);
+        const newEvents: EventNode[] = template ? template.events.map(te => ({
+            id: Date.now() + Math.random(),
+            projectId: project.id,
+            what: {
+                id: `what-${Date.now() + Math.random()}`,
+                name: te.whatName,
+                description: te.whatDescription,
+                type: EntityType.What,
+                whatType: te.whatType,
+            },
+            who: [],
+        })) : [];
+
+        const eventIds = newEvents.map(e => e.id);
+        const historyDescription = template 
+            ? `Created project "${project.name}" from template`
+            : `Created project: "${project.name}"`;
+        
+        pushToHistory('CREATE', 'Project', historyDescription, { id: project.id, eventIds });
         setProjects(prev => [...prev, project]);
+        if (newEvents.length > 0) {
+            setEvents(prev => [...prev, ...newEvents]);
+        }
     }
     setIsAddProjectModalOpen(false);
     setEditingProject(null);
@@ -222,6 +247,25 @@ const App: React.FC = () => {
           }
       })
   }
+
+  // Template Handlers
+  const handleSaveTemplate = (template: ProjectTemplate) => {
+      const isEditing = projectTemplates.some(t => t.id === template.id);
+      if(isEditing) {
+          const previousState = projectTemplates.find(t => t.id === template.id)!;
+          pushToHistory('UPDATE', 'ProjectTemplate', `Updated template: "${template.name}"`, { previousState });
+          setProjectTemplates(prev => prev.map(t => t.id === template.id ? template : t));
+      } else {
+          pushToHistory('CREATE', 'ProjectTemplate', `Created template: "${template.name}"`, { id: template.id });
+          setProjectTemplates(prev => [...prev, template]);
+      }
+  }
+  const handleDeleteTemplate = (templateId: number) => {
+      const templateToDelete = projectTemplates.find(t => t.id === templateId);
+      if(!templateToDelete) return;
+      pushToHistory('DELETE', 'ProjectTemplate', `Deleted template: "${templateToDelete.name}"`, { deletedState: templateToDelete });
+      setProjectTemplates(prev => prev.filter(t => t.id !== templateId));
+  }
   
   // History Handlers
   const handleUndo = (historyId: number) => {
@@ -240,17 +284,22 @@ const App: React.FC = () => {
          setter(prev => prev.map(i => i.id === item.id ? item : i));
       };
 
-      const entityMap = {
+      const entityMap: Record<HistoryEntityType, any> = {
           'Event': { setter: setEvents, remover: stateRemover, restorer: stateRestorer, adder: stateUpdater },
           'Project': { setter: setProjects, remover: stateRemover, restorer: stateRestorer, adder: stateUpdater },
           'Contact': { setter: setContacts, remover: stateRemover, restorer: stateRestorer, adder: stateUpdater },
           'Location': { setter: setLocations, remover: stateRemover, restorer: stateRestorer, adder: stateUpdater },
+          'ProjectTemplate': { setter: setProjectTemplates, remover: stateRemover, restorer: stateRestorer, adder: stateUpdater },
       };
 
       const handler = entityMap[entity];
 
       if (action === 'CREATE') {
           handler.remover(handler.setter, undoData.id);
+          if (entity === 'Project' && undoData.eventIds && undoData.eventIds.length > 0) {
+              const eventIdSet = new Set(undoData.eventIds);
+              setEvents(prev => prev.filter(e => !eventIdSet.has(e.id)));
+          }
       } else if (action === 'DELETE') {
           handler.adder(handler.setter, undoData.deletedState);
           if (entity === 'Project' && undoData.deletedEvents) {
@@ -300,16 +349,18 @@ const App: React.FC = () => {
           onDeleteLocation={handleDeleteLocation}
           selectedProjectId={selectedProjectId}
           onProjectSelect={handleProjectSelect}
+          onOpenProjectTemplates={() => setIsProjectTemplatesModalOpen(true)}
         />
       </main>
 
       {isAddEventModalOpen && <AddEventModal projects={projects} locations={locations} contacts={contacts} eventToEdit={editingEvent} preselectedProjectId={preselectedProjectId} onClose={() => { setIsAddEventModalOpen(false); setEditingEvent(null); setPreselectedProjectId(null); }} onSave={handleSaveEvent} />}
-      {isAddProjectModalOpen && <AddProjectModal projectToEdit={editingProject} onClose={() => { setIsAddProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} />}
+      {isAddProjectModalOpen && <AddProjectModal projectToEdit={editingProject} projectTemplates={projectTemplates} onClose={() => { setIsAddProjectModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} />}
       {isAddContactModalOpen && <AddContactModal locations={locations} contactToEdit={editingContact} onClose={() => { setIsAddContactModalOpen(false); setEditingContact(null); }} onSave={handleSaveContact} />}
       {isAddLocationModalOpen && <AddLocationModal initialQuery={addLocationQuery} onClose={() => setIsAddLocationModalOpen(false)} onSave={handleSaveLocation} />}
       {editingLocation && <EditLocationModal location={editingLocation} onClose={() => setEditingLocation(null)} onSave={handleSaveLocation} />}
       {confirmationState && <ConfirmationModal {...confirmationState} onCancel={() => setConfirmationState(null)} />}
       {isHistoryPanelOpen && <HistoryPanel history={history} onUndo={handleUndo} onClear={handleClearHistory} onClose={() => setIsHistoryPanelOpen(false)} />}
+      {isProjectTemplatesModalOpen && <ProjectTemplatesModal templates={projectTemplates} onSave={handleSaveTemplate} onDelete={handleDeleteTemplate} onClose={() => setIsProjectTemplatesModalOpen(false)} />}
     </div>
   );
 };

@@ -298,6 +298,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   
   const { periodEvents, pointEvents, holidays } = useMemo(() => {
     const visibleEvents = events.filter(event => {
+      if (!event.when) return false;
       if (!laneInfo.has(event.projectId)) return false;
       const eventDateMs = new Date(event.when.timestamp).getTime();
       const eventEndDateMs = event.endWhen ? new Date(event.endWhen.timestamp).getTime() : eventDateMs;
@@ -407,7 +408,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
             <div className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none">
                 {pointEvents.map(event => {
                     const info = laneInfo.get(event.projectId);
-                    if (!info) return null;
+                    if (!info || !event.when) return null;
 
                     const position = getPositionPercent(new Date(event.when.timestamp));
                     const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;

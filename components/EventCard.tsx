@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { EventNode, Location, EntityType, WhatType } from '../types';
 import { EntityTag } from './EntityTag';
@@ -56,21 +55,34 @@ export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocati
                 {/* When */}
                 <div className="flex items-center space-x-3 text-sm">
                     <ClockIcon className="h-5 w-5 text-secondary" />
-                    <EntityTag label={event.when.display} type={EntityType.When} onClick={() => onWhenClick(event.when)} />
-                    {event.endWhen && (
+                    {event.when ? (
                         <>
-                            <span className="text-secondary">&rarr;</span>
-                            <EntityTag label={event.endWhen.display} type={EntityType.When} onClick={() => onWhenClick(event.endWhen!)} />
+                            <EntityTag label={event.when.display} type={EntityType.When} onClick={() => onWhenClick(event.when!)} />
+                            {event.endWhen && (
+                                <>
+                                    <span className="text-secondary">&rarr;</span>
+                                    <EntityTag label={event.endWhen.display} type={EntityType.When} onClick={() => onWhenClick(event.endWhen!)} />
+                                </>
+                            )}
                         </>
+                    ) : (
+                        <span className="text-secondary italic px-3 py-1">Unscheduled</span>
                     )}
                 </div>
                 
                 {/* Where */}
-                {location && (
+                {location ? (
                     <div className="flex items-center space-x-3 text-sm">
                         <PinIcon className="h-5 w-5 text-secondary" />
                         <EntityTag label={location.alias || location.name} type={EntityType.Where} onClick={() => onLocationClick(location)} />
                     </div>
+                ) : (
+                   event.hasOwnProperty('whereId') && event.whereId === undefined && ( // Only show if created from template
+                     <div className="flex items-center space-x-3 text-sm">
+                        <PinIcon className="h-5 w-5 text-secondary" />
+                        <span className="text-secondary italic px-3 py-1">No Location</span>
+                    </div>
+                   )
                 )}
 
                 {/* Who */}

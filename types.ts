@@ -53,10 +53,10 @@ export interface EventNode {
     id: number;
     projectId: number;
     what: What;
-    when: When;
+    when?: When;
     endWhen?: When;
     who: Who[];
-    whereId: string;
+    whereId?: string;
 }
 
 export interface Project {
@@ -110,9 +110,25 @@ export interface ConfirmationState {
   confirmText?: string;
 }
 
+// --- Project Template Types ---
+export interface TemplateEvent {
+    whatName: string;
+    whatDescription?: string;
+    whatType: WhatType;
+}
+
+export interface ProjectTemplate {
+    id: number;
+    name: string;
+    category: string;
+    description: string;
+    events: TemplateEvent[];
+}
+
+
 // --- History / Undo Types ---
 export type HistoryActionType = 'CREATE' | 'UPDATE' | 'DELETE';
-export type HistoryEntityType = 'Event' | 'Project' | 'Contact' | 'Location';
+export type HistoryEntityType = 'Event' | 'Project' | 'Contact' | 'Location' | 'ProjectTemplate';
 
 export interface HistoryEntry {
     id: number;
@@ -122,9 +138,10 @@ export interface HistoryEntry {
     description: string;
     // Data needed to reverse the action
     undoData: {
-        id?: number | string; // For CREATE undo
-        previousState?: Project | EventNode | Contact | Location; // For UPDATE undo
-        deletedState?: Project | EventNode | Contact | Location; // For DELETE undo
+        id?: number | string; // For CREATE/DELETE undo
+        eventIds?: number[]; // For Project CREATE undo
+        previousState?: Project | EventNode | Contact | Location | ProjectTemplate; // For UPDATE undo
+        deletedState?: Project | EventNode | Contact | Location | ProjectTemplate; // For DELETE undo
         deletedEvents?: EventNode[]; // For Project DELETE undo
     };
 }

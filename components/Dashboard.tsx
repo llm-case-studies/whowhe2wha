@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { EventNode, Project, Location, Contact, ViewMode, TimelineScale, TierConfig } from '../types';
 import { ViewControls } from './ViewControls';
@@ -8,6 +7,7 @@ import { ProjectCard } from './ProjectCard';
 import { TierConfigModal } from './TierConfigModal';
 import { LocationDetailModal } from './LocationDetailModal';
 import { TimeMapModal } from './TimeMapModal';
+import { ProjectTemplatesModal } from './ProjectTemplatesModal'; // Import ProjectTemplatesModal
 
 interface DashboardProps {
   events: EventNode[];
@@ -29,6 +29,7 @@ interface DashboardProps {
   onDeleteLocation: (locationId: string) => void;
   selectedProjectId: number | null;
   onProjectSelect: (projectId: number) => void;
+  onOpenProjectTemplates: () => void;
 }
 
 const initialTierConfig: TierConfig = [
@@ -43,7 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
     onAddProject, onEditProject, onDeleteProject,
     onAddContact, onEditContact, onDeleteContact,
     onAddLocation, onEditLocation, onDeleteLocation,
-    selectedProjectId, onProjectSelect
+    selectedProjectId, onProjectSelect, onOpenProjectTemplates
   } = props;
 
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
@@ -65,6 +66,9 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
 
   const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
 
+  const unscheduledEvents = events.filter(e => !e.when).sort((a,b) => a.id - b.id);
+  const scheduledEvents = events.filter(e => !!e.when).sort((a, b) => new Date(a.when!.timestamp).getTime() - new Date(b.when!.timestamp).getTime());
+
   return (
     <>
       <ViewControls
@@ -78,6 +82,8 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         onAddProjectClick={onAddProject}
         onAddContactClick={onAddContact}
         onAddLocationClick={() => onAddLocation('')}
+        // Fix: Pass handler for opening project templates modal to ViewControls
+        onOpenTemplatesClick={onOpenProjectTemplates}
         selectedHolidayCategories={selectedHolidayCategories}
         setSelectedHolidayCategories={setSelectedHolidayCategories}
         selectedProjectCategories={selectedProjectCategories}
@@ -88,26 +94,42 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
       {viewMode === 'stream' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
+            {unscheduledEvents.length > 0 && (
+              <div className="mb-10">
+                 <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
+                 <div className="space-y-4">
+                    {unscheduledEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        locations={locations} 
+                        onLocationClick={setLocationDetailModal} 
+                        onWhenClick={(w) => setTimeMapModalWhen(w)} 
+                        onEdit={onEditEvent}
+                        onDelete={onDeleteEvent}
+                      />
+                    ))}
+                 </div>
+              </div>
+            )}
+            
             <h2 className="text-xl font-bold text-primary">Event Stream</h2>
-            {events.length > 0 ? (
-              events
-                .slice()
-                .sort((a, b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime())
-                .map(event => (
+            {scheduledEvents.length > 0 ? (
+                scheduledEvents.map(event => (
                   <EventCard 
                     key={event.id} 
                     event={event} 
                     locations={locations} 
                     onLocationClick={setLocationDetailModal} 
-                    onWhenClick={setTimeMapModalWhen} 
+                    onWhenClick={(w) => setTimeMapModalWhen(w)} 
                     onEdit={onEditEvent}
                     onDelete={onDeleteEvent}
                   />
                 ))
             ) : (
               <div className="text-center py-16 px-6 bg-secondary rounded-lg">
-                  <h3 className="text-lg font-semibold text-primary">No Events Found</h3>
-                  <p className="text-tertiary mt-2">Try clearing your search or project filter.</p>
+                  <h3 className="text-lg font-semibold text-primary">No Scheduled Events Found</h3>
+                  <p className="text-tertiary mt-2">Try clearing your search, adding a date to unscheduled events, or creating a new event.</p>
               </div>
             )}
           </div>

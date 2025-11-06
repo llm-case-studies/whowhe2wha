@@ -1,22 +1,24 @@
-
 import React, { useState, useEffect } from 'react';
-import { Project } from '../types';
+import { Project, ProjectTemplate } from '../types';
 import { PROJECT_CATEGORIES } from '../constants';
 
 interface AddProjectModalProps {
   projectToEdit?: Project | null;
+  projectTemplates: ProjectTemplate[];
   onClose: () => void;
-  onSave: (project: Project) => void;
+  onSave: (project: Project, templateId?: number) => void;
 }
 
 const colorOptions = ['blue', 'purple', 'orange', 'yellow', 'green', 'pink'];
 
-export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit, onClose, onSave }) => {
+export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit, projectTemplates, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState(PROJECT_CATEGORIES[0]);
   const [color, setColor] = useState('blue');
   const [status, setStatus] = useState<'Active' | 'On Hold' | 'Completed'>('Active');
+  const [templateId, setTemplateId] = useState<string>('');
+
 
   useEffect(() => {
     if (projectToEdit) {
@@ -27,6 +29,19 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
       setStatus(projectToEdit.status);
     }
   }, [projectToEdit]);
+  
+  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const selectedId = e.target.value;
+      setTemplateId(selectedId);
+      if (selectedId) {
+          const template = projectTemplates.find(t => t.id === Number(selectedId));
+          if (template && !name) {
+              setName(template.name);
+              setDescription(template.description);
+              setCategory(template.category);
+          }
+      }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +55,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
       color,
       status,
     };
-    onSave(newProject);
+    onSave(newProject, templateId ? Number(templateId) : undefined);
   };
 
   return (
@@ -52,6 +67,15 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ projectToEdit,
         </div>
        
         <div className="space-y-4">
+            {!projectToEdit && (
+                 <div>
+                    <label htmlFor="template" className="block text-sm font-medium text-secondary mb-1">Start from a template (optional)</label>
+                    <select id="template" value={templateId} onChange={handleTemplateChange} className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
+                        <option value="">Start from scratch</option>
+                        {projectTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                </div>
+            )}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-secondary mb-1">Project Name</label>
               <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />

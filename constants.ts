@@ -1,6 +1,4 @@
-
-
-import { EventNode, EntityType, Project, Contact, Holiday, WhatType, Location } from './types';
+import { EventNode, EntityType, Project, Contact, Holiday, WhatType, Location, ProjectTemplate } from './types';
 
 export const COLORS: { [key in EntityType]: string } = {
   [EntityType.Who]: 'bg-who-pink',
@@ -24,6 +22,69 @@ export const HOLIDAY_CATEGORIES = [
 ];
 
 export const PROJECT_CATEGORIES = ['Work', 'Health', 'Finance', 'Home', 'Personal'];
+
+export const MOCK_PROJECT_TEMPLATES: ProjectTemplate[] = [
+  {
+    id: 1,
+    name: 'Half-Marathon Training (12 Weeks)',
+    category: 'Health',
+    description: 'A 12-week beginner training plan to prepare for a half-marathon.',
+    events: [
+      { whatName: 'Week 1-4: Build Base Mileage', whatDescription: 'Focus on consistent, easy runs to build endurance.', whatType: WhatType.Period },
+      { whatName: 'Week 5: Checkpoint', whatDescription: 'Assess progress and adjust plan if needed.', whatType: WhatType.Checkpoint },
+      { whatName: 'Week 5-9: Introduce Speed Work', whatDescription: 'Incorporate tempo runs and interval training.', whatType: WhatType.Period },
+      { whatName: 'Week 10-11: Tapering', whatDescription: 'Reduce mileage to allow muscles to recover and store energy.', whatType: WhatType.Period },
+      { whatName: 'Final Week: Rest & Hydrate', whatDescription: 'Very short, easy runs. Focus on nutrition and hydration.', whatType: WhatType.Period },
+      { whatName: 'Race Day', whatDescription: 'The culmination of your training!', whatType: WhatType.Milestone },
+    ]
+  },
+  {
+    id: 2,
+    name: 'Agile Sprint (2 Weeks)',
+    category: 'Work',
+    description: 'A standard two-week sprint cycle for a software development team.',
+    events: [
+      { whatName: 'Sprint Planning', whatDescription: 'Team commits to a set of work for the upcoming sprint.', whatType: WhatType.Appointment },
+      { whatName: 'Daily Standup Meetings', whatDescription: 'Brief daily check-ins to sync on progress and blockers.', whatType: WhatType.Period },
+      { whatName: 'Backlog Refinement', whatDescription: 'Review and prepare user stories for the next sprint.', whatType: WhatType.Appointment },
+      { whatName: 'Sprint Review', whatDescription: 'Demonstrate the work completed during the sprint to stakeholders.', whatType: WhatType.Milestone },
+      { whatName: 'Sprint Retrospective', whatDescription: 'Team reflects on the past sprint to identify areas for improvement.', whatType: WhatType.Appointment },
+    ]
+  },
+  {
+    id: 3,
+    name: 'US Visa Application',
+    category: 'Personal',
+    description: 'Standard process for applying for a non-immigrant US visa.',
+    events: [
+      { whatName: 'Complete DS-160 Form', whatDescription: 'Fill out the online non-immigrant visa application.', whatType: WhatType.Milestone },
+      { whatName: 'Pay Application Fee', whatDescription: 'Pay the non-refundable MRV fee.', whatType: WhatType.Deadline },
+      { whatName: 'Schedule Interview', whatDescription: 'Schedule appointments for biometrics and the consular interview.', whatType: WhatType.Appointment },
+      { whatName: 'Gather Required Documents', whatDescription: 'Passport, photos, receipts, application confirmation, etc.', whatType: WhatType.Milestone },
+      { whatName: 'Attend Interview', whatDescription: 'Attend the scheduled interview at the embassy or consulate.', whatType: WhatType.Appointment },
+      { whatName: 'Passport Return', whatDescription: 'Receive passport with visa via courier or pickup.', whatType: WhatType.Checkpoint },
+    ]
+  },
+   {
+    id: 4,
+    name: 'Home Renovation',
+    category: 'Home',
+    description: 'A template for managing a major home renovation project.',
+    events: [
+      { whatName: 'Define Scope & Budget', whatDescription: 'Finalize project goals and financial limits.', whatType: WhatType.Milestone },
+      { whatName: 'Hire Contractor & Sign Contract', whatDescription: 'Select and legally engage a general contractor.', whatType: WhatType.Deadline },
+      { whatName: 'Obtain Necessary Permits', whatDescription: 'Apply for and receive all required building permits.', whatType: WhatType.Milestone },
+      { whatName: 'Demolition Phase', whatDescription: 'Clear out the existing space.', whatType: WhatType.Period },
+      { whatName: 'Rough-in Work', whatDescription: 'Install new plumbing, electrical, and HVAC systems.', whatType: WhatType.Period },
+      { whatName: 'Initial Inspections', whatDescription: 'Have rough-in work inspected by city officials.', whatType: WhatType.Checkpoint },
+      { whatName: 'Drywall, Paint & Flooring', whatDescription: 'Close up walls and install final surfaces.', whatType: WhatType.Period },
+      { whatName: 'Cabinetry & Fixture Installation', whatDescription: 'Install kitchen/bathroom cabinets, lights, sinks, etc.', whatType: WhatType.Period },
+      { whatName: 'Final Inspection', whatDescription: 'The final walkthrough with the inspector.', whatType: WhatType.Deadline },
+      { whatName: 'Punch List & Final Payment', whatDescription: 'Address any remaining small issues before final payment.', whatType: WhatType.Milestone },
+    ]
+  },
+];
+
 
 export const HOLIDAY_DATA: Record<string, Holiday[]> = {
   US: [
