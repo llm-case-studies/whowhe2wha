@@ -103,3 +103,10 @@ export interface Tier {
 }
 
 export type TierConfig = Tier[];
+
+export interface ConfirmationState {
+  title: string;
+  message: React.ReactNode;
+  onConfirm: () => void;
+  confirmText?: string;
+}

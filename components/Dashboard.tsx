@@ -6,9 +6,8 @@ import { TimelineView } from './TimelineView';
 import { EventCard } from './EventCard';
 import { ProjectCard } from './ProjectCard';
 import { TierConfigModal } from './TierConfigModal';
-import { MapModal } from './MapModal';
+import { LocationDetailModal } from './LocationDetailModal';
 import { TimeMapModal } from './TimeMapModal';
-import { AddEventModal } from './AddEventForm';
 
 interface DashboardProps {
   events: EventNode[];
@@ -17,9 +16,19 @@ interface DashboardProps {
   locations: Location[];
   contacts: Contact[];
   onAddEvent: () => void;
+  onEditEvent: (event: EventNode) => void;
+  onDeleteEvent: (eventId: number) => void;
   onAddProject: () => void;
+  onEditProject: (project: Project) => void;
+  onDeleteProject: (projectId: number) => void;
   onAddContact: () => void;
+  onEditContact: (contact: Contact) => void;
+  onDeleteContact: (contactId: string) => void;
   onAddLocation: (query: string) => void;
+  onEditLocation: (location: Location) => void;
+  onDeleteLocation: (locationId: string) => void;
+  selectedProjectId: number | null;
+  onProjectSelect: (projectId: number) => void;
 }
 
 const initialTierConfig: TierConfig = [
@@ -27,17 +36,16 @@ const initialTierConfig: TierConfig = [
   { id: 'tier-2', name: 'Secondary', categories: ['Home', 'Personal'] },
 ];
 
-export const Dashboard: React.FC<DashboardProps> = ({
-  events,
-  allEvents,
-  projects,
-  locations,
-  contacts,
-  onAddEvent,
-  onAddProject,
-  onAddContact,
-  onAddLocation,
-}) => {
+export const Dashboard: React.FC<DashboardProps> = (props) => {
+  const {
+    events, allEvents, projects, locations, contacts, 
+    onAddEvent, onEditEvent, onDeleteEvent, 
+    onAddProject, onEditProject, onDeleteProject,
+    onAddContact, onEditContact, onDeleteContact,
+    onAddLocation, onEditLocation, onDeleteLocation,
+    selectedProjectId, onProjectSelect
+  } = props;
+
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
   const [timelineDate, setTimelineDate] = useState(new Date('2025-11-15T12:00:00Z'));
@@ -47,18 +55,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isTierConfigModalOpen, setIsTierConfigModalOpen] = useState(false);
   const [tierConfig, setTierConfig] = useState<TierConfig>(initialTierConfig);
 
-  const [mapModalLocation, setMapModalLocation] = useState<Location | null>(null);
+  const [locationDetailModal, setLocationDetailModal] = useState<Location | null>(null);
   const [timeMapModalWhen, setTimeMapModalWhen] = useState<EventNode['when'] | null>(null);
-  const [addEventWithContact, setAddEventWithContact] = useState<Contact | null>(null);
   
   const handleSaveTierConfig = (newConfig: TierConfig) => {
     setTierConfig(newConfig);
     setIsTierConfigModalOpen(false);
-  };
-
-  const handleScheduleFromMap = (contact: Contact) => {
-    setMapModalLocation(null);
-    setAddEventWithContact(contact);
   };
 
   const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
@@ -92,16 +94,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 .slice()
                 .sort((a, b) => new Date(a.when.timestamp).getTime() - new Date(b.when.timestamp).getTime())
                 .map(event => (
-                  <EventCard key={event.id} event={event} locations={locations} onLocationClick={setMapModalLocation} onWhenClick={setTimeMapModalWhen} />
+                  <EventCard 
+                    key={event.id} 
+                    event={event} 
+                    locations={locations} 
+                    onLocationClick={setLocationDetailModal} 
+                    onWhenClick={setTimeMapModalWhen} 
+                    onEdit={onEditEvent}
+                    onDelete={onDeleteEvent}
+                  />
                 ))
             ) : (
-              <p className="text-tertiary">No events to display.</p>
+              <div className="text-center py-16 px-6 bg-secondary rounded-lg">
+                  <h3 className="text-lg font-semibold text-primary">No Events Found</h3>
+                  <p className="text-tertiary mt-2">Try clearing your search or project filter.</p>
+              </div>
             )}
           </div>
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-primary">Projects</h2>
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-primary">Projects</h2>
+                {selectedProjectId && (
+                    <button onClick={() => onProjectSelect(selectedProjectId)} className="text-sm text-wha-blue hover:underline">Clear Filter</button>
+                )}
+            </div>
             {visibleProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard 
+                key={project.id} 
+                project={project}
+                isSelected={selectedProjectId === project.id}
+                onClick={() => onProjectSelect(project.id)}
+                onEdit={onEditProject}
+                onDelete={onDeleteProject}
+              />
             ))}
           </div>
         </div>
@@ -121,9 +146,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       {isTierConfigModalOpen && <TierConfigModal currentConfig={tierConfig} onSave={handleSaveTierConfig} onClose={() => setIsTierConfigModalOpen(false)} />}
-      {mapModalLocation && <MapModal location={mapModalLocation} allEvents={allEvents} allLocations={locations} onClose={() => setMapModalLocation(null)} onSchedule={handleScheduleFromMap} />}
+      {locationDetailModal && (
+        <LocationDetailModal 
+            location={locationDetailModal} 
+            allEvents={allEvents} 
+            allLocations={locations} 
+            contacts={contacts}
+            onClose={() => setLocationDetailModal(null)} 
+            onEditLocation={onEditLocation}
+            onDeleteLocation={onDeleteLocation}
+            onEditContact={onEditContact}
+            onDeleteContact={onDeleteContact}
+        />
+      )}
       {timeMapModalWhen && <TimeMapModal when={timeMapModalWhen} allEvents={allEvents} allLocations={locations} onClose={() => setTimeMapModalWhen(null)} />}
-      {addEventWithContact && <AddEventModal projects={projects} locations={locations} contacts={contacts} initialContact={addEventWithContact} onClose={() => setAddEventWithContact(null)} onSave={() => setAddEventWithContact(null)} />}
     </>
   );
 };

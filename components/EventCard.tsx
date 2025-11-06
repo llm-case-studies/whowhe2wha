@@ -2,13 +2,15 @@
 import React from 'react';
 import { EventNode, Location, EntityType, WhatType } from '../types';
 import { EntityTag } from './EntityTag';
-import { PinIcon, ClockIcon, UsersIcon, MilestoneIcon, DeadlineIcon, PeriodIcon, CheckpointIcon, AppointmentIcon } from './icons';
+import { PinIcon, ClockIcon, UsersIcon, MilestoneIcon, DeadlineIcon, PeriodIcon, CheckpointIcon, AppointmentIcon, PencilIcon, TrashIcon } from './icons';
 
 interface EventCardProps {
   event: EventNode;
   locations: Location[];
   onLocationClick: (location: Location) => void;
   onWhenClick: (when: EventNode['when']) => void;
+  onEdit: (event: EventNode) => void;
+  onDelete: (eventId: number) => void;
 }
 
 const WhatIcon: React.FC<{whatType: WhatType}> = ({ whatType }) => {
@@ -25,7 +27,7 @@ const WhatIcon: React.FC<{whatType: WhatType}> = ({ whatType }) => {
 }
 
 
-export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocationClick, onWhenClick }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocationClick, onWhenClick, onEdit, onDelete }) => {
   const location = locations.find(l => l.id === event.whereId);
 
   return (
@@ -35,8 +37,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, locations, onLocati
           <WhatIcon whatType={event.what.whatType} />
         </div>
         <div className="flex-1">
-            <h3 className="text-lg font-bold text-primary">{event.what.name}</h3>
-            {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
+            <div className="flex justify-between items-start">
+                <div>
+                    <h3 className="text-lg font-bold text-primary">{event.what.name}</h3>
+                    {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
+                    <button onClick={() => onEdit(event)} className="p-1.5 rounded-full text-secondary hover:bg-tertiary hover:text-primary transition-colors duration-200" title="Edit Event">
+                        <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => onDelete(event.id)} className="p-1.5 rounded-full text-secondary hover:bg-tertiary hover:text-red-500 transition-colors duration-200" title="Delete Event">
+                        <TrashIcon className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
             
             <div className="mt-4 space-y-3">
                 {/* When */}
