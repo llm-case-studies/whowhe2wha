@@ -12,7 +12,7 @@ The UI is broken down into a tree of reusable React components located in the `s
 
 -   **`App.tsx` (Root Component):** This is the central hub of the application. It is responsible for:
     -   Managing the primary application state (lists of all projects, events, and locations; theme, view mode, timeline settings, tier configuration).
-    -   Handling the visibility of modals (`MapModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`, `AddLocationModal`).
+    -   Handling the visibility of modals (`LocationDetailModal`, `TimeMapModal`, `AddEventForm`, `TierConfigModal`, `AddLocationModal`).
     -   Orchestrating the data flow between its child components. It passes down state and callback functions as props.
 
 -   **UI Components:**
@@ -28,7 +28,7 @@ The UI is broken down into a tree of reusable React components located in the `s
 -   **Modal Components:**
     -   `AddEventForm.tsx`: A stateful component for creating new events.
     -   `AddLocationModal.tsx`: A multi-step modal that uses the AI service to find, verify, and create new real-world locations.
-    -   `MapModal.tsx`: Displays the single-location map view.
+    -   `LocationDetailModal.tsx`: Displays the comprehensive profile for a single location, including a map, rich details, and related events/contacts.
     -   `TimeMapModal.tsx`: Displays the multi-location itinerary and route map.
     -   `TierConfigModal.tsx`: Allows users to create, edit, and assign project categories to timeline tiers.
 

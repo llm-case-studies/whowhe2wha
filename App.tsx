@@ -4,7 +4,7 @@ import { SearchBar } from './components/SearchBar';
 import { Dashboard } from './components/Dashboard';
 import { AddEventForm } from './components/AddEventForm';
 import { AddLocationModal } from './components/AddLocationModal';
-import { MapModal } from './components/MapModal';
+import { LocationDetailModal } from './components/LocationDetailModal';
 import { TimeMapModal } from './components/TimeMapModal';
 import { TierConfigModal } from './components/TierConfigModal';
 import { Project, EventNode, Theme, Location, When, Contact, ViewMode, TimelineScale, Tier, EntityType } from './types';
@@ -50,7 +50,7 @@ const App: React.FC = () => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
 
-  const [mapModalLocation, setMapModalLocation] = useState<Location | null>(null);
+  const [locationDetailModalLocation, setLocationDetailModalLocation] = useState<Location | null>(null);
   const [timeMapModalWhen, setTimeMapModalWhen] = useState<When | null>(null);
   const [addEventInitialData, setAddEventInitialData] = useState<{ who?: string; where?: string } | null>(null);
 
@@ -156,7 +156,7 @@ const App: React.FC = () => {
       const location = locations.find(l => l.id === contact.locationId);
       if (!location) return;
       
-      setMapModalLocation(null);
+      setLocationDetailModalLocation(null);
       setAddEventInitialData({
           who: contact.name,
           where: location.alias || location.name,
@@ -213,7 +213,7 @@ const App: React.FC = () => {
           isLoading={isLoading}
           error={error}
           isSearched={filteredEventIds !== null}
-          onLocationClick={setMapModalLocation}
+          onLocationClick={setLocationDetailModalLocation}
           onWhenClick={setTimeMapModalWhen}
           viewMode={viewMode}
           timelineDate={timelineDate}
@@ -256,12 +256,12 @@ const App: React.FC = () => {
         />
       )}
 
-      {mapModalLocation && (
-        <MapModal 
-            location={mapModalLocation} 
+      {locationDetailModalLocation && (
+        <LocationDetailModal 
+            location={locationDetailModalLocation} 
             allEvents={events} 
             allLocations={locations}
-            onClose={() => setMapModalLocation(null)}
+            onClose={() => setLocationDetailModalLocation(null)}
             onSchedule={handleScheduleFromContact}
         />
       )}

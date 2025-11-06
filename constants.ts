@@ -1,4 +1,5 @@
 
+
 import { EventNode, EntityType, Project, Contact, Holiday, WhatType, Location } from './types';
 
 export const COLORS: { [key in EntityType]: string } = {
@@ -158,10 +159,21 @@ export const MOCK_PROJECTS: Project[] = [
 ];
 
 export const MOCK_LOCATIONS: Location[] = [
-    { id: 'where-1', name: 'Springfield Clinic', type: EntityType.Where, latitude: 39.7837, longitude: -89.6502 },
+    { 
+        id: 'where-1', 
+        name: 'Springfield Clinic', 
+        type: EntityType.Where, 
+        latitude: 39.7837, 
+        longitude: -89.6502,
+        alias: 'Springfield Dental',
+        phone: '217-528-0000',
+        website: 'https://www.springfieldclinic.com',
+        portalUrl: 'https://myhealth.springfieldclinic.com',
+        notes: 'Main entrance is on the north side of the building. Parking is available in the adjacent garage.'
+    },
     { id: 'where-2', name: 'Zoom Room', type: EntityType.Where },
     { id: 'where-3', name: 'Home', type: EntityType.Where, latitude: 39.7480, longitude: -89.6050, alias: 'Home Office' },
-    { id: 'where-4', name: 'Downtown Library', type: EntityType.Where, latitude: 39.7984, longitude: -89.6449 },
+    { id: 'where-4', name: 'Downtown Library', type: EntityType.Where, latitude: 39.7984, longitude: -89.6449, phone: '217-753-4900', website: 'https://www.lincolnlibrary.info/' },
     { id: 'where-6', name: 'National Park', type: EntityType.Where },
 ];
 

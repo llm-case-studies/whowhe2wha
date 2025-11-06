@@ -50,13 +50,15 @@ The search bar is your gateway to the AI engine. You can ask questions in plain 
 
 Every event has color-coded tags for **Who**, **Where**, and **When**. The location and time tags are interactive.
 
-### The Map Modal (Location View)
+### The Location Detail Modal
 
 -   **How to Access:** Click on any green **`Where`** tag (e.g., "Springfield Clinic").
--   **What it Shows:**
-    1.  **Map:** An interactive map centered on the selected location.
-    2.  **Tabs:**
-        -   **Scheduled Events:** Shows a list of other events in your system that are physically close to this location.
+-   **What it Shows:** This is a comprehensive profile for the location.
+    1.  **Left Column:**
+        -   **Map:** An interactive map of the location with a quick "Navigate" button.
+        -   **Details:** An "at-a-glance" view of the location's data, including its official address, phone number, website, and any notes you've added. Phone numbers and links are clickable.
+    2.  **Right Column (Tabs):**
+        -   **Scheduled Events:** Shows a list of all past, present, and future events in your system that are scheduled *at this specific location*.
         -   **Contacts & Partners:** Lists key people associated with that location. You can click the **"Schedule"** button here to quickly create a new event with that person and place pre-filled.
 
 ### The TimeMap Modal (Spatial-Temporal View)

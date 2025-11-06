@@ -113,3 +113,19 @@ export const NavigateIcon: React.FC<{className?: string}> = ({className}) => (
 export const SearchIcon: React.FC<{className?: string}> = ({className}) => (
     <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
 );
+
+export const PhoneIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
+);
+
+export const WebsiteIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.72 7.97 5 10 5c2.03 0 3.488.72 4.756 1.321l.127.063a.993.993 0 11-.854 1.642l-.127-.063a4.011 4.011 0 00-3.1-1.321c-1.282 0-2.296.54-3.045 1.076a4.011 4.011 0 00-1.5 2.585v.353a.993.993 0 01-1.986 0v-.353z" clipRule="evenodd" /></svg>
+);
+
+export const LinkIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" /></svg>
+);
+
+export const NotesIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg {...iconProps} className={className || 'h-5 w-5'}><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
+);

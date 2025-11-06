@@ -17,7 +17,7 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **Dynamic Timeline Layout:** Implemented a configurable, multi-tier (swimlane) timeline layout.
 -   [x] **PWA Functionality:** Made the app installable on mobile and desktop devices with offline support via a service worker and web manifest.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
--   [x] **Location Intelligence (Phase 1 & 2):** Reworked data model to treat Locations as first-class entities and implemented an AI-powered workflow for discovering and adding new real-world locations.
+-   [x] **Location Intelligence (Phase 1, 2 & 3):** Reworked data model to treat Locations as first-class entities, implemented an AI-powered workflow for discovering new locations, and created a full-featured Location Detail profile modal.
 
 ## Planned Features & Enhancements 🚀
 
@@ -33,10 +33,10 @@ This document tracks the development progress of the **whowhe2wha** application,
         -   [x] Implement a `geminiService` function using **Google Maps Grounding** to search for real-world places from a fuzzy query.
         -   [x] Display a list of potential places for the user to select.
         -   [x] Pre-fill location data from the selected place for the user to confirm and add an alias.
-    -   [ ] **Phase 3: Full Location Profile:**
-        -   [ ] Create a `LocationDetailModal` to replace the current `MapModal`.
-        -   [ ] Display all rich location data (map, alias, phone, website, portal).
-        -   [ ] Add actionable buttons (click-to-call, links to website/portal).
+    -   [x] **Phase 3: Full Location Profile:**
+        -   [x] Create a `LocationDetailModal` to replace the current `MapModal`.
+        -   [x] Display all rich location data (map, alias, phone, website, portal).
+        -   [x] Add actionable buttons (click-to-call, links to website/portal).
 -   [ ] **Edit & Delete:** Add functionality to edit and delete existing events and projects.
 -   [ ] **Contact Management:** Create a dedicated view for adding and managing contacts, rather than relying on a static list.
 -   [ ] **Data Import/Export:** Add functionality to export all user data to a standard format (JSON, CSV) and import events from `.ics` files.
