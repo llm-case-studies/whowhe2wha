@@ -79,10 +79,23 @@
              --color-status-onhold-text: 254 226 226;
           }
 
+          /* Default dark theme */
           input[type="date"]::-webkit-calendar-picker-indicator,
           input[type="datetime-local"]::-webkit-calendar-picker-indicator {
             cursor: pointer;
             filter: invert(0.8);
+          }
+
+          /* Light theme override */
+          html.light input[type="date"]::-webkit-calendar-picker-indicator,
+          html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: none; /* Use default browser icon color */
+          }
+
+          /* Focus theme override */
+          html.focus input[type="date"]::-webkit-calendar-picker-indicator,
+          html.focus input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.6);
           }
         }
     </style>

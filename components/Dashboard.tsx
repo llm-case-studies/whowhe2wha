@@ -112,8 +112,8 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         {mainView === 'dashboard' && (
           <div className="h-full">
             {viewMode === 'stream' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 h-full">
-                <div className="md:col-span-2 overflow-y-auto space-y-6 pr-4 pb-12">
+              <div className="flex md:flex-row flex-col gap-8 h-full">
+                <div className="md:w-2/3 w-full overflow-y-auto space-y-6 pr-4 pb-12">
                   {unscheduledEvents.length > 0 && (
                     <div className="mb-10">
                        <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
@@ -161,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                     </div>
                   )}
                 </div>
-                <div className="overflow-y-auto space-y-6 pr-4 pb-12">
+                <div className="md:w-1/3 w-full overflow-y-auto space-y-6 pr-4 pb-12">
                   <div className="flex justify-between items-center">
                       <h2 className="text-xl font-bold text-primary">Projects</h2>
                       {selectedProjectId && (
