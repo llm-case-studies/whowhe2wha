@@ -78,6 +78,12 @@
              --color-status-onhold: 239 68 68;
              --color-status-onhold-text: 254 226 226;
           }
+
+          input[type="date"]::-webkit-calendar-picker-indicator,
+          input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.8);
+          }
         }
     </style>
     <script>

@@ -21,7 +21,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({ contacts, locations,
   ).sort((a,b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="flex-grow flex flex-col min-h-0">
+    <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
         <h2 className="text-2xl font-bold text-primary flex items-center">
