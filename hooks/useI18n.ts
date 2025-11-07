@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { translations } from '../i18n/translations';
 
 type Language = 'en' | 'es' | 'fr' | 'de' | 'pt';
@@ -24,8 +24,11 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, language, 
         return langPack?.[key] || translations.en[key] || fallback || key;
     };
 
-    // FIX: Replaced JSX with React.createElement to be valid in a .ts file. This resolves errors caused by the TypeScript compiler misinterpreting JSX syntax as comparison operators.
-    return React.createElement(I18nContext.Provider, { value: { language, setLanguage, t } }, children);
+    return React.createElement(
+        I18nContext.Provider,
+        { value: { language, setLanguage, t } },
+        children
+    );
 };
 
 export const useI18n = (): I18nContextType => {

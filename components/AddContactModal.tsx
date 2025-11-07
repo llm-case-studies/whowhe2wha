@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Contact, Location } from '../types';
 import { useI18n } from '../hooks/useI18n';

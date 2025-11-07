@@ -19,6 +19,7 @@ import { queryGraph } from './services/geminiService';
 import { parseICS } from './utils/icsParser';
 import { generateICS } from './utils/icsGenerator';
 import { expandRecurringEvents } from './utils/recurrence';
+import { generateEventsFromTemplate } from './utils/templateUtils';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
 import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView, ParsedEvent, ProjectAndTemplateData } from './types';
 import { I18nProvider, useI18n } from './hooks/useI18n';
@@ -328,50 +329,9 @@ const AppContent: React.FC = () => {
 
             if (templateId && startDate) {
                 const template = projectTemplates.find(t => t.id === templateId);
-                const projectStartDate = new Date(startDate);
                 if (template) {
                     historyDescription += ` from template "${template.name}"`;
-                    let cumulativeOffset = 0;
-                    newEventsFromTemplate = template.events
-                        .sort((a, b) => a.sequence - b.sequence)
-                        .map(templateEvent => {
-                            const eventStartDate = new Date(projectStartDate);
-                            eventStartDate.setDate(projectStartDate.getDate() + cumulativeOffset);
-
-                            const eventEndDate = new Date(eventStartDate);
-                            const duration = Math.max(1, templateEvent.durationDays);
-                            eventEndDate.setDate(eventStartDate.getDate() + duration - 1);
-                            
-                            cumulativeOffset += duration;
-
-                            return {
-                                id: Date.now() + Math.random(),
-                                projectId: newProjectWithId.id,
-                                what: {
-                                    id: `what-${Date.now() + Math.random()}`,
-                                    name: templateEvent.whatName,
-                                    description: templateEvent.description,
-                                    type: EntityType.What,
-                                    whatType: templateEvent.whatType,
-                                },
-                                when: {
-                                    id: `when-${Date.now() + Math.random()}`,
-                                    name: eventStartDate.toISOString(),
-                                    timestamp: eventStartDate.toISOString(),
-                                    display: eventStartDate.toLocaleString(),
-                                    type: EntityType.When,
-                                },
-                                endWhen: duration > 1 ? {
-                                    id: `endwhen-${Date.now() + Math.random()}`,
-                                    name: eventEndDate.toISOString(),
-                                    timestamp: eventEndDate.toISOString(),
-                                    display: eventEndDate.toLocaleString(),
-                                    type: EntityType.When,
-                                } : undefined,
-                                who: [],
-                                whereId: '', // Needs to be assigned by user later
-                            };
-                        });
+                    newEventsFromTemplate = generateEventsFromTemplate(template, newProjectWithId.id, new Date(startDate));
                 }
             }
             
