@@ -76,11 +76,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <h3 className="text-lg font-semibold text-primary mb-2">{t('language')}</h3>
                         <select
                             value={language}
-                            onChange={(e) => setLanguage(e.target.value as 'en' | 'es')}
+                            onChange={(e) => setLanguage(e.target.value as any)}
                             className="w-full md:w-1/2 px-3 py-2 bg-input border border-primary rounded-lg"
                         >
                             <option value="en">English</option>
                             <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="pt">Português</option>
                         </select>
                     </div>
 

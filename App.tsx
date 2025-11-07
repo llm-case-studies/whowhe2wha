@@ -896,7 +896,8 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
-    const [language, setLanguage] = useState<'en' | 'es'>((localStorage.getItem('whowhe2wha-lang') as 'en' | 'es') || 'en');
+    type Language = 'en' | 'es' | 'fr' | 'de' | 'pt';
+    const [language, setLanguage] = useState<Language>((localStorage.getItem('whowhe2wha-lang') as Language) || 'en');
 
     useEffect(() => {
         localStorage.setItem('whowhe2wha-lang', language);

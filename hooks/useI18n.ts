@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { translations } from '../i18n/translations';
 
-type Language = 'en' | 'es';
+type Language = 'en' | 'es' | 'fr' | 'de' | 'pt';
 type Translations = typeof translations.en;
 
 interface I18nContextType {
@@ -20,7 +20,8 @@ interface I18nProviderProps {
 
 export const I18nProvider: React.FC<I18nProviderProps> = ({ children, language, setLanguage }) => {
     const t = (key: keyof Translations, fallback?: string): string => {
-        return translations[language][key] || translations.en[key] || fallback || key;
+        const langPack = translations[language] as Translations | undefined;
+        return langPack?.[key] || translations.en[key] || fallback || key;
     };
 
     // FIX: Replaced JSX with React.createElement to be valid in a .ts file. This resolves errors caused by the TypeScript compiler misinterpreting JSX syntax as comparison operators.
