@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewMode, TimelineScale } from '../types';
+import { ViewMode, TimelineScale, MainView } from '../types';
 import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon, CalendarIcon, BriefcaseIcon, UsersIcon, PinIcon, ClipboardListIcon } from './icons';
 import { HOLIDAY_CATEGORIES, PROJECT_CATEGORIES } from '../constants';
 
 interface ViewControlsProps {
+  mainView: MainView;
+  setMainView: (view: MainView) => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   timelineScale: TimelineScale;
@@ -59,6 +61,8 @@ const getTimelineLabel = (date: Date, scale: TimelineScale): string => {
 };
 
 export const ViewControls: React.FC<ViewControlsProps> = ({
+  mainView,
+  setMainView,
   viewMode,
   setViewMode,
   timelineScale,
@@ -131,13 +135,15 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
     setIsAddMenuOpen(false);
   };
 
+  const isDashboardActive = mainView === 'dashboard';
+
   return (
     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
       <div className="flex items-center space-x-1 bg-tertiary p-1 rounded-full">
         <button
-          onClick={() => setViewMode('stream')}
+          onClick={() => { setMainView('dashboard'); setViewMode('stream'); }}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
-            viewMode === 'stream' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
+            isDashboardActive && viewMode === 'stream' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
           }`}
           aria-label="Switch to Stream view"
         >
@@ -145,18 +151,28 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           <span>Stream</span>
         </button>
         <button
-          onClick={() => setViewMode('timeline')}
+          onClick={() => { setMainView('dashboard'); setViewMode('timeline'); }}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
-            viewMode === 'timeline' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
+            isDashboardActive && viewMode === 'timeline' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
           }`}
           aria-label="Switch to Timeline view"
         >
           <TimelineIcon className="h-4 w-4" />
           <span>Timeline</span>
         </button>
+         <button
+          onClick={() => setMainView('contacts')}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
+            mainView === 'contacts' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
+          }`}
+          aria-label="Switch to Contacts view"
+        >
+          <UsersIcon className="h-4 w-4" />
+          <span>Contacts</span>
+        </button>
       </div>
 
-      {viewMode === 'timeline' && (
+      {isDashboardActive && viewMode === 'timeline' && (
         <div className="flex items-center space-x-2 bg-tertiary p-1 rounded-full">
           <button onClick={() => setTimelineDate(getAdjustedDate(timelineDate, timelineScale, 'prev'))} className="p-2 text-secondary hover:text-primary rounded-full" aria-label="Previous time period">
             &lt;

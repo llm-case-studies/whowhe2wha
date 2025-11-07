@@ -15,7 +15,7 @@ import { ShareView } from './components/ShareView';
 import { ShareTemplateView } from './components/ShareTemplateView';
 import { queryGraph } from './services/geminiService';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView } from './types';
 
 // --- Helper functions for compression and base64 encoding ---
 
@@ -67,6 +67,7 @@ async function decodeAndDecompress<T>(encodedString: string): Promise<T> {
 const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('dark');
     const [isLoading, setIsLoading] = useState(false);
+    const [mainView, setMainView] = useState<MainView>('dashboard');
 
     // Main data state
     const [allProjects, setAllProjects] = useState<Project[]>(MOCK_PROJECTS);
@@ -513,6 +514,8 @@ const App: React.FC = () => {
             <main className="container mx-auto px-4 flex-grow flex flex-col">
                 <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
                 <Dashboard
+                    mainView={mainView}
+                    setMainView={setMainView}
                     events={displayedEvents}
                     allEvents={allEvents}
                     projects={allProjects}

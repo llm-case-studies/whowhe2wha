@@ -1,4 +1,5 @@
 export type Theme = 'light' | 'dark' | 'focus';
+export type MainView = 'dashboard' | 'contacts';
 export type ViewMode = 'stream' | 'timeline';
 export type TimelineScale = 'week' | 'month' | 'quarter' | 'year';
 

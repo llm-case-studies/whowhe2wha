@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { EventNode, Project, Location, Contact, ViewMode, TimelineScale, TierConfig } from '../types';
+import { EventNode, Project, Location, Contact, ViewMode, TimelineScale, TierConfig, MainView } from '../types';
 import { ViewControls } from './ViewControls';
 import { TimelineView } from './TimelineView';
 import { EventCard } from './EventCard';
@@ -7,9 +7,11 @@ import { ProjectCard } from './ProjectCard';
 import { TierConfigModal } from './TierConfigModal';
 import { LocationDetailModal } from './LocationDetailModal';
 import { TimeMapModal } from './TimeMapModal';
-import { ProjectTemplatesModal } from './ProjectTemplatesModal'; // Import ProjectTemplatesModal
+import { ContactsView } from './ContactsView';
 
 interface DashboardProps {
+  mainView: MainView;
+  setMainView: (view: MainView) => void;
   events: EventNode[];
   allEvents: EventNode[];
   projects: Project[];
@@ -40,6 +42,7 @@ const initialTierConfig: TierConfig = [
 
 export const Dashboard: React.FC<DashboardProps> = (props) => {
   const {
+    mainView, setMainView,
     events, allEvents, projects, locations, contacts, 
     onAddEvent, onEditEvent, onDeleteEvent, 
     onAddProject, onEditProject, onDeleteProject,
@@ -74,6 +77,8 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
   return (
     <>
       <ViewControls
+        mainView={mainView}
+        setMainView={setMainView}
         viewMode={viewMode}
         setViewMode={setViewMode}
         timelineScale={timelineScale}
@@ -92,14 +97,48 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         onConfigureTiersClick={() => setIsTierConfigModalOpen(true)}
       />
 
-      {viewMode === 'stream' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 flex-grow min-h-0">
-          <div className="md:col-span-2 overflow-y-auto space-y-6 pr-4 pb-12">
-            {unscheduledEvents.length > 0 && (
-              <div className="mb-10">
-                 <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
-                 <div className="space-y-4">
-                    {unscheduledEvents.map(event => {
+      {mainView === 'contacts' && (
+        <ContactsView
+            contacts={contacts}
+            locations={locations}
+            onAddContact={onAddContact}
+            onEditContact={onEditContact}
+            onDeleteContact={onDeleteContact}
+            onLocationClick={setLocationDetailModal}
+        />
+      )}
+
+      {mainView === 'dashboard' && (
+        <>
+          {viewMode === 'stream' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 flex-grow min-h-0">
+              <div className="md:col-span-2 overflow-y-auto space-y-6 pr-4 pb-12">
+                {unscheduledEvents.length > 0 && (
+                  <div className="mb-10">
+                     <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
+                     <div className="space-y-4">
+                        {unscheduledEvents.map(event => {
+                          const project = projects.find(p => p.id === event.projectId);
+                          return (
+                            <EventCard 
+                              key={event.id} 
+                              event={event} 
+                              project={project}
+                              locations={locations} 
+                              onLocationClick={setLocationDetailModal} 
+                              onWhenClick={(w) => setTimeMapModalWhen(w)} 
+                              onEdit={onEditEvent}
+                              onDelete={onDeleteEvent}
+                            />
+                          );
+                        })}
+                     </div>
+                  </div>
+                )}
+                
+                <h2 className="text-xl font-bold text-primary">Event Stream</h2>
+                {scheduledEvents.length > 0 ? (
+                    scheduledEvents.map(event => {
                       const project = projects.find(p => p.id === event.projectId);
                       return (
                         <EventCard 
@@ -113,69 +152,50 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                           onDelete={onDeleteEvent}
                         />
                       );
-                    })}
-                 </div>
-              </div>
-            )}
-            
-            <h2 className="text-xl font-bold text-primary">Event Stream</h2>
-            {scheduledEvents.length > 0 ? (
-                scheduledEvents.map(event => {
-                  const project = projects.find(p => p.id === event.projectId);
-                  return (
-                    <EventCard 
-                      key={event.id} 
-                      event={event} 
-                      project={project}
-                      locations={locations} 
-                      onLocationClick={setLocationDetailModal} 
-                      onWhenClick={(w) => setTimeMapModalWhen(w)} 
-                      onEdit={onEditEvent}
-                      onDelete={onDeleteEvent}
-                    />
-                  );
-                })
-            ) : (
-              <div className="text-center py-16 px-6 bg-secondary rounded-lg">
-                  <h3 className="text-lg font-semibold text-primary">No Scheduled Events Found</h3>
-                  <p className="text-tertiary mt-2">Try clearing your search, adding a date to unscheduled events, or creating a new event.</p>
-              </div>
-            )}
-          </div>
-          <div className="overflow-y-auto space-y-6 pr-4 pb-12">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-primary">Projects</h2>
-                {selectedProjectId && (
-                    <button onClick={() => onProjectSelect(selectedProjectId)} className="text-sm text-wha-blue hover:underline">Clear Filter</button>
+                    })
+                ) : (
+                  <div className="text-center py-16 px-6 bg-secondary rounded-lg">
+                      <h3 className="text-lg font-semibold text-primary">No Scheduled Events Found</h3>
+                      <p className="text-tertiary mt-2">Try clearing your search, adding a date to unscheduled events, or creating a new event.</p>
+                  </div>
                 )}
+              </div>
+              <div className="overflow-y-auto space-y-6 pr-4 pb-12">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-primary">Projects</h2>
+                    {selectedProjectId && (
+                        <button onClick={() => onProjectSelect(selectedProjectId)} className="text-sm text-wha-blue hover:underline">Clear Filter</button>
+                    )}
+                </div>
+                {visibleProjects.map(project => (
+                  <ProjectCard 
+                    key={project.id} 
+                    project={project}
+                    isSelected={selectedProjectId === project.id}
+                    onClick={() => onProjectSelect(project.id)}
+                    onEdit={onEditProject}
+                    onDelete={onDeleteProject}
+                    onAddEvent={() => onAddEvent(project.id)}
+                    onShare={onShareProject}
+                  />
+                ))}
+              </div>
             </div>
-            {visibleProjects.map(project => (
-              <ProjectCard 
-                key={project.id} 
-                project={project}
-                isSelected={selectedProjectId === project.id}
-                onClick={() => onProjectSelect(project.id)}
-                onEdit={onEditProject}
-                onDelete={onDeleteProject}
-                onAddEvent={() => onAddEvent(project.id)}
-                onShare={onShareProject}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {viewMode === 'timeline' && (
-        <TimelineView 
-            events={events} 
-            projects={visibleProjects} 
-            currentDate={timelineDate} 
-            scale={timelineScale}
-            selectedHolidayCategories={selectedHolidayCategories}
-            selectedProjectCategories={selectedProjectCategories}
-            setTimelineDate={setTimelineDate}
-            tierConfig={tierConfig}
-        />
+          )}
+          
+          {viewMode === 'timeline' && (
+            <TimelineView 
+                events={events} 
+                projects={visibleProjects} 
+                currentDate={timelineDate} 
+                scale={timelineScale}
+                selectedHolidayCategories={selectedHolidayCategories}
+                selectedProjectCategories={selectedProjectCategories}
+                setTimelineDate={setTimelineDate}
+                tierConfig={tierConfig}
+            />
+          )}
+        </>
       )}
 
       {isTierConfigModalOpen && <TierConfigModal currentConfig={tierConfig} onSave={handleSaveTierConfig} onClose={() => setIsTierConfigModalOpen(false)} />}
