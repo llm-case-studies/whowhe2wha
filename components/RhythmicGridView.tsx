@@ -17,12 +17,12 @@ const projectColorClasses: Record<string, string> = {
 
 // Re-ordered for better visual contrast between adjacent months
 const MONTH_COLORS = [
-    { bg: 'bg-blue-500/10', text: 'text-blue-400' },
-    { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
-    { bg: 'bg-pink-500/10', text: 'text-pink-400' },
-    { bg: 'bg-green-500/10', text: 'text-green-400' },
-    { bg: 'bg-orange-500/10', text: 'text-orange-400' },
-    { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+    { bg: 'bg-blue-500/10', text: 'text-blue-400' },      // Jan
+    { bg: 'bg-green-500/10', text: 'text-green-400' },    // Feb
+    { bg: 'bg-orange-500/10', text: 'text-orange-400' },   // Mar
+    { bg: 'bg-pink-500/10', text: 'text-pink-400' },      // Apr
+    { bg: 'bg-purple-500/10', text: 'text-purple-400' },   // May
+    { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },   // Jun
 ];
 
 interface TooltipData {
@@ -76,10 +76,9 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const todayRowRef = useRef<HTMLDivElement>(null);
 
-    const today = new Date();
+    // FIX: Set "today" to the user-specified date for consistent context.
+    const today = new Date('2025-11-07T12:00:00Z');
     const startOfThisWeek = getStartOfWeek(today);
-    const endOfThisWeek = new Date(startOfThisWeek);
-    endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
 
     const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
@@ -142,13 +141,11 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         const totalWeeks = (endYear - startYear + 1) * 53;
         
         const monthLabelMap = new Map<string, MonthLabelData>();
-        // FIX: Replaced `JSX.Element` with `React.ReactNode` to fix "Cannot find namespace 'JSX'" error.
         const generatedRows: React.ReactNode[] = [];
 
         const todayWeekIndex = Math.floor((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
         for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
-            // FIX: Replaced `JSX.Element` with `React.ReactNode` to fix "Cannot find namespace 'JSX'" error.
             const rowCells: React.ReactNode[] = [];
             
             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -175,7 +172,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 const monthColor = MONTH_COLORS[cellDate.getMonth() % MONTH_COLORS.length].bg;
 
                 rowCells.push(
-                    <div key={`${weekIndex}-${dayIndex}`} className={`relative border-r border-b border-secondary/50 h-12 ${monthColor}`}>
+                    <div key={`${weekIndex}-${dayIndex}`} className={`relative border-r border-b border-secondary h-12 ${monthColor}`}>
                         {weekIndex === todayWeekIndex && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
                         <span className={`absolute top-0.5 left-1 text-xs ${isTodayCell ? 'text-primary font-bold' : 'text-tertiary'}`}>
                             {cellDate.getDate()}
@@ -212,19 +209,32 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         return (
-            <div className="flex">
-                <MonthLabelColumn labels={monthLabels} />
-                <div className="flex-grow">
-                    <div className="grid grid-cols-7 border-l border-t border-secondary/50">
-                        {/* Sticky Header */}
-                         {dayHeaders.map(day => (
-                            <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary/50 bg-secondary sticky top-0 z-20">{day}</div>
+            <div className="flex flex-col h-full">
+                {/* Sticky Header */}
+                <div className="flex flex-shrink-0 z-20">
+                    <div className="w-28 flex-shrink-0" /> {/* Spacer for left month labels */}
+                    <div className="flex-grow grid grid-cols-7 border-l border-t border-secondary">
+                        {dayHeaders.map(day => (
+                            <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary bg-secondary">
+                                {day}
+                            </div>
                         ))}
-                        {/* Grid Body */}
-                        {gridRows}
+                    </div>
+                    <div className="w-28 flex-shrink-0" /> {/* Spacer for right month labels */}
+                </div>
+                
+                {/* Scrollable Body */}
+                <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
+                    <div className="flex">
+                        <MonthLabelColumn labels={monthLabels} />
+                        <div className="flex-grow">
+                            <div className="grid grid-cols-7 border-l border-secondary">
+                                {gridRows}
+                            </div>
+                        </div>
+                        <MonthLabelColumn labels={monthLabels} />
                     </div>
                 </div>
-                <MonthLabelColumn labels={monthLabels} />
             </div>
         );
     };
@@ -249,7 +259,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                     </button>
                  </div>
             </div>
-            <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
+            <div className="flex-grow min-h-0">
                 {layout === 'week' ? renderWeekLayout() : <p className="text-center p-8 text-secondary">Month Layout coming soon!</p>}
             </div>
             {tooltip && (
