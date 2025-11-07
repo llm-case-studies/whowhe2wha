@@ -29,6 +29,14 @@ export const MOCK_LOCATIONS: Location[] = [
         latitude: 39.7392,
         longitude: -89.7545
     },
+     {
+        id: 'where-4',
+        name: '101 Fitness Run, Springfield, IL 62702',
+        alias: 'Runners Plus',
+        type: EntityType.Where,
+        latitude: 39.7900,
+        longitude: -89.6600
+    },
 ];
 
 // --- MOCK CONTACTS ---
@@ -47,6 +55,14 @@ export const MOCK_CONTACTS: Contact[] = [
         role: 'Scheduling',
         locationId: 'where-1',
         phone: '217-555-1234'
+    },
+     {
+        id: 'contact-3',
+        name: 'Dr. Allen',
+        role: 'Physiotherapist',
+        locationId: 'where-1',
+        phone: '217-555-1236',
+        email: 'dr.allen@springfieldclinic.example.com'
     },
 ];
 
@@ -93,9 +109,23 @@ export const MOCK_EVENTS: EventNode[] = [
         whereId: 'where-3'
     },
     {
-        id: 11, projectId: 6,
-        what: { id: 'what-11', name: 'Week 5: Checkpoint', type: EntityType.What, whatType: WhatType.Checkpoint, description: 'Assess progress and adjust plan if needed.' },
-        when: { id: 'when-11', name: '2025-12-08T12:00:00.000Z', timestamp: '2025-12-08T12:00:00.000Z', display: new Date('2025-12-08T12:00:00.000Z').toLocaleString(), type: EntityType.When },
+        id: 11, projectId: 6, parentId: 10,
+        what: { id: 'what-11', name: 'Physio check-up', type: EntityType.What, whatType: WhatType.Appointment, description: 'Assess running form and any pains.' },
+        when: { id: 'when-11', name: '2025-11-18T11:00:00.000Z', timestamp: '2025-11-18T11:00:00.000Z', display: new Date('2025-11-18T11:00:00.000Z').toLocaleString(), type: EntityType.When },
+        who: [{id: 'who-3', name: 'Dr. Allen', type: EntityType.Who}],
+        whereId: 'where-1'
+    },
+    {
+        id: 12, projectId: 6, parentId: 10,
+        what: { id: 'what-12', name: 'Buy new running shoes', type: EntityType.What, whatType: WhatType.Task },
+        when: { id: 'when-12', name: '2025-11-22T14:00:00.000Z', timestamp: '2025-11-22T14:00:00.000Z', display: new Date('2025-11-22T14:00:00.000Z').toLocaleString(), type: EntityType.When },
+        who: [],
+        whereId: 'where-4'
+    },
+    {
+        id: 13, projectId: 6,
+        what: { id: 'what-13', name: 'Week 5: Checkpoint', type: EntityType.What, whatType: WhatType.Checkpoint, description: 'Assess progress and adjust plan if needed.' },
+        when: { id: 'when-13', name: '2025-12-08T12:00:00.000Z', timestamp: '2025-12-08T12:00:00.000Z', display: new Date('2025-12-08T12:00:00.000Z').toLocaleString(), type: EntityType.When },
         who: [],
         whereId: 'where-3'
     },

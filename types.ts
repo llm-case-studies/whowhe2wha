@@ -12,12 +12,12 @@ export enum EntityType {
 }
 
 export enum WhatType {
-    Appointment = 'Appointment',
-    Task = 'Task',
-    Period = 'Period',
-    Milestone = 'Milestone',
-    Deadline = 'Deadline',
-    Checkpoint = 'Checkpoint',
+    Appointment = 'Appointment', // A point-in-time meeting or session
+    Task = 'Task',               // An action to be completed, can be point-in-time or have a duration
+    Period = 'Period',             // A longer duration activity or phase, like a training block
+    Milestone = 'Milestone',       // A goal-oriented marker of achievement
+    Deadline = 'Deadline',         // A goal-oriented due date with an implicit lead-up time
+    Checkpoint = 'Checkpoint',     // A point-in-time progress check
 }
 
 // Base Entity
@@ -32,6 +32,7 @@ export interface WhatNode extends BaseNode {
     description?: string;
     whatType: WhatType;
     type: EntityType.What;
+    leadTimeDays?: number; // Specific to Deadlines, but can be on the base type
 }
 
 export interface WhenNode extends BaseNode {
@@ -90,6 +91,7 @@ export interface EventNode {
     who: WhoNode[];
     whereId: string;
     recurrence?: RecurrenceRule;
+    parentId?: number; // ID of the parent EventNode (for nesting)
 }
 
 export interface Holiday {
