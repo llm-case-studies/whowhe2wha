@@ -21,6 +21,7 @@ import { generateICS } from './utils/icsGenerator';
 import { expandRecurringEvents } from './utils/recurrence';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
 import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView, ParsedEvent, ProjectAndTemplateData } from './types';
+import { I18nProvider, useI18n } from './hooks/useI18n';
 
 // --- Helper functions for compression and base64 encoding ---
 
@@ -69,10 +70,11 @@ async function decodeAndDecompress<T>(encodedString: string): Promise<T> {
 }
 
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('dark');
     const [isLoading, setIsLoading] = useState(false);
     const [mainView, setMainView] = useState<MainView>('dashboard');
+    const { t } = useI18n();
 
     // Main data state
     const [allProjects, setAllProjects] = useState<Project[]>(MOCK_PROJECTS);
@@ -275,10 +277,10 @@ const App: React.FC = () => {
 
         if (masterEvent.recurrence) {
             setConfirmation({
-                title: "Edit Recurring Event?",
-                message: "This is a recurring event. Your changes will apply to all future occurrences of this event.",
+                title: t('editRecurringEvent'),
+                message: t('editRecurringEventMsg'),
                 onConfirm: openEditModal,
-                confirmText: 'Edit All',
+                confirmText: t('editAll'),
             });
         } else {
             openEditModal();
@@ -298,14 +300,14 @@ const App: React.FC = () => {
 
         if (eventToDelete.recurrence) {
              setConfirmation({
-                title: "Delete Recurring Event?",
-                message: "This is a recurring event. Deleting it will remove all future occurrences. Are you sure?",
+                title: t('deleteRecurringEvent'),
+                message: t('deleteRecurringEventMsg'),
                 onConfirm: confirmDelete
             });
         } else {
             setConfirmation({
-                title: "Delete Event?",
-                message: "Are you sure you want to permanently delete this event?",
+                title: t('deleteEvent'),
+                message: t('deleteEventMsg'),
                 onConfirm: confirmDelete
             });
         }
@@ -396,8 +398,8 @@ const App: React.FC = () => {
         const projectToDelete = allProjects.find(p => p.id === projectId);
         if (!projectToDelete) return;
          setConfirmation({
-            title: "Delete Project?",
-            message: "Are you sure? This will also delete all associated events.",
+            title: t('deleteProject'),
+            message: t('deleteProjectMsg'),
             onConfirm: () => {
                 const beforeState = getCurrentAppState();
                 addHistoryEntry(`Deleted project: "${projectToDelete.name}"`, beforeState);
@@ -435,8 +437,8 @@ const App: React.FC = () => {
         const contactToDelete = allContacts.find(c => c.id === contactId);
         if (!contactToDelete) return;
          setConfirmation({
-            title: "Delete Contact?",
-            message: "Are you sure you want to delete this contact?",
+            title: t('deleteContact'),
+            message: t('deleteContactMsg'),
             onConfirm: () => {
                 const beforeState = getCurrentAppState();
                 addHistoryEntry(`Deleted contact: "${contactToDelete.name}"`, beforeState);
@@ -474,8 +476,8 @@ const App: React.FC = () => {
         const locationToDelete = allLocations.find(l => l.id === locationId);
         if (!locationToDelete) return;
          setConfirmation({
-            title: "Delete Location?",
-            message: "You can only delete locations that have no events scheduled. Are you sure?",
+            title: t('deleteLocation'),
+            message: t('deleteLocationMsg'),
             onConfirm: () => {
                 const isUsed = allEvents.some(e => e.whereId === locationId);
                 if (!isUsed) {
@@ -507,8 +509,8 @@ const App: React.FC = () => {
         if (!templateToDelete) return;
 
         setConfirmation({
-            title: "Delete Template?",
-            message: "Are you sure you want to permanently delete this project template?",
+            title: t('deleteTemplate'),
+            message: t('deleteTemplateMsg'),
             onConfirm: () => {
                 const beforeState = getCurrentAppState();
                 addHistoryEntry(`Deleted template: "${templateToDelete.name}"`, beforeState);
@@ -640,7 +642,7 @@ const App: React.FC = () => {
             const parsed = JSON.parse(fileContent) as ProjectAndTemplateData;
             if (Array.isArray(parsed.projects) && Array.isArray(parsed.projectTemplates)) {
                 setConfirmation({
-                    title: "Confirm Import",
+                    title: t('confirmImport'),
                     message: `This will add ${parsed.projects.length} projects and ${parsed.projectTemplates.length} templates. Existing items will not be overwritten. Continue?`,
                     onConfirm: () => {
                         const beforeState = getCurrentAppState();
@@ -668,8 +670,8 @@ const App: React.FC = () => {
             const parsed = JSON.parse(fileContent) as AppState;
             if (parsed.projects && parsed.events && parsed.locations && parsed.contacts && parsed.projectTemplates) {
                 setConfirmation({
-                    title: "DANGER: Restore from Backup",
-                    message: "This will completely overwrite all current data. This action cannot be undone. Are you sure you want to proceed?",
+                    title: t('restoreFromBackup'),
+                    message: t('restoreFromBackupMsg'),
                     onConfirm: () => {
                         setAllProjects(parsed.projects);
                         setAllEvents(parsed.events);
@@ -892,5 +894,20 @@ const App: React.FC = () => {
         </div>
     );
 };
+
+const App: React.FC = () => {
+    const [language, setLanguage] = useState<'en' | 'es'>((localStorage.getItem('whowhe2wha-lang') as 'en' | 'es') || 'en');
+
+    useEffect(() => {
+        localStorage.setItem('whowhe2wha-lang', language);
+    }, [language]);
+
+    return (
+        <I18nProvider language={language} setLanguage={setLanguage}>
+            <AppContent />
+        </I18nProvider>
+    );
+};
+
 
 export default App;

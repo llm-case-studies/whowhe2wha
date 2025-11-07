@@ -1,8 +1,9 @@
 import React from 'react';
 
-// FIX: The base React.SVGProps does not include the 'title' attribute. It is a valid SVG attribute
-// for accessibility and tooltips, so it's added to the type to support its use on icon components.
-type IconProps = React.SVGProps<SVGSVGElement> & { title?: string };
+// FIX: Changed from a type alias to an interface to avoid potential JSX parsing ambiguity with generics in .tsx files.
+interface IconProps extends React.SVGProps<SVGSVGElement> {
+    title?: string;
+}
 
 export const HistoryIcon: React.FC<IconProps> = ({ className = "h-6 w-6", ...props }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

@@ -21,6 +21,13 @@ interface LocationDetailModalProps {
 const NEARBY_RADIUS_MILES = 5;
 type ActiveTab = 'events' | 'contacts';
 
+interface TabButtonProps {
+    tab: ActiveTab;
+    label: string;
+    icon: React.ReactNode;
+    count: number;
+}
+
 export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({ 
     location, allEvents, allLocations, contacts, onClose, 
     onEditLocation, onDeleteLocation, onEditContact, onDeleteContact 
@@ -35,7 +42,7 @@ export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({
   const mapSrc = (location.latitude && location.longitude) ? `https://maps.google.com/maps?q=${location.latitude},${location.longitude}&t=&z=14&ie=UTF8&iwloc=&output=embed` : '';
   const navigationUrl = (location.latitude && location.longitude) ? `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}` : '';
 
-  const TabButton: React.FC<{tab: ActiveTab, label: string, icon: React.ReactNode, count: number}> = ({ tab, label, icon, count }) => (
+  const TabButton: React.FC<TabButtonProps> = ({ tab, label, icon, count }) => (
     <button
       onClick={() => setActiveTab(tab)}
       className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${

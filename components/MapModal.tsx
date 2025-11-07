@@ -17,6 +17,12 @@ const NEARBY_RADIUS_MILES = 5;
 
 type ActiveTab = 'events' | 'contacts';
 
+interface TabButtonProps {
+    tab: ActiveTab;
+    label: string;
+    icon: React.ReactNode;
+}
+
 export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLocations, contacts, onClose, onSchedule }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('events');
 
@@ -42,7 +48,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLoca
   const mapSrc = `https://maps.google.com/maps?q=${location.latitude},${location.longitude}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
   const navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
 
-  const TabButton: React.FC<{tab: ActiveTab, label: string, icon: React.ReactNode}> = ({ tab, label, icon }) => (
+  const TabButton: React.FC<TabButtonProps> = ({ tab, label, icon }) => (
     <button
       onClick={() => setActiveTab(tab)}
       className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${

@@ -2,6 +2,7 @@ import React from 'react';
 import { SharedProjectData } from '../types';
 import { EventCard } from './EventCard';
 import { PROJECT_COLOR_CLASSES } from '../constants';
+import { useI18n } from '../hooks/useI18n';
 
 interface ShareViewProps {
     data: SharedProjectData;
@@ -32,6 +33,7 @@ const Logo = () => (
 
 export const ShareView: React.FC<ShareViewProps> = ({ data }) => {
     const { project, events, locations } = data;
+    const { t } = useI18n();
     const colorClass = PROJECT_COLOR_CLASSES[project.color] || PROJECT_COLOR_CLASSES['blue'];
     const statusClasses: Record<string, string> = {
         'Active': 'bg-green-500',
@@ -54,7 +56,7 @@ export const ShareView: React.FC<ShareViewProps> = ({ data }) => {
         <div className="bg-background text-primary min-h-screen font-sans flex flex-col items-center p-4 md:p-8">
             <header className="w-full max-w-4xl text-center mb-8">
                 <div className="flex justify-center mb-2"><Logo /></div>
-                <p className="text-sm text-secondary">A shared project from The Unified Context Engine</p>
+                <p className="text-sm text-secondary">{t('sharedProjectFrom')}</p>
             </header>
             
             <main className="w-full max-w-4xl bg-secondary rounded-lg p-6 md:p-8">
@@ -71,7 +73,7 @@ export const ShareView: React.FC<ShareViewProps> = ({ data }) => {
                     </div>
                 </div>
                 
-                <h2 className="text-xl font-bold text-primary mb-4">Events</h2>
+                <h2 className="text-xl font-bold text-primary mb-4">{t('eventStream')}</h2>
                 
                 <div className="space-y-4">
                     {scheduledEvents.length > 0 ? (
@@ -89,7 +91,7 @@ export const ShareView: React.FC<ShareViewProps> = ({ data }) => {
                             />
                         ))
                     ) : (
-                        <p className="text-secondary text-center py-4">This project has no scheduled events.</p>
+                        <p className="text-secondary text-center py-4">{t('noScheduledEvents')}</p>
                     )}
                 </div>
             </main>
@@ -99,10 +101,10 @@ export const ShareView: React.FC<ShareViewProps> = ({ data }) => {
                     onClick={handleImport}
                     className="px-8 py-3 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
                 >
-                    Add to my whowhe2wha
+                    {t('addToApp')}
                 </button>
                  <p className="text-xs text-secondary mt-4">
-                    whowhe2wha helps you connect the dots in your life. <a href={window.location.origin + window.location.pathname} className="text-blue-400 hover:underline">Try it now.</a>
+                    whowhe2wha helps you connect the dots in your life. <a href={window.location.origin + window.location.pathname} className="text-blue-400 hover:underline">{t('tryItNow')}</a>
                 </p>
             </footer>
         </div>

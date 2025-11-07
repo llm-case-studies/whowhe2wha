@@ -1,5 +1,6 @@
 import React from 'react';
 import { SharedTemplateData } from '../types';
+import { useI18n } from '../hooks/useI18n';
 
 interface ShareTemplateViewProps {
     data: SharedTemplateData;
@@ -30,6 +31,7 @@ const Logo = () => (
 
 export const ShareTemplateView: React.FC<ShareTemplateViewProps> = ({ data }) => {
     const { template } = data;
+    const { t } = useI18n();
 
     const handleImport = () => {
         // This is for phase 2. For now, it will just redirect to the main app.
@@ -40,7 +42,7 @@ export const ShareTemplateView: React.FC<ShareTemplateViewProps> = ({ data }) =>
         <div className="bg-background text-primary min-h-screen font-sans flex flex-col items-center p-4 md:p-8">
             <header className="w-full max-w-4xl text-center mb-8">
                 <div className="flex justify-center mb-2"><Logo /></div>
-                <p className="text-sm text-secondary">A shared project template from The Unified Context Engine</p>
+                <p className="text-sm text-secondary">{t('sharedTemplateFrom')}</p>
             </header>
             
             <main className="w-full max-w-4xl bg-secondary rounded-lg p-6 md:p-8">
@@ -50,7 +52,7 @@ export const ShareTemplateView: React.FC<ShareTemplateViewProps> = ({ data }) =>
                     <div className="mt-2 text-xs font-semibold inline-block bg-tertiary text-secondary px-2 py-1 rounded-full">{template.category}</div>
                 </div>
                 
-                <h2 className="text-xl font-bold text-primary mb-4">Template Events</h2>
+                <h2 className="text-xl font-bold text-primary mb-4">{t('templateEvents')}</h2>
                 
                 <div className="space-y-4">
                     {template.events.length > 0 ? (
@@ -76,10 +78,10 @@ export const ShareTemplateView: React.FC<ShareTemplateViewProps> = ({ data }) =>
                     onClick={handleImport}
                     className="px-8 py-3 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200"
                 >
-                    Use this Template in whowhe2wha
+                    {t('useTemplateInApp')}
                 </button>
                  <p className="text-xs text-secondary mt-4">
-                    whowhe2wha helps you connect the dots in your life. <a href={window.location.origin + window.location.pathname} className="text-blue-400 hover:underline">Try it now.</a>
+                    whowhe2wha helps you connect the dots in your life. <a href={window.location.origin + window.location.pathname} className="text-blue-400 hover:underline">{t('tryItNow')}</a>
                 </p>
             </footer>
         </div>

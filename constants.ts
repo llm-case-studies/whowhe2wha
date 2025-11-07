@@ -29,11 +29,11 @@ export const PROJECT_CATEGORIES: string[] = [
 ];
 
 export const HOLIDAY_CATEGORIES = [
-    { id: 'US', label: 'United States' },
-    { id: 'Canada', label: 'Canada' },
-    { id: 'UK', label: 'United Kingdom' },
-    { id: 'Christian', label: 'Christian' },
-    { id: 'Jewish', label: 'Jewish' },
+    { id: 'US', labelKey: 'usHolidays' as const },
+    { id: 'Canada', labelKey: 'canadaHolidays' as const },
+    { id: 'UK', labelKey: 'ukHolidays' as const },
+    { id: 'Christian', labelKey: 'christianHolidays' as const },
+    { id: 'Jewish', labelKey: 'jewishHolidays' as const },
 ];
 
 // Simplified Holiday Data for 2025

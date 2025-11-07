@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ViewMode, TimelineScale, MainView } from '../types';
 import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon, CalendarIcon, BriefcaseIcon, UsersIcon, PinIcon, ClipboardListIcon } from './icons';
 import { HOLIDAY_CATEGORIES, PROJECT_CATEGORIES } from '../constants';
+import { useI18n } from '../hooks/useI18n';
 
 interface ViewControlsProps {
   mainView: MainView;
@@ -83,6 +84,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   const [isHolidaySelectorOpen, setIsHolidaySelectorOpen] = useState(false);
   const [isProjectSelectorOpen, setIsProjectSelectorOpen] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const { t } = useI18n();
   
   const holidaySelectorRef = useRef<HTMLDivElement>(null);
   const projectSelectorRef = useRef<HTMLDivElement>(null);
@@ -148,7 +150,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           aria-label="Switch to Stream view"
         >
           <StreamIcon className="h-4 w-4" />
-          <span>Stream</span>
+          <span>{t('stream')}</span>
         </button>
         <button
           onClick={() => { setMainView('dashboard'); setViewMode('timeline'); }}
@@ -158,7 +160,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           aria-label="Switch to Timeline view"
         >
           <TimelineIcon className="h-4 w-4" />
-          <span>Timeline</span>
+          <span>{t('timeline')}</span>
         </button>
          <button
           onClick={() => setMainView('contacts')}
@@ -168,7 +170,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           aria-label="Switch to Contacts view"
         >
           <UsersIcon className="h-4 w-4" />
-          <span>Contacts</span>
+          <span>{t('contacts')}</span>
         </button>
       </div>
 
@@ -199,7 +201,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
             <button
                 onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
                 className="p-2 text-secondary hover:text-primary rounded-full relative"
-                aria-label="Filter projects on timeline"
+                aria-label={t('filterCategories')}
             >
                 <FilterIcon />
                  {selectedProjectCategories.length > 0 && selectedProjectCategories.length < PROJECT_CATEGORIES.length && (
@@ -208,7 +210,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
             </button>
             {isProjectSelectorOpen && (
                  <div className="absolute top-full right-0 mt-2 w-56 bg-secondary border border-primary rounded-lg shadow-xl z-20 p-2 max-h-64 overflow-y-auto">
-                    <p className="text-xs text-secondary font-bold px-2 pb-1">Filter Categories</p>
+                    <p className="text-xs text-secondary font-bold px-2 pb-1">{t('filterCategories')}</p>
                     <div className="space-y-1">
                         <label className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-tertiary cursor-pointer">
                             <input
@@ -217,7 +219,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
                                 onChange={(e) => handleSelectAllProjectCategories(e.target.checked)}
                                 className="rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
                             />
-                            <span className="text-sm text-primary font-semibold">All Categories</span>
+                            <span className="text-sm text-primary font-semibold">{t('allCategories')}</span>
                         </label>
                          <hr className="border-primary my-1" />
                         {PROJECT_CATEGORIES.map(category => (
@@ -240,8 +242,8 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           <button
               onClick={onConfigureTiersClick}
               className="p-2 text-secondary hover:text-primary rounded-full relative"
-              aria-label="Configure timeline layout"
-              title="Configure timeline layout"
+              aria-label={t('configureTimelineLayout')}
+              title={t('configureTimelineLayout')}
             >
               <LayersIcon />
             </button>
@@ -250,7 +252,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
             <button
               onClick={() => setIsHolidaySelectorOpen(!isHolidaySelectorOpen)}
               className="p-2 text-secondary hover:text-primary rounded-full relative"
-              aria-label="Select holidays to display"
+              aria-label={t('showHolidays')}
             >
               <StarIcon />
               {selectedHolidayCategories.length > 0 && (
@@ -262,7 +264,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
             </button>
             {isHolidaySelectorOpen && (
               <div className="absolute top-full right-0 mt-2 w-56 bg-secondary border border-primary rounded-lg shadow-xl z-20 p-2">
-                <p className="text-xs text-secondary font-bold px-2 pb-1">Show Holidays</p>
+                <p className="text-xs text-secondary font-bold px-2 pb-1">{t('showHolidays')}</p>
                 <div className="space-y-1">
                   {HOLIDAY_CATEGORIES.map(category => (
                     <label key={category.id} className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-tertiary cursor-pointer">
@@ -272,7 +274,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
                         onChange={() => handleHolidayToggle(category.id)}
                         className="rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
                       />
-                      <span className="text-sm text-primary">{category.label}</span>
+                      <span className="text-sm text-primary">{t(category.labelKey)}</span>
                     </label>
                   ))}
                 </div>
@@ -286,26 +288,26 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         <button
           onClick={onOpenTemplatesClick}
           className="px-5 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition duration-200 flex items-center"
-          title="Manage Project Templates"
+          title={t('templates')}
         >
           <ClipboardListIcon className="w-4 h-4 mr-2"/>
-          Templates
+          {t('templates')}
         </button>
         <div className="relative" ref={addMenuRef}>
           <button
             onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
             className="px-5 py-2 rounded-md bg-to-orange text-white font-bold hover:bg-orange-600 transition duration-200 flex items-center"
           >
-            Add...
+            {t('add')}
             <svg className={`w-4 h-4 ml-2 transform transition-transform duration-200 ${isAddMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
           {isAddMenuOpen && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-secondary border border-primary rounded-lg shadow-xl z-20">
               <ul className="p-1">
-                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddEventClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><CalendarIcon className="w-4 h-4 mr-3 text-secondary"/>Event</button></li>
-                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddProjectClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><BriefcaseIcon className="w-4 h-4 mr-3 text-secondary"/>Project</button></li>
-                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddContactClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><UsersIcon className="w-4 h-4 mr-3 text-secondary"/>Contact/Partner</button></li>
-                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddLocationClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><PinIcon className="w-4 h-4 mr-3 text-secondary"/>Location</button></li>
+                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddEventClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><CalendarIcon className="w-4 h-4 mr-3 text-secondary"/>{t('addEvent')}</button></li>
+                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddProjectClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><BriefcaseIcon className="w-4 h-4 mr-3 text-secondary"/>{t('addProject')}</button></li>
+                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddContactClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><UsersIcon className="w-4 h-4 mr-3 text-secondary"/>{t('addContact')}</button></li>
+                <li className="p-1"><button onClick={() => handleAddMenuClick(onAddLocationClick)} className="w-full text-left flex items-center px-3 py-2 text-sm text-primary rounded-md hover:bg-tertiary"><PinIcon className="w-4 h-4 mr-3 text-secondary"/>{t('addLocation')}</button></li>
               </ul>
             </div>
           )}

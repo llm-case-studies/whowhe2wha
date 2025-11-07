@@ -27,18 +27,18 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [x] **PWA Functionality:** Made the app installable with offline support via a service worker and web manifest.
 -   [x] **Documentation:** Created a comprehensive suite of project documentation.
 -   [x] **Undo History:** Implemented a functional undo history for all major data-modifying actions, including templates.
+-   [x] **Data Import/Export:** Added functionality to export all user data to a standard format (JSON, .ics) and import events from `.ics` and `.json` files.
+-   [x] **Recurring Events:** Added support for creating events that repeat daily, weekly, or monthly.
+-   [x] **Sharing & Collaboration:** Implemented read-only sharing for projects and templates via a unique URL.
+-   [x] **Dedicated Contact Management View:** Created a dedicated screen for viewing and managing all contacts, separate from the main dashboard.
+
 
 ## Planned Features & Enhancements 🚀
 
-### Tier 1: Core Functionality
-
--   [ ] **Dedicated Contact Management View:** Create a dedicated screen for viewing and managing all contacts, separate from the main dashboard.
--   [ ] **Data Import/Export:** Add functionality to export all user data to a standard format (JSON, CSV) and import events from `.ics` files.
--   [ ] **Recurring Events:** Add support for creating events that repeat daily, weekly, or monthly.
-
 ### Tier 2: Collaboration & Integration
 
--   [ ] **Sharing & Collaboration:** Introduce the ability to share a read-only or collaborative version of a project with another user.
+-   [ ] **Interactive Importing from Shared Links:** Allow users to import a shared project/template as a new, editable copy into their own app.
+-   [ ] **Live Multi-User Collaboration:** Introduce the ability to invite others to a project for real-time, shared editing.
 -   [ ] **External Calendar Integration:** Add options to sync with Google Calendar, Outlook, or other calendar services.
 -   [ ] **AI-Powered Event Creation from Text/Email:** Allow users to paste a block of text (e.g., an email confirmation) and have the AI automatically parse it to fill out the "Add Event" form.
 -   [ ] **File Attachments:** Allow users to attach documents, images, or links to events (e.g., receipts, tickets, meeting agendas).

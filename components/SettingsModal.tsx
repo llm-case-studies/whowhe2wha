@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useI18n } from '../hooks/useI18n';
 
 type ImportType = 'ics' | 'events-json' | 'projects-templates-json' | 'backup-json';
 
@@ -27,6 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const currentImportType = useRef<ImportType | null>(null);
+    const { t, language, setLanguage } = useI18n();
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -56,8 +58,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
             <div className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
                 <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h2 id="settings-modal-title" className="text-2xl font-bold">Settings & Data</h2>
-                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
+                    <h2 id="settings-modal-title" className="text-2xl font-bold">{t('settingsAndData')}</h2>
+                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label={t('close')}>&times;</button>
                 </div>
                 
                 <input
@@ -69,22 +71,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
 
                 <div className="overflow-y-auto pr-2 space-y-6">
+                    {/* Language Section */}
+                     <div className="p-4 bg-tertiary/50 rounded-lg">
+                        <h3 className="text-lg font-semibold text-primary mb-2">{t('language')}</h3>
+                        <select
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value as 'en' | 'es')}
+                            className="w-full md:w-1/2 px-3 py-2 bg-input border border-primary rounded-lg"
+                        >
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </div>
+
                     {/* Events Section */}
                     <div className="p-4 bg-tertiary/50 rounded-lg">
-                        <h3 className="text-lg font-semibold text-primary mb-2">Events</h3>
+                        <h3 className="text-lg font-semibold text-primary mb-2">{t('addEvent')}s</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-secondary mb-3">Import events from calendar files or JSON backups.</p>
+                                <p className="text-sm text-secondary mb-3">{t('importEvents')}</p>
                                 <div className="space-y-2">
-                                    <button onClick={() => handleImportClick('ics')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Import from .ics</button>
-                                    <button onClick={() => handleImportClick('events-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Import from .json</button>
+                                    <button onClick={() => handleImportClick('ics')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('importICS')}</button>
+                                    <button onClick={() => handleImportClick('events-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('importJSON')}</button>
                                 </div>
                             </div>
                              <div>
-                                <p className="text-sm text-secondary mb-3">Export events to standard formats for use elsewhere.</p>
+                                <p className="text-sm text-secondary mb-3">{t('exportEvents')}</p>
                                 <div className="space-y-2">
-                                    <button onClick={onExportEventsICS} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Export to .ics</button>
-                                    <button onClick={onExportEventsJSON} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Export to .json</button>
+                                    <button onClick={onExportEventsICS} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('exportICS')}</button>
+                                    <button onClick={onExportEventsJSON} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('exportJSON')}</button>
                                 </div>
                             </div>
                         </div>
@@ -92,30 +107,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     
                     {/* Projects & Templates Section */}
                     <div className="p-4 bg-tertiary/50 rounded-lg">
-                        <h3 className="text-lg font-semibold text-primary mb-2">Projects & Templates</h3>
+                        <h3 className="text-lg font-semibold text-primary mb-2">{t('projects')} & {t('templates')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-secondary mb-3">Import project structures and templates from a JSON file.</p>
-                                <button onClick={() => handleImportClick('projects-templates-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Import from .json</button>
+                                <p className="text-sm text-secondary mb-3">{t('importProjectsTemplates')}</p>
+                                <button onClick={() => handleImportClick('projects-templates-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('importJSON')}</button>
                             </div>
                             <div>
-                                <p className="text-sm text-secondary mb-3">Export your project and template structures.</p>
-                                <button onClick={onExportProjectsAndTemplates} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Export to .json</button>
+                                <p className="text-sm text-secondary mb-3">{t('exportProjectsTemplates')}</p>
+                                <button onClick={onExportProjectsAndTemplates} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('exportJSON')}</button>
                             </div>
                         </div>
                     </div>
                     
                     {/* Full Backup Section */}
                     <div className="p-4 bg-tertiary/50 rounded-lg border border-yellow-500/50">
-                        <h3 className="text-lg font-semibold text-yellow-400 mb-2">Full Backup & Restore</h3>
+                        <h3 className="text-lg font-semibold text-yellow-400 mb-2">{t('fullBackupRestore')}</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-secondary mb-3">Restore your entire application state from a full backup file.</p>
-                                <button onClick={() => handleImportClick('backup-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">Restore from Backup...</button>
+                                <p className="text-sm text-secondary mb-3">{t('restoreBackupMsg')}</p>
+                                <button onClick={() => handleImportClick('backup-json')} className="w-full text-left px-4 py-2 rounded-md bg-tertiary text-primary font-bold hover:bg-secondary transition">{t('restoreBackupBtn')}</button>
                             </div>
                             <div>
-                                <p className="text-sm text-secondary mb-3">Create a full backup of all data in your application.</p>
-                                <button onClick={onExportFullBackup} className="w-full text-left px-4 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition">Create Full Backup</button>
+                                <p className="text-sm text-secondary mb-3">{t('createBackupMsg')}</p>
+                                <button onClick={onExportFullBackup} className="w-full text-left px-4 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition">{t('createBackupBtn')}</button>
                             </div>
                         </div>
                     </div>
@@ -123,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="flex justify-end pt-6 mt-auto flex-shrink-0">
                     <button onClick={onClose} className="px-5 py-2 rounded-md font-semibold text-primary hover:bg-tertiary transition">
-                        Close
+                        {t('close')}
                     </button>
                 </div>
             </div>

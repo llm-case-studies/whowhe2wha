@@ -52,7 +52,13 @@ const getIconForHoliday = (holiday: Holiday): string => {
   }
 };
 
-const TimelineMarker: React.FC<{ label?: string; isToday?: boolean, align?: 'left' | 'center' | 'right' }> = ({ label, isToday = false, align = 'center' }) => {
+interface TimelineMarkerProps {
+    label?: string;
+    isToday?: boolean;
+    align?: 'left' | 'center' | 'right';
+}
+
+const TimelineMarker: React.FC<TimelineMarkerProps> = ({ label, isToday = false, align = 'center' }) => {
   const circleSize = isToday ? 'w-6 h-6' : 'w-5 h-5';
   
   const todayCircleClasses = 'bg-gradient-to-br from-blue-400 to-wha-blue border-blue-300 shadow-[0_0_12px_2px_rgba(59,130,246,0.6)]';
@@ -84,7 +90,11 @@ const TimelineMarker: React.FC<{ label?: string; isToday?: boolean, align?: 'lef
   );
 };
 
-const PointEventMarker: React.FC<{event: EventNode, colorStyle: {bg: string, border: string, text: string}}> = ({ event, colorStyle }) => {
+interface PointEventMarkerProps {
+    event: EventNode;
+    colorStyle: {bg: string, border: string, text: string};
+}
+const PointEventMarker: React.FC<PointEventMarkerProps> = ({ event, colorStyle }) => {
     const commonClasses = `w-4 h-4 ${colorStyle.bg} ${colorStyle.text}`;
     switch(event.what.whatType) {
         case WhatType.Milestone:

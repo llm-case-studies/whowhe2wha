@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Location, DiscoveredPlace, EntityType } from '../types';
 import { discoverPlaces, geocodeLocation, findPlaceFromUrl } from '../services/geminiService';
 import { SpinnerIcon, PinIcon } from './icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface AddLocationModalProps {
     initialQuery: string;
@@ -17,6 +18,7 @@ const URL_REGEX = /(https?:\/\/(?:maps\.app\.goo\.gl\/[a-zA-Z0-9]+|www\.google\.
 export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery, onSave, onClose }) => {
     const [query, setQuery] = useState(initialQuery);
     const [view, setView] = useState<View>('search');
+    const { t } = useI18n();
 
     // Search state
     const [isLoading, setIsLoading] = useState(false);
@@ -138,10 +140,10 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                 value={query}
                 onChange={handleQueryChange}
                 className="flex-grow px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
-                placeholder="Search for a place or paste a Google Maps link..."
+                placeholder={t('locationSearchPlaceholder')}
             />
             <button type="submit" disabled={isLoading || isProcessingUrl} className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary">
-                {isLoading || isProcessingUrl ? <SpinnerIcon className="h-5 w-5 animate-spin"/> : 'Search'}
+                {isLoading || isProcessingUrl ? <SpinnerIcon className="h-5 w-5 animate-spin"/> : t('search')}
             </button>
         </form>
     );
@@ -154,7 +156,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
             {isProcessingUrl && (
                  <div className="text-center py-4">
                     <SpinnerIcon className="h-8 w-8 animate-spin mx-auto text-wha-blue" />
-                    <p className="text-secondary mt-2">Analyzing Google Maps link...</p>
+                    <p className="text-secondary mt-2">{t('analyzingLink')}</p>
                 </div>
             )}
             
@@ -178,12 +180,12 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                         </button>
                     ))
                 ) : (
-                    !isLoading && !isProcessingUrl && !error && <p className="text-secondary text-center py-4">No results found.</p>
+                    !isLoading && !isProcessingUrl && !error && <p className="text-secondary text-center py-4">{t('noResultsFound')}</p>
                 )}
             </div>
             <div className="border-t border-primary mt-4 pt-4 text-center">
                  <button onClick={() => setView('manual')} className="text-sm text-blue-400 hover:underline">
-                    Or, add this location manually
+                    {t('addLocationManually')}
                 </button>
             </div>
         </>
@@ -192,17 +194,17 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const renderConfirmView = () => (
         <div className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-secondary mb-1">Friendly Name (Alias)</label>
+                <label className="block text-sm font-medium text-secondary mb-1">{t('alias')}</label>
                 <input
                     type="text"
                     value={alias}
                     onChange={e => setAlias(e.target.value)}
                     className="w-full px-3 py-2 bg-input border border-primary rounded-lg"
-                    placeholder="e.g., Mom's House, Main Office"
+                    placeholder={t('aliasPlaceholder')}
                 />
             </div>
              <div>
-                <label className="block text-sm font-medium text-secondary mb-1">Official Name / Address</label>
+                <label className="block text-sm font-medium text-secondary mb-1">{t('officialName')}</label>
                 <div className="relative">
                     <input
                         type="text"
@@ -218,13 +220,13 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                 {geocodedData && <p className="text-xs text-secondary mt-1">Lat: {geocodedData.latitude.toFixed(4)}, Lng: {geocodedData.longitude.toFixed(4)}</p>}
             </div>
             <div>
-                 <label className="block text-sm font-medium text-secondary mb-1">Notes / Description</label>
+                 <label className="block text-sm font-medium text-secondary mb-1">{t('notes')}</label>
                  <textarea
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     rows={2}
                     className="w-full px-3 py-2 bg-input border border-primary rounded-lg"
-                    placeholder="e.g., Use the back entrance, suite 210."
+                    placeholder={t('notesPlaceholder')}
                 />
             </div>
         </div>
@@ -243,7 +245,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                 />
             </div>
              <div>
-                 <label className="block text-sm font-medium text-secondary mb-1">Notes / Description</label>
+                 <label className="block text-sm font-medium text-secondary mb-1">{t('notes')}</label>
                  <textarea
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
@@ -266,8 +268,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="location-finder-title">
             <div className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-lg">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 id="location-finder-title" className="text-2xl font-bold">Location Finder</h2>
-                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
+                    <h2 id="location-finder-title" className="text-2xl font-bold">{t('locationFinder')}</h2>
+                    <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label={t('close')}>&times;</button>
                 </div>
 
                 {view === 'search' && renderSearchView()}
@@ -281,7 +283,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                         </button>
                     )}
                     <button type="button" onClick={onClose} className="px-5 py-2 rounded-md text-primary hover:bg-tertiary transition">
-                        Cancel
+                        {t('cancel')}
                     </button>
                     {(view === 'confirm' || view === 'manual') && (
                         <button
@@ -290,7 +292,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                             disabled={!finalName}
                             className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition disabled:bg-tertiary"
                         >
-                            Save Location
+                            {t('saveLocation')}
                         </button>
                     )}
                 </div>

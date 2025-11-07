@@ -8,6 +8,7 @@ import { TierConfigModal } from './TierConfigModal';
 import { LocationDetailModal } from './LocationDetailModal';
 import { TimeMapModal } from './TimeMapModal';
 import { ContactsView } from './ContactsView';
+import { useI18n } from '../hooks/useI18n';
 
 interface DashboardProps {
   mainView: MainView;
@@ -55,6 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
   const [timelineDate, setTimelineDate] = useState(new Date('2025-11-15T12:00:00Z'));
+  const { t } = useI18n();
   
   const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
   const [selectedProjectCategories, setSelectedProjectCategories] = useState<string[]>(() => projects.map(p => p.category));
@@ -112,11 +114,11 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         {mainView === 'dashboard' && (
           <div className="h-full">
             {viewMode === 'stream' && (
-              <div className="flex md:flex-row flex-col gap-8 h-full">
-                <div className="md:w-2/3 w-full overflow-y-auto space-y-6 pr-4 pb-12">
+              <div className="flex md:flex-row flex-col gap-8 h-full min-h-0">
+                <div className="md:w-2/3 w-full overflow-y-auto space-y-6 pr-4">
                   {unscheduledEvents.length > 0 && (
                     <div className="mb-10">
-                       <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">Unscheduled Events</h2>
+                       <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">{t('unscheduledEvents')}</h2>
                        <div className="space-y-4">
                           {unscheduledEvents.map(event => {
                             const project = projects.find(p => p.id === event.projectId);
@@ -137,7 +139,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                     </div>
                   )}
                   
-                  <h2 className="text-xl font-bold text-primary">Event Stream</h2>
+                  <h2 className="text-xl font-bold text-primary">{t('eventStream')}</h2>
                   {scheduledEvents.length > 0 ? (
                       scheduledEvents.map(event => {
                         const project = projects.find(p => p.id === event.projectId);
@@ -156,16 +158,16 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                       })
                   ) : (
                     <div className="text-center py-16 px-6 bg-secondary rounded-lg">
-                        <h3 className="text-lg font-semibold text-primary">No Scheduled Events Found</h3>
-                        <p className="text-tertiary mt-2">Try clearing your search, adding a date to unscheduled events, or creating a new event.</p>
+                        <h3 className="text-lg font-semibold text-primary">{t('noScheduledEvents')}</h3>
+                        <p className="text-tertiary mt-2">{t('noScheduledEventsDesc')}</p>
                     </div>
                   )}
                 </div>
-                <div className="md:w-1/3 w-full overflow-y-auto space-y-6 pr-4 pb-12">
+                <div className="md:w-1/3 w-full overflow-y-auto space-y-6 pr-4">
                   <div className="flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-primary">Projects</h2>
+                      <h2 className="text-xl font-bold text-primary">{t('projects')}</h2>
                       {selectedProjectId && (
-                          <button onClick={() => onProjectSelect(selectedProjectId)} className="text-sm text-wha-blue hover:underline">Clear Filter</button>
+                          <button onClick={() => onProjectSelect(selectedProjectId)} className="text-sm text-wha-blue hover:underline">{t('clearFilter')}</button>
                       )}
                   </div>
                   {visibleProjects.map(project => (

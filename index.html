@@ -87,9 +87,13 @@
           }
 
           /* Light theme override */
+          html.light input[type="date"],
+          html.light input[type="datetime-local"] {
+            color-scheme: light;
+          }
           html.light input[type="date"]::-webkit-calendar-picker-indicator,
           html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-            filter: none; /* Use default browser icon color */
+            filter: none;
           }
 
           /* Focus theme override */

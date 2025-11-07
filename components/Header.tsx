@@ -2,6 +2,7 @@ import React from 'react';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { Theme } from '../types';
 import { HistoryIcon, SettingsIcon } from './icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface HeaderProps {
     theme: Theme;
@@ -34,6 +35,7 @@ const Logo = () => (
 );
 
 export const Header: React.FC<HeaderProps> = ({ theme, setTheme, onToggleHistory, onOpenSettings }) => {
+  const { t } = useI18n();
   return (
     <header className="py-6 px-4">
       <div className="container mx-auto flex justify-between items-center">
@@ -41,21 +43,21 @@ export const Header: React.FC<HeaderProps> = ({ theme, setTheme, onToggleHistory
             <button 
                 onClick={onToggleHistory} 
                 className="p-2.5 rounded-full bg-tertiary text-secondary hover:text-primary hover:bg-secondary transition-colors"
-                title="View Changes History"
+                title={t('history')}
             >
                 <HistoryIcon />
             </button>
              <button 
                 onClick={onOpenSettings} 
                 className="p-2.5 rounded-full bg-tertiary text-secondary hover:text-primary hover:bg-secondary transition-colors"
-                title="Settings & Data Management"
+                title={t('settings')}
             >
                 <SettingsIcon />
             </button>
         </div>
         <div className="flex-1 flex justify-center items-center flex-col space-y-2">
           <Logo />
-          <p className="text-sm text-secondary">The Unified Context Engine for Life and Work</p>
+          <p className="text-sm text-secondary">{t('appSubtitle')}</p>
         </div>
         <div className="flex-1 flex justify-end">
             <ThemeSwitcher theme={theme} setTheme={setTheme} />

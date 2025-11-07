@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project, Location, Contact, EventNode, WhatType, EntityType } from '../types';
 import { LocationSelectModal } from './LocationSelectModal';
+import { useI18n } from '../hooks/useI18n';
 
 interface AddEventModalProps {
   projects: Project[];
@@ -21,6 +22,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
   const [whoIds, setWhoIds] = useState<string[]>([]);
   const [whereId, setWhereId] = useState<string | ''>('');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const { t } = useI18n();
 
   // Recurrence state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -110,44 +112,44 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
       <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="add-event-title">
         <form onSubmit={handleSubmit} className="bg-secondary border border-primary rounded-lg p-8 w-full max-w-lg">
           <div className="flex justify-between items-center mb-6">
-            <h2 id="add-event-title" className="text-2xl font-bold">{eventToEdit ? 'Edit Event' : 'Add New Event'}</h2>
-            <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
+            <h2 id="add-event-title" className="text-2xl font-bold">{eventToEdit ? t('editEventTitle') : t('addEventTitle')}</h2>
+            <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label={t('close')}>&times;</button>
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                    <label htmlFor="whatName" className="block text-sm font-medium text-secondary mb-1">What (Event/Step Name)</label>
+                    <label htmlFor="whatName" className="block text-sm font-medium text-secondary mb-1">{t('whatLabel')}</label>
                     <input type="text" id="whatName" value={whatName} onChange={(e) => setWhatName(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
                 </div>
                 <div>
-                     <label htmlFor="whatType" className="block text-sm font-medium text-secondary mb-1">Event Type</label>
+                     <label htmlFor="whatType" className="block text-sm font-medium text-secondary mb-1">{t('eventTypeLabel')}</label>
                     <select id="whatType" value={whatType} onChange={(e) => setWhatType(e.target.value as WhatType)} className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
                         {/* FIX: Corrected a type error where the 'type' variable was inferred as 'unknown'. Added an explicit cast to string to ensure type safety. */}
                         {Object.values(WhatType).map(type => <option key={type as string} value={type as string}>{(type as string).charAt(0).toUpperCase() + (type as string).slice(1)}</option>)}
                     </select>
                 </div>
                  <div>
-                    <label htmlFor="projectId" className="block text-sm font-medium text-secondary mb-1">Project</label>
+                    <label htmlFor="projectId" className="block text-sm font-medium text-secondary mb-1">{t('projectLabel')}</label>
                     <select id="projectId" value={projectId} onChange={(e) => setProjectId(Number(e.target.value))} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
-                        <option value="" disabled>Select a project</option>
+                        <option value="" disabled>{t('selectProject')}</option>
                         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                 </div>
             </div>
              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-secondary mb-1">Description</label>
+                <label htmlFor="description" className="block text-sm font-medium text-secondary mb-1">{t('descriptionLabel')}</label>
                 <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="when" className="block text-sm font-medium text-secondary mb-1">When</label>
+                    <label htmlFor="when" className="block text-sm font-medium text-secondary mb-1">{t('whenLabel')}</label>
                     <input type="datetime-local" id="when" value={when} onChange={(e) => setWhen(e.target.value)} required className="w-full px-3 py-2 bg-input border border-primary rounded-lg" />
                 </div>
                 <div>
-                    <label htmlFor="where" className="block text-sm font-medium text-secondary mb-1">Where</label>
+                    <label htmlFor="where" className="block text-sm font-medium text-secondary mb-1">{t('whereLabel')}</label>
                     <button type="button" onClick={() => setIsLocationModalOpen(true)} className="w-full text-left px-3 py-2 bg-input border border-primary rounded-lg truncate">
-                        {whereId ? locations.find(l=>l.id === whereId)?.alias || locations.find(l=>l.id === whereId)?.name : 'Select a location...'}
+                        {whereId ? locations.find(l=>l.id === whereId)?.alias || locations.find(l=>l.id === whereId)?.name : t('selectLocation')}
                     </button>
                 </div>
             </div>
@@ -161,27 +163,27 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
                         className="h-4 w-4 rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
                     />
                     <label htmlFor="isRecurring" className="ml-2 block text-sm font-medium text-secondary">
-                        This event repeats
+                        {t('recurringEvent')}
                     </label>
                 </div>
 
                 {isRecurring && (
                     <div className="grid grid-cols-2 gap-4 p-3 bg-tertiary/50 rounded-lg">
                         <div>
-                            <label htmlFor="frequency" className="block text-xs font-medium text-secondary mb-1">Frequency</label>
+                            <label htmlFor="frequency" className="block text-xs font-medium text-secondary mb-1">{t('frequency')}</label>
                             <select 
                                 id="frequency" 
                                 value={frequency} 
                                 onChange={(e) => setFrequency(e.target.value as any)} 
                                 className="w-full px-3 py-2 text-sm bg-input border border-primary rounded-lg"
                             >
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
+                                <option value="daily">{t('daily')}</option>
+                                <option value="weekly">{t('weekly')}</option>
+                                <option value="monthly">{t('monthly')}</option>
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="recurrenceEndDate" className="block text-xs font-medium text-secondary mb-1">End Date (optional)</label>
+                            <label htmlFor="recurrenceEndDate" className="block text-xs font-medium text-secondary mb-1">{t('endDateOptional')}</label>
                             <input 
                                 type="date" 
                                 id="recurrenceEndDate" 
@@ -196,8 +198,8 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
           </div>
 
           <div className="flex justify-end space-x-4 pt-6">
-            <button type="button" onClick={onClose} className="px-5 py-2 rounded-md font-semibold text-primary hover:bg-tertiary transition">Cancel</button>
-            <button type="submit" className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition">{eventToEdit ? 'Save Changes' : 'Save Event'}</button>
+            <button type="button" onClick={onClose} className="px-5 py-2 rounded-md font-semibold text-primary hover:bg-tertiary transition">{t('cancel')}</button>
+            <button type="submit" className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600 transition">{eventToEdit ? t('saveChanges') : t('saveEvent')}</button>
           </div>
         </form>
       </div>

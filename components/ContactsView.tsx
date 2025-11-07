@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Contact, Location } from '../types';
 import { ContactCard } from './ContactCard';
 import { UsersIcon, PlusIcon } from './icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface ContactsViewProps {
   contacts: Contact[];
@@ -14,6 +15,7 @@ interface ContactsViewProps {
 
 export const ContactsView: React.FC<ContactsViewProps> = ({ contacts, locations, onAddContact, onEditContact, onDeleteContact, onLocationClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useI18n();
 
   const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,11 +28,11 @@ export const ContactsView: React.FC<ContactsViewProps> = ({ contacts, locations,
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
         <h2 className="text-2xl font-bold text-primary flex items-center">
           <UsersIcon className="h-7 w-7 mr-3" />
-          Contacts & Partners
+          {t('contactsAndPartners')}
         </h2>
         <button onClick={onAddContact} className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-md bg-wha-blue text-white hover:bg-blue-600 transition">
           <PlusIcon className="h-4 w-4" />
-          <span>Add Contact</span>
+          <span>{t('addContactBtn')}</span>
         </button>
       </div>
 
@@ -38,7 +40,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({ contacts, locations,
       <div className="mb-6 flex-shrink-0">
         <input
           type="text"
-          placeholder="Search contacts by name or role..."
+          placeholder={t('searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-4 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
@@ -62,8 +64,8 @@ export const ContactsView: React.FC<ContactsViewProps> = ({ contacts, locations,
           </div>
         ) : (
           <div className="text-center py-16 px-6 bg-secondary rounded-lg">
-            <h3 className="text-lg font-semibold text-primary">No Contacts Found</h3>
-            <p className="text-tertiary mt-2">Try adjusting your search or adding a new contact.</p>
+            <h3 className="text-lg font-semibold text-primary">{t('noContactsFound')}</h3>
+            <p className="text-tertiary mt-2">{t('noContactsFoundDesc')}</p>
           </div>
         )}
       </div>
