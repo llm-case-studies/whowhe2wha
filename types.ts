@@ -138,3 +138,11 @@ export interface Tier {
 }
 
 export type TierConfig = Tier[];
+
+// Sharing
+export interface SharedProjectData {
+    project: Project;
+    events: EventNode[];
+    locations: Location[];
+    contacts: Contact[];
+}

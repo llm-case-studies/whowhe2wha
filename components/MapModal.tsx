@@ -106,8 +106,7 @@ export const MapModal: React.FC<MapModalProps> = ({ location, allEvents, allLoca
               {nearbyEvents.length > 0 ? (
                 <div className="space-y-4">
                   {nearbyEvents.map(event => (
-                    // FIX: Added dummy onEdit and onDelete props to satisfy EventCardProps interface
-                    <EventCard key={event.id} event={event} locations={allLocations} onLocationClick={handleLocationClick} onWhenClick={handleWhenClick} onEdit={() => {}} onDelete={() => {}} />
+                    <EventCard key={event.id} event={event} locations={allLocations} onLocationClick={handleLocationClick} onWhenClick={handleWhenClick} onEdit={() => {}} onDelete={() => {}} isReadOnly={true} />
                   ))}
                 </div>
               ) : (

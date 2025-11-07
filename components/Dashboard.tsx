@@ -30,6 +30,7 @@ interface DashboardProps {
   selectedProjectId: number | null;
   onProjectSelect: (projectId: number) => void;
   onOpenProjectTemplates: () => void;
+  onShareProject: (projectId: number) => void;
 }
 
 const initialTierConfig: TierConfig = [
@@ -44,7 +45,8 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
     onAddProject, onEditProject, onDeleteProject,
     onAddContact, onEditContact, onDeleteContact,
     onAddLocation, onEditLocation, onDeleteLocation,
-    selectedProjectId, onProjectSelect, onOpenProjectTemplates
+    selectedProjectId, onProjectSelect, onOpenProjectTemplates,
+    onShareProject
   } = props;
 
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
@@ -156,6 +158,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                 onEdit={onEditProject}
                 onDelete={onDeleteProject}
                 onAddEvent={() => onAddEvent(project.id)}
+                onShare={onShareProject}
               />
             ))}
           </div>

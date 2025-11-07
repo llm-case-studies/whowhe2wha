@@ -12,42 +12,45 @@ interface EventCardProps {
   onWhenClick: (when: WhenNode) => void;
   onEdit: (event: EventNode) => void;
   onDelete: (eventId: number) => void;
+  isReadOnly?: boolean;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, project, locations, onLocationClick, onWhenClick, onEdit, onDelete }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, project, locations, onLocationClick, onWhenClick, onEdit, onDelete, isReadOnly = false }) => {
   const location = locations.find(l => l.id === event.whereId);
   const colorClass = project ? (PROJECT_COLOR_CLASSES[project.color] || PROJECT_COLOR_CLASSES['blue']) : PROJECT_COLOR_CLASSES['blue'];
 
   return (
-    <div className={`border-l-4 p-4 rounded-r-lg shadow-sm hover:shadow-md transition-shadow duration-200 ${colorClass}`}>
+    <div className={`border-l-4 p-4 rounded-r-lg shadow-sm ${!isReadOnly && 'hover:shadow-md'} transition-shadow duration-200 ${colorClass}`}>
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-primary text-lg">{event.what.name}</h3>
           {project && <p className="text-sm font-semibold text-secondary">{project.name}</p>}
           {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
         </div>
-        <div className="flex items-center space-x-1 flex-shrink-0">
-           <button onClick={() => onEdit(event)} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-primary transition-colors duration-200" title="Edit Event">
-              <PencilIcon className="h-4 w-4" />
-          </button>
-          <button onClick={() => onDelete(event.id)} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-red-500 transition-colors duration-200" title="Delete Event">
-              <TrashIcon className="h-4 w-4" />
-          </button>
-        </div>
+        {!isReadOnly && (
+          <div className="flex items-center space-x-1 flex-shrink-0">
+             <button onClick={() => onEdit(event)} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-primary transition-colors duration-200" title="Edit Event">
+                <PencilIcon className="h-4 w-4" />
+            </button>
+            <button onClick={() => onDelete(event.id)} className="p-1.5 rounded-full text-secondary/70 hover:bg-tertiary hover:text-red-500 transition-colors duration-200" title="Delete Event">
+                <TrashIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex flex-wrap gap-2 mt-3 items-center">
         {event.when && (
             <EntityTag 
                 label={event.when.display} 
                 type={EntityType.When} 
-                onClick={() => onWhenClick(event.when)}
+                onClick={!isReadOnly ? () => onWhenClick(event.when!) : undefined}
             />
         )}
         {location && (
             <EntityTag 
                 label={location.alias || location.name} 
                 type={EntityType.Where}
-                onClick={() => onLocationClick(location)}
+                onClick={!isReadOnly ? () => onLocationClick(location) : undefined}
             />
         )}
         {event.who.map(person => (

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Location, EventNode, Contact } from '../types';
 import { getDistanceInMiles } from '../services/geoService';
@@ -133,7 +134,7 @@ export const LocationDetailModal: React.FC<LocationDetailModalProps> = ({
                       {eventsAtThisLocation.length > 0 ? (
                         <div className="space-y-4">
                           {eventsAtThisLocation.map(event => (
-                            <EventCard key={event.id} event={event} locations={allLocations} onLocationClick={() => {}} onWhenClick={() => {}} onEdit={() => {}} onDelete={() => {}} />
+                            <EventCard key={event.id} event={event} locations={allLocations} onLocationClick={() => {}} onWhenClick={() => {}} onEdit={() => {}} onDelete={() => {}} isReadOnly={true} />
                           ))}
                         </div>
                       ) : ( <p className="text-tertiary text-center py-8">No events scheduled at this location.</p> )}

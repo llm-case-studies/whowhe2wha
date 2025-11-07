@@ -10,9 +10,58 @@ import { EditLocationModal } from './components/EditLocationModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
+import { ShareModal } from './components/ShareModal';
+import { ShareView } from './components/ShareView';
 import { queryGraph } from './services/geminiService';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData } from './types';
+
+// --- Helper functions for compression and base64 encoding ---
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+    let binary = '';
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+    const binary_string = atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
+}
+
+async function compressAndEncode(data: object): Promise<string> {
+    const jsonString = JSON.stringify(data);
+    const stream = new Blob([jsonString]).stream().pipeThrough(new CompressionStream('gzip'));
+    const compressedResponse = new Response(stream);
+    const buffer = await compressedResponse.arrayBuffer();
+    // URL-safe Base64: replace '+' with '-', '/' with '_', and remove padding '='
+    return uint8ArrayToBase64(new Uint8Array(buffer))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+async function decodeAndDecompress<T>(encodedString: string): Promise<T> {
+    // Add back padding and reverse URL-safe replacements
+    let base64 = encodedString.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+        base64 += '=';
+    }
+    const bytes = base64ToUint8Array(base64);
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const decompressedResponse = new Response(stream);
+    const jsonString = await decompressedResponse.text();
+    return JSON.parse(jsonString);
+}
+
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('dark');
@@ -51,10 +100,37 @@ const App: React.FC = () => {
 
     // History state
     const [history, setHistory] = useState<HistoryEntry[]>([]);
+    
+    // Share state
+    const [shareData, setShareData] = useState<SharedProjectData | null>(null);
+    const [isShareView, setIsShareView] = useState(false);
+    const [shareModalUrl, setShareModalUrl] = useState<string | null>(null);
 
 
     useEffect(() => {
         document.documentElement.className = theme;
+        
+        const loadSharedData = async () => {
+            try {
+                const hash = window.location.hash;
+                if (hash.startsWith('#share=')) {
+                    const encodedData = hash.substring(7); // remove #share=
+                    const data = await decodeAndDecompress<SharedProjectData>(encodedData);
+                    // Basic validation
+                    if (data.project && data.events && data.locations && data.contacts) {
+                        setShareData(data);
+                        setIsShareView(true);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to parse share data from URL", error);
+                // If parsing fails, just load the normal app
+                window.location.hash = '';
+            }
+        };
+        
+        loadSharedData();
+
     }, [theme]);
     
     // --- History Management ---
@@ -378,7 +454,33 @@ const App: React.FC = () => {
             }
         });
     };
+    
+    const handleShareProject = async (projectId: number) => {
+        const project = allProjects.find(p => p.id === projectId);
+        if (!project) return;
 
+        const projectEvents = allEvents.filter(e => e.projectId === projectId);
+        const locationIds = new Set(projectEvents.map(e => e.whereId));
+        const projectLocations = allLocations.filter(l => locationIds.has(l.id));
+
+        const contactNames = new Set(projectEvents.flatMap(e => e.who.map(w => w.name)));
+        const projectContacts = allContacts.filter(c => contactNames.has(c.name));
+
+        const data: SharedProjectData = {
+            project,
+            events: projectEvents,
+            locations: projectLocations,
+            contacts: projectContacts,
+        };
+
+        const encodedData = await compressAndEncode(data);
+        const url = `${window.location.origin}${window.location.pathname}#share=${encodedData}`;
+        setShareModalUrl(url);
+    };
+
+    if (isShareView && shareData) {
+        return <ShareView data={shareData} />;
+    }
 
     return (
         <div className="bg-background text-primary min-h-screen font-sans flex flex-col">
@@ -406,6 +508,7 @@ const App: React.FC = () => {
                     selectedProjectId={selectedProjectId}
                     onProjectSelect={handleProjectSelect}
                     onOpenProjectTemplates={() => setIsTemplatesModalOpen(true)}
+                    onShareProject={handleShareProject}
                 />
             </main>
             
@@ -460,7 +563,9 @@ const App: React.FC = () => {
                     onDelete={handleDeleteTemplate}
                 />
             )}
-
+            {shareModalUrl && (
+                <ShareModal url={shareModalUrl} onClose={() => setShareModalUrl(null)} />
+            )}
             {confirmation && (
                 <ConfirmationModal
                     title={confirmation.title}
