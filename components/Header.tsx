@@ -1,12 +1,13 @@
 import React from 'react';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { Theme } from '../types';
-import { HistoryIcon } from './icons';
+import { HistoryIcon, SettingsIcon } from './icons';
 
 interface HeaderProps {
     theme: Theme;
     setTheme: (theme: Theme) => void;
     onToggleHistory: () => void;
+    onOpenSettings: () => void;
 }
 
 const Logo = () => (
@@ -32,17 +33,24 @@ const Logo = () => (
   </svg>
 );
 
-export const Header: React.FC<HeaderProps> = ({ theme, setTheme, onToggleHistory }) => {
+export const Header: React.FC<HeaderProps> = ({ theme, setTheme, onToggleHistory, onOpenSettings }) => {
   return (
     <header className="py-6 px-4">
       <div className="container mx-auto flex justify-between items-center">
-        <div className="flex-1 flex justify-start">
+        <div className="flex-1 flex justify-start items-center space-x-2">
             <button 
                 onClick={onToggleHistory} 
                 className="p-2.5 rounded-full bg-tertiary text-secondary hover:text-primary hover:bg-secondary transition-colors"
                 title="View Changes History"
             >
                 <HistoryIcon />
+            </button>
+             <button 
+                onClick={onOpenSettings} 
+                className="p-2.5 rounded-full bg-tertiary text-secondary hover:text-primary hover:bg-secondary transition-colors"
+                title="Settings & Data Management"
+            >
+                <SettingsIcon />
             </button>
         </div>
         <div className="flex-1 flex justify-center items-center flex-col space-y-2">

@@ -13,9 +13,12 @@ import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
 import { ShareModal } from './components/ShareModal';
 import { ShareView } from './components/ShareView';
 import { ShareTemplateView } from './components/ShareTemplateView';
+import { SettingsModal } from './components/SettingsModal';
+import { ImportReviewModal } from './components/ImportReviewModal';
 import { queryGraph } from './services/geminiService';
+import { parseICS } from './utils/icsParser';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView, ParsedEvent } from './types';
 
 // --- Helper functions for compression and base64 encoding ---
 
@@ -88,6 +91,8 @@ const App: React.FC = () => {
     const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
     const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
     const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [isImportReviewModalOpen, setIsImportReviewModalOpen] = useState(false);
 
     // State for editing items
     const [eventToEdit, setEventToEdit] = useState<EventNode | null>(null);
@@ -108,6 +113,9 @@ const App: React.FC = () => {
     const [shareTemplateData, setShareTemplateData] = useState<SharedTemplateData | null>(null);
     const [isShareView, setIsShareView] = useState(false);
     const [shareModalUrl, setShareModalUrl] = useState<string | null>(null);
+    
+    // Import/Export State
+    const [parsedICS, setParsedICS] = useState<ParsedEvent[] | null>(null);
 
 
     useEffect(() => {
@@ -465,6 +473,7 @@ const App: React.FC = () => {
         });
     };
     
+    // --- Sharing Handlers ---
     const handleShareProject = async (projectId: number) => {
         const project = allProjects.find(p => p.id === projectId);
         if (!project) return;
@@ -498,6 +507,115 @@ const App: React.FC = () => {
         const url = `${window.location.origin}${window.location.pathname}#share-template=${encodedData}`;
         setShareModalUrl(url);
     };
+    
+    // --- Data Import/Export Handlers ---
+    const handleExportData = () => {
+        const appState = getCurrentAppState();
+        const jsonString = JSON.stringify(appState, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `whowhe2wha_backup_${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setIsSettingsModalOpen(false);
+    };
+    
+    const handleImportICS = (fileContent: string) => {
+        try {
+            const parsedEvents = parseICS(fileContent);
+            if(parsedEvents.length > 0) {
+                setParsedICS(parsedEvents);
+                setIsSettingsModalOpen(false);
+                setIsImportReviewModalOpen(true);
+            } else {
+                alert("No valid events found in the selected file.");
+            }
+        } catch (error) {
+            console.error("Failed to parse ICS file:", error);
+            alert("An error occurred while parsing the .ics file. Please ensure it is a valid iCalendar file.");
+        }
+    };
+    
+    const handleConfirmImport = (projectId: number) => {
+        if (!parsedICS || !projectId) return;
+        const beforeState = getCurrentAppState();
+
+        const newLocations: Location[] = [];
+        const newEvents: EventNode[] = [];
+        let currentLocations = [...allLocations];
+
+        for (const parsedEvent of parsedICS) {
+            let eventWhereId = '';
+            if (parsedEvent.location) {
+                let existingLocation = currentLocations.find(l => 
+                    l.name.toLowerCase() === parsedEvent.location!.toLowerCase() ||
+                    l.alias?.toLowerCase() === parsedEvent.location!.toLowerCase()
+                );
+
+                if (!existingLocation) {
+                    const newLoc: Location = {
+                        id: `where-${Date.now() + Math.random()}`,
+                        name: parsedEvent.location,
+                        type: EntityType.Where,
+                    };
+                    newLocations.push(newLoc);
+                    currentLocations.push(newLoc);
+                    eventWhereId = newLoc.id;
+                } else {
+                    eventWhereId = existingLocation.id;
+                }
+            }
+            
+            const startDate = parsedEvent.startDate;
+            const endDate = parsedEvent.endDate;
+            const isPeriod = endDate && (endDate.getTime() - startDate.getTime()) >= (24 * 60 * 60 * 1000);
+
+            const newEv: EventNode = {
+                id: Date.now() + Math.random(),
+                projectId,
+                what: {
+                    id: `what-${Date.now() + Math.random()}`,
+                    name: parsedEvent.summary,
+                    description: parsedEvent.description,
+                    type: EntityType.What,
+                    whatType: isPeriod ? WhatType.Period : WhatType.Appointment,
+                },
+                when: {
+                    id: `when-${Date.now() + Math.random()}`,
+                    name: startDate.toISOString(),
+                    timestamp: startDate.toISOString(),
+                    display: startDate.toLocaleString(),
+                    type: EntityType.When,
+                },
+                endWhen: isPeriod ? {
+                    id: `endwhen-${Date.now() + Math.random()}`,
+                    name: endDate!.toISOString(),
+                    timestamp: endDate!.toISOString(),
+                    display: endDate!.toLocaleString(),
+                    type: EntityType.When,
+                } : undefined,
+                who: [],
+                whereId: eventWhereId,
+            };
+            newEvents.push(newEv);
+        }
+
+        setAllEvents(prev => [...prev, ...newEvents]);
+        if (newLocations.length > 0) {
+            setAllLocations(prev => [...prev, ...newLocations]);
+        }
+        
+        addHistoryEntry(`Imported ${newEvents.length} events from .ics file`, beforeState);
+
+        setParsedICS(null);
+        setIsImportReviewModalOpen(false);
+    };
+
 
     if (isShareView) {
         if (shareData) {
@@ -510,7 +628,7 @@ const App: React.FC = () => {
 
     return (
         <div className="bg-background text-primary min-h-screen font-sans flex flex-col">
-            <Header theme={theme} setTheme={setTheme} onToggleHistory={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)} />
+            <Header theme={theme} setTheme={setTheme} onToggleHistory={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)} onOpenSettings={() => setIsSettingsModalOpen(true)} />
             <main className="container mx-auto px-4 flex-grow flex flex-col">
                 <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
                 <Dashboard
@@ -594,6 +712,21 @@ const App: React.FC = () => {
             )}
             {shareModalUrl && (
                 <ShareModal url={shareModalUrl} onClose={() => setShareModalUrl(null)} />
+            )}
+            {isSettingsModalOpen && (
+                <SettingsModal
+                    onClose={() => setIsSettingsModalOpen(false)}
+                    onExport={handleExportData}
+                    onImport={handleImportICS}
+                />
+            )}
+            {isImportReviewModalOpen && parsedICS && (
+                <ImportReviewModal
+                    parsedEvents={parsedICS}
+                    projects={allProjects}
+                    onClose={() => { setIsImportReviewModalOpen(false); setParsedICS(null); }}
+                    onConfirm={handleConfirmImport}
+                />
             )}
             {confirmation && (
                 <ConfirmationModal

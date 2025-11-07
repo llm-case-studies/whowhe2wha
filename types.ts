@@ -151,3 +151,12 @@ export interface SharedProjectData {
 export interface SharedTemplateData {
     template: ProjectTemplate;
 }
+
+// Data Import/Export
+export interface ParsedEvent {
+  summary: string;
+  startDate: Date;
+  endDate?: Date;
+  location?: string;
+  description?: string;
+}
