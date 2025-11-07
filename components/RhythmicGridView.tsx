@@ -111,14 +111,10 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     const scrollToToday = (behavior: 'auto' | 'smooth' = 'smooth') => {
         if (todayRowRef.current && scrollContainerRef.current) {
             const container = scrollContainerRef.current;
-            const rowWrapper = todayRowRef.current;
-
-            const firstCell = rowWrapper.children[0] as HTMLElement;
-            if (!firstCell) return;
-
+            const rowElement = todayRowRef.current;
             const containerHeight = container.offsetHeight;
             const rowHeight = 48; // h-12
-            const scrollTop = firstCell.offsetTop - (containerHeight / 2) + (rowHeight / 2);
+            const scrollTop = rowElement.offsetTop - (containerHeight / 2) + (rowHeight / 2);
             container.scrollTo({ top: scrollTop, behavior });
         }
     };
@@ -134,16 +130,15 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     // Scroll listener to show/hide the "Go to Today" button
     useEffect(() => {
         const container = scrollContainerRef.current;
-        if (!container || !todayRowRef.current) return;
+        if (!container) return;
 
         const handleScroll = () => {
-            if (!todayRowRef.current) return;
-
-            const firstCell = todayRowRef.current.children[0] as HTMLElement;
-            if (!firstCell) return;
-
+            if (!todayRowRef.current) {
+                setShowGoToToday(true); // If ref is lost for some reason, show button
+                return;
+            };
             const { scrollTop, offsetHeight } = container;
-            const rowOffsetTop = firstCell.offsetTop;
+            const { offsetTop: rowOffsetTop } = todayRowRef.current;
             const rowHeight = 48; // h-12
 
             const isRowVisible = rowOffsetTop >= scrollTop && (rowOffsetTop + rowHeight) <= (scrollTop + offsetHeight);
@@ -151,10 +146,12 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // Initial check
+        // Run initial check once refs are definitely set
+        const initialCheckTimer = setTimeout(handleScroll, 0); 
 
         return () => {
             container.removeEventListener('scroll', handleScroll);
+            clearTimeout(initialCheckTimer);
         };
     }, []);
 
@@ -190,17 +187,16 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
 
         const startOfThisWeek = getStartOfWeek(today);
         
-        // Correctly calculate today's week index relative to the grid start date
         const todayWeekIndex = Math.round((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
         for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
             const rowCells: React.ReactNode[] = [];
+            const isTodayWeek = weekIndex === todayWeekIndex;
             
             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
                 const cellDate = new Date(gridStartDate);
                 cellDate.setDate(gridStartDate.getDate() + (weekIndex * 7 + dayIndex));
 
-                // Populate month labels
                 const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
                 if (!monthLabelMap.has(monthKey)) {
                     const color = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!;
@@ -220,8 +216,14 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 const monthColor = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!.bg;
 
                 rowCells.push(
-                    <div key={`${weekIndex}-${dayIndex}`} className={`relative border-r border-b border-secondary h-12 ${monthColor}`}>
-                        {weekIndex === todayWeekIndex && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
+                    <div 
+                        key={`${weekIndex}-${dayIndex}`}
+                        // The ref is now correctly placed on the first cell of the current week,
+                        // which is a tangible DOM element, ensuring its offsetTop is calculated correctly for scrolling.
+                        ref={isTodayWeek && dayIndex === 0 ? todayRowRef : null}
+                        className={`relative border-r border-b border-secondary h-12 ${monthColor}`}
+                    >
+                        {isTodayWeek && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
                         <span className={`absolute top-0.5 left-1 text-xs ${isTodayCell ? 'text-primary font-bold' : 'text-tertiary'}`}>
                             {cellDate.getDate()}
                         </span>
@@ -244,7 +246,8 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 );
             }
              generatedRows.push(
-                 <div key={weekIndex} ref={weekIndex === todayWeekIndex ? todayRowRef : null} className="contents">
+                 // The wrapper div is kept for layout purposes but no longer holds the ref.
+                 <div key={weekIndex} className="contents">
                     {rowCells}
                 </div>
             )

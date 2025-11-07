@@ -16,8 +16,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
     }, [t]);
 
     useEffect(() => {
-        // FIX: The return type of `setTimeout` in a browser environment is `number`, not `NodeJS.Timeout`.
-        let timer: number;
+        let timer: NodeJS.Timeout;
         if (copyButtonText === t('copied')) {
             timer = setTimeout(() => {
                 setCopyButtonText(t('copyLink'));
