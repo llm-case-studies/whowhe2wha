@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { EventNode, Project } from '../types';
-import { CalendarIcon } from './icons';
+import { CalendarIcon, ChevronsLeftIcon, ChevronsRightIcon } from './icons';
 
 const projectColorClasses: Record<string, string> = {
     blue: 'bg-blue-500',
@@ -24,27 +24,28 @@ interface TooltipData {
     y: number;
 }
 
-interface MonthLabelData {
+interface LabelData {
     name: string;
     startRow: number;
     endRow: number;
-    color: string;
+    color?: string;
 }
 
-interface MonthLabelColumnProps {
-    labels: MonthLabelData[];
-    totalWeeks: number;
+interface LabelColumnProps {
+    labels: LabelData[];
+    totalRows: number;
+    rowHeight: number;
     isRight?: boolean;
 }
 
-const MonthLabelColumn: React.FC<MonthLabelColumnProps> = ({ labels, totalWeeks, isRight }) => {
-    const totalHeight = totalWeeks * 48; // 48 is h-12
+const LabelColumn: React.FC<LabelColumnProps> = ({ labels, totalRows, rowHeight, isRight }) => {
+    const totalHeight = totalRows * rowHeight;
 
     return (
         <div className="w-28 flex-shrink-0 px-4 relative" style={{ height: `${totalHeight}px` }}>
             {labels.map((label) => {
-                const top = label.startRow * 48;
-                const height = (label.endRow - label.startRow + 1) * 48;
+                const top = label.startRow * rowHeight;
+                const height = (label.endRow - label.startRow + 1) * rowHeight;
 
                 return (
                     <div 
@@ -52,7 +53,7 @@ const MonthLabelColumn: React.FC<MonthLabelColumnProps> = ({ labels, totalWeeks,
                         className={`absolute w-full px-4 flex items-center ${isRight ? 'justify-start' : 'justify-end'}`} 
                         style={{ top: `${top}px`, height: `${height}px`, left: 0 }}
                     >
-                        <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color}`}>
+                        <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color || 'text-secondary'}`}>
                             {label.name}
                         </h3>
                     </div>
@@ -82,13 +83,16 @@ interface RhythmicGridViewProps {
 }
 
 export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, projects }) => {
-    const [layout, setLayout] = useState<'week' | 'month'>('week');
+    const [layout, setLayout] = useState<'week' | 'month' | 'traditional'>('week');
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const todayRowRef = useRef<HTMLDivElement>(null);
     const [showGoToToday, setShowGoToToday] = useState(false);
+    
+    // State for Traditional calendar
+    const [calendarDate, setCalendarDate] = useState(new Date());
+    const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-    // Use the system's current date
     const today = new Date();
 
     const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
@@ -96,64 +100,94 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     const eventsByDate = useMemo(() => {
         const map = new Map<string, EventNode[]>();
         events.forEach(event => {
-            if (event.when) {
-                const date = new Date(event.when.timestamp);
-                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                if (!map.has(key)) {
-                    map.set(key, []);
-                }
+            const processDate = (date: Date) => {
+                 const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                if (!map.has(key)) map.set(key, []);
                 map.get(key)!.push(event);
+            };
+
+            if (event.when) {
+                const startDate = new Date(event.when.timestamp);
+                const endDate = event.endWhen ? new Date(event.endWhen.timestamp) : startDate;
+                
+                // Iterate through each day of a period event
+                let currentDate = new Date(startDate);
+                currentDate.setHours(0,0,0,0);
+                while(currentDate <= endDate) {
+                    processDate(currentDate);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
             }
         });
         return map;
     }, [events]);
+    
+    // --- Navigation Handlers ---
 
     const scrollToToday = (behavior: 'auto' | 'smooth' = 'smooth') => {
+        if (layout === 'traditional') {
+            setCalendarDate(new Date());
+            return;
+        }
+
         if (todayRowRef.current && scrollContainerRef.current) {
             const container = scrollContainerRef.current;
             const rowElement = todayRowRef.current;
             const containerHeight = container.offsetHeight;
-            const rowHeight = 48; // h-12
+            const rowHeight = layout === 'week' ? 48 : 40;
             const scrollTop = rowElement.offsetTop - (containerHeight / 2) + (rowHeight / 2);
             container.scrollTo({ top: scrollTop, behavior });
         }
     };
 
-    // Initial scroll on mount
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            scrollToToday('auto');
-        }, 100); // A small delay helps ensure layout is complete
-        return () => clearTimeout(timer);
-    }, []);
+    const handleMonthChange = (direction: 'next' | 'prev') => {
+        setTransitionDirection(direction);
+        setTimeout(() => {
+            setCalendarDate(prevDate => {
+                const newDate = new Date(prevDate);
+                newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+                return newDate;
+            });
+             setTransitionDirection(null);
+        }, 150); // duration of the fade-out animation
+    };
 
-    // Scroll listener to show/hide the "Go to Today" button
+    // --- Effects ---
+
+    useEffect(() => {
+        if (layout === 'week' || layout === 'month') {
+             const timer = setTimeout(() => {
+                scrollToToday('auto');
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [layout]);
+
     useEffect(() => {
         const container = scrollContainerRef.current;
-        if (!container) return;
+        if (!container || layout === 'traditional') return;
 
         const handleScroll = () => {
             if (!todayRowRef.current) {
-                setShowGoToToday(true); // If ref is lost for some reason, show button
+                setShowGoToToday(true);
                 return;
             };
             const { scrollTop, offsetHeight } = container;
             const { offsetTop: rowOffsetTop } = todayRowRef.current;
-            const rowHeight = 48; // h-12
+            const rowHeight = 48;
 
             const isRowVisible = rowOffsetTop >= scrollTop && (rowOffsetTop + rowHeight) <= (scrollTop + offsetHeight);
             setShowGoToToday(!isRowVisible);
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
-        // Run initial check once refs are definitely set
         const initialCheckTimer = setTimeout(handleScroll, 0); 
 
         return () => {
             container.removeEventListener('scroll', handleScroll);
             clearTimeout(initialCheckTimer);
         };
-    }, []);
+    }, [layout]);
 
     const handleMouseEnter = (e: React.MouseEvent, event: EventNode) => {
         const project = projectMap.get(event.projectId);
@@ -166,126 +200,240 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         });
     };
 
-    const handleMouseLeave = () => {
-        setTooltip(null);
-    };
+    const handleMouseLeave = () => setTooltip(null);
+    
+    // --- Data Memos for Linear Grids ---
 
-    const { gridRows, monthLabels, totalWeeks } = useMemo(() => {
+    const { gridRows, rowLabels, totalRows, rowHeight } = useMemo(() => {
         const startYear = today.getFullYear() - 2;
         const endYear = today.getFullYear() + 2;
-        const yearStartDate = new Date(startYear, 0, 1);
-        
-        const dayOfWeek = yearStartDate.getDay();
-        const offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        const gridStartDate = new Date(yearStartDate);
-        gridStartDate.setDate(yearStartDate.getDate() + offset);
 
-        const totalWeeks = (endYear - startYear + 1) * 53;
-        
-        const monthLabelMap = new Map<string, MonthLabelData>();
-        const generatedRows: React.ReactNode[] = [];
+        if (layout === 'week') {
+            const yearStartDate = new Date(startYear, 0, 1);
+            const dayOfWeek = yearStartDate.getDay();
+            const offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const gridStartDate = new Date(yearStartDate);
+            gridStartDate.setDate(yearStartDate.getDate() + offset);
 
-        const startOfThisWeek = getStartOfWeek(today);
-        
-        const todayWeekIndex = Math.round((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+            const totalWeeks = (endYear - startYear + 1) * 53;
+            const monthLabelMap = new Map<string, LabelData>();
+            const generatedRows: React.ReactNode[] = [];
+            const startOfThisWeek = getStartOfWeek(today);
+            const todayWeekIndex = Math.round((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
-        for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
-            const rowCells: React.ReactNode[] = [];
-            const isTodayWeek = weekIndex === todayWeekIndex;
-            
-            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-                const cellDate = new Date(gridStartDate);
-                cellDate.setDate(gridStartDate.getDate() + (weekIndex * 7 + dayIndex));
-
-                const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
-                if (!monthLabelMap.has(monthKey)) {
-                    const color = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!;
-                    monthLabelMap.set(monthKey, {
-                        name: cellDate.toLocaleString('default', { month: 'long', year: 'numeric' }),
-                        startRow: weekIndex,
-                        endRow: weekIndex,
-                        color: color.text,
-                    });
-                }
-                monthLabelMap.get(monthKey)!.endRow = weekIndex;
-
-                const dateKey = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
-                const dayEvents = eventsByDate.get(dateKey) || [];
-                const isTodayCell = isSameDay(cellDate, today);
+            for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
+                const rowCells: React.ReactNode[] = [];
+                const isTodayWeek = weekIndex === todayWeekIndex;
                 
-                const monthColor = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!.bg;
+                for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                    const cellDate = new Date(gridStartDate);
+                    cellDate.setDate(gridStartDate.getDate() + (weekIndex * 7 + dayIndex));
+                    const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
+                    if (!monthLabelMap.has(monthKey)) {
+                        const color = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!;
+                        monthLabelMap.set(monthKey, { name: cellDate.toLocaleString('default', { month: 'long', year: 'numeric' }), startRow: weekIndex, endRow: weekIndex, color: color.text });
+                    }
+                    monthLabelMap.get(monthKey)!.endRow = weekIndex;
 
-                rowCells.push(
-                    <div 
-                        key={`${weekIndex}-${dayIndex}`}
-                        // The ref is now correctly placed on the first cell of the current week,
-                        // which is a tangible DOM element, ensuring its offsetTop is calculated correctly for scrolling.
-                        ref={isTodayWeek && dayIndex === 0 ? todayRowRef : null}
-                        className={`relative border-r border-b border-secondary h-12 ${monthColor}`}
-                    >
-                        {isTodayWeek && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
-                        <span className={`absolute top-0.5 left-1 text-xs ${isTodayCell ? 'text-primary font-bold' : 'text-tertiary'}`}>
-                            {cellDate.getDate()}
-                        </span>
-                        <div className="absolute inset-0 flex flex-wrap gap-1 p-1 justify-center items-center">
-                            {dayEvents.map(event => {
-                                const project = projectMap.get(event.projectId);
-                                const colorClass = project ? (projectColorClasses[project.color] || 'bg-gray-500') : 'bg-gray-500';
-                                return (
-                                    <div
-                                        key={`${event.id}-${event.when?.timestamp}`}
-                                        className={`w-3 h-3 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`}
-                                        onMouseEnter={(e) => handleMouseEnter(e, event)}
-                                        onMouseLeave={handleMouseLeave}
-                                    />
-                                );
-                            })}
+                    const dateKey = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+                    const dayEvents = eventsByDate.get(dateKey) || [];
+                    const isTodayCell = isSameDay(cellDate, today);
+                    const monthColor = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!.bg;
+
+                    rowCells.push(
+                        <div key={`${weekIndex}-${dayIndex}`} ref={isTodayWeek && dayIndex === 0 ? todayRowRef : null} className={`relative border-r border-b border-secondary h-12 ${monthColor}`}>
+                            {isTodayWeek && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
+                            <span className={`absolute top-0.5 left-1 text-xs ${isTodayCell ? 'text-primary font-bold' : 'text-tertiary'}`}>{cellDate.getDate()}</span>
+                            <div className="absolute inset-0 flex flex-wrap gap-1 p-1 justify-center items-center">
+                                {dayEvents.map(event => {
+                                    const project = projectMap.get(event.projectId);
+                                    const colorClass = project ? (projectColorClasses[project.color] || 'bg-gray-500') : 'bg-gray-500';
+                                    return <div key={`${event.id}-${event.when?.timestamp}`} className={`w-3 h-3 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`} onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave} />;
+                                })}
+                            </div>
+                            {isTodayCell && <div className="absolute inset-[-1px] ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
                         </div>
-                        {isTodayCell && <div className="absolute inset-[-1px] ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
+                    );
+                }
+                generatedRows.push(<div key={weekIndex} className="contents">{rowCells}</div>);
+            }
+            return { gridRows: generatedRows, rowLabels: Array.from(monthLabelMap.values()), totalRows: totalWeeks, rowHeight: 48 };
+        } else if (layout === 'month') {
+            const generatedRows = [];
+            const yearLabelMap = new Map<string, LabelData>();
+            const totalMonths = (endYear - startYear + 1) * 12;
+            const todayMonthIndex = (today.getFullYear() - startYear) * 12 + today.getMonth();
+
+            for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
+                const year = startYear + Math.floor(monthIndex / 12);
+                const month = monthIndex % 12;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const isTodayMonth = monthIndex === todayMonthIndex;
+                const monthColor = MONTH_COLORS_ALT[month % 2]!.bg;
+
+                if (!yearLabelMap.has(year.toString())) {
+                    yearLabelMap.set(year.toString(), { name: year.toString(), startRow: monthIndex, endRow: monthIndex });
+                }
+                yearLabelMap.get(year.toString())!.endRow = monthIndex;
+
+                const rowCells = [];
+                for (let day = 1; day <= 31; day++) {
+                    const isRealDay = day <= daysInMonth;
+                    const cellDate = new Date(year, month, day);
+                    const isTodayCell = isRealDay && isSameDay(cellDate, today);
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = isRealDay ? eventsByDate.get(dateKey) || [] : [];
+                    const dayOfWeek = isRealDay ? cellDate.getDay() : -1;
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                    rowCells.push(
+                        <div key={`${monthIndex}-${day}`} className={`relative h-10 border-r border-b border-secondary/50 ${isRealDay ? (isWeekend ? 'bg-tertiary/10' : '') : 'bg-tertiary/30'}`}>
+                            {isRealDay && <div className="absolute inset-0 flex items-center justify-center">
+                                {dayEvents.map(event => {
+                                    const project = projectMap.get(event.projectId);
+                                    const colorClass = project ? (projectColorClasses[project.color] || 'bg-gray-500') : 'bg-gray-500';
+                                    return <div key={`${event.id}-${event.when?.timestamp}`} className={`w-2.5 h-2.5 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`} onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave} />;
+                                })}
+                            </div>}
+                            {isTodayCell && <div className="absolute inset-[-1px] ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
+                        </div>
+                    );
+                }
+                generatedRows.push(
+                    <div key={monthIndex} ref={isTodayMonth ? todayRowRef : null} className={`grid grid-cols-31 ${monthColor}`}>
+                        {rowCells}
                     </div>
                 );
             }
-             generatedRows.push(
-                 // The wrapper div is kept for layout purposes but no longer holds the ref.
-                 <div key={weekIndex} className="contents">
-                    {rowCells}
-                </div>
-            )
+             return { gridRows: generatedRows, rowLabels: Array.from(yearLabelMap.values()), totalRows: totalMonths, rowHeight: 40 };
         }
+        return { gridRows: [], rowLabels: [], totalRows: 0, rowHeight: 0 };
+    }, [layout, eventsByDate, today]);
 
-        return { gridRows: generatedRows, monthLabels: Array.from(monthLabelMap.values()), totalWeeks };
-    }, [eventsByDate, today]);
+    // --- Render Functions ---
 
     const renderWeekLayout = () => {
         const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const totalGridHeight = totalWeeks * 48;
+        const totalGridHeight = totalRows * rowHeight;
 
         return (
             <div className="flex flex-col h-full">
-                {/* Sticky Header */}
                 <div className="flex flex-shrink-0 z-20 sticky top-0 bg-secondary">
-                    <div className="w-28 flex-shrink-0" /> {/* Spacer */}
+                    <div className="w-28 flex-shrink-0" />
                     <div className="flex-grow grid grid-cols-7 border-l border-t border-secondary">
-                        {dayHeaders.map(day => (
-                            <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary bg-secondary">
-                                {day}
-                            </div>
-                        ))}
+                        {dayHeaders.map(day => <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary bg-secondary">{day}</div>)}
                     </div>
-                    <div className="w-28 flex-shrink-0" /> {/* Spacer */}
+                    <div className="w-28 flex-shrink-0" />
                 </div>
-                
-                {/* Scrollable Body */}
                 <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
                     <div className="flex">
-                        <MonthLabelColumn labels={monthLabels} totalWeeks={totalWeeks} />
+                        <LabelColumn labels={rowLabels} totalRows={totalRows} rowHeight={rowHeight} />
                         <div className="flex-grow" style={{ minHeight: `${totalGridHeight}px` }}>
-                            <div className="grid grid-cols-7 border-l border-secondary">
-                                {gridRows}
-                            </div>
+                            <div className="grid grid-cols-7 border-l border-secondary">{gridRows}</div>
                         </div>
-                        <MonthLabelColumn labels={monthLabels} totalWeeks={totalWeeks} isRight />
+                        <LabelColumn labels={rowLabels} totalRows={totalRows} rowHeight={rowHeight} isRight />
                     </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderMonthLayout = () => {
+        const totalGridHeight = totalRows * rowHeight;
+        return (
+             <div className="flex flex-col h-full">
+                <div className="flex flex-shrink-0 z-20 sticky top-0 bg-secondary">
+                    <div className="w-28 flex-shrink-0" />
+                    <div className="flex-grow grid grid-cols-31 border-l border-t border-secondary">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => <div key={day} className="text-center font-bold text-xs py-2 border-r border-b border-secondary bg-secondary">{day}</div>)}
+                    </div>
+                </div>
+                <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
+                    <div className="flex">
+                        <LabelColumn labels={rowLabels} totalRows={totalRows} rowHeight={rowHeight} />
+                        <div className="flex-grow" style={{ minHeight: `${totalGridHeight}px` }}>
+                           <div className="border-l border-secondary">{gridRows}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    };
+    
+    const renderTraditionalLayout = () => {
+        const calendarDays = useMemo(() => {
+            const days = [];
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const date = new Date(firstDay);
+                date.setDate(date.getDate() - (startDayOfWeek - i));
+                days.push({ date, isCurrentMonth: false });
+            }
+            for (let i = 1; i <= lastDay.getDate(); i++) {
+                days.push({ date: new Date(year, month, i), isCurrentMonth: true });
+            }
+            const remaining = 42 - days.length;
+            for (let i = 1; i <= remaining; i++) {
+                const date = new Date(lastDay);
+                date.setDate(lastDay.getDate() + i);
+                days.push({ date, isCurrentMonth: false });
+            }
+            return days;
+        }, [calendarDate]);
+
+        let animationClass = '';
+        if(transitionDirection === 'next') animationClass = 'animate-[fadeOutRight_150ms_ease-in-out]';
+        if(transitionDirection === 'prev') animationClass = 'animate-[fadeOutLeft_150ms_ease-in-out]';
+        
+        return (
+            <div className="flex flex-col h-full">
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                    <h3 className="text-xl font-bold text-primary">{calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
+                    <div className="flex items-center space-x-2">
+                        <button onClick={() => handleMonthChange('prev')} className="p-1.5 rounded-full hover:bg-tertiary"><ChevronsLeftIcon /></button>
+                        <button onClick={() => setCalendarDate(new Date())} className="text-sm font-semibold px-3 py-1 rounded-md hover:bg-tertiary">Today</button>
+                        <button onClick={() => handleMonthChange('next')} className="p-1.5 rounded-full hover:bg-tertiary"><ChevronsRightIcon /></button>
+                    </div>
+                </div>
+                <div className="grid grid-cols-7 flex-shrink-0">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} className="text-center text-xs font-bold uppercase text-secondary pb-2">{day}</div>)}
+                </div>
+                <div key={calendarDate.getMonth()} className={`grid grid-cols-7 grid-rows-6 flex-grow border-t border-l border-secondary animate-[fadeIn_300ms_ease-in-out] ${animationClass}`}>
+                    {calendarDays.map(({ date, isCurrentMonth }, index) => {
+                        const isTodayCell = isSameDay(date, today);
+                        const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        const dayEvents = eventsByDate.get(dateKey) || [];
+                        const eventCount = dayEvents.length;
+                        let densityClass = '';
+                        if(eventCount > 0 && eventCount <= 2) densityClass = 'bg-tertiary/20';
+                        else if(eventCount > 2 && eventCount <= 4) densityClass = 'bg-tertiary/40';
+                        else if(eventCount > 4) densityClass = 'bg-tertiary/60';
+
+                        return (
+                            <div key={index} className={`relative p-1 border-r border-b border-secondary flex flex-col ${isCurrentMonth ? 'bg-transparent' : 'bg-tertiary/20'} ${densityClass}`}>
+                                <span className={`text-xs font-semibold ${isCurrentMonth ? (isTodayCell ? 'text-wha-blue' : 'text-primary') : 'text-tertiary'}`}>{date.getDate()}</span>
+                                {isTodayCell && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-wha-blue rounded-full" />}
+                                <div className="flex-grow overflow-hidden mt-1 space-y-0.5">
+                                    {dayEvents.slice(0, 2).map(event => {
+                                        const project = projectMap.get(event.projectId);
+                                        const color = project?.color || 'gray';
+                                        return (
+                                            <div key={`${event.id}-${event.when?.timestamp}`} className="text-xs text-primary whitespace-nowrap overflow-hidden text-ellipsis flex items-center cursor-pointer" onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave}>
+                                                <div className={`w-1.5 h-1.5 rounded-full bg-${color}-500 mr-1.5 flex-shrink-0`}></div>
+                                                <span>{event.what.name}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    {dayEvents.length > 2 && <div className="text-xs text-secondary pl-3 cursor-pointer" onMouseEnter={(e) => handleMouseEnter(e, dayEvents[2])} onMouseLeave={handleMouseLeave}>+ {dayEvents.length - 2} more</div>}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -296,23 +444,15 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                  <h2 className="text-xl font-bold text-primary">Rhythmic Grid</h2>
                  <div className="flex items-center space-x-1 bg-tertiary p-1 rounded-full">
-                    <button 
-                        onClick={() => setLayout('week')}
-                        className={`px-3 py-1.5 text-sm rounded-full ${layout === 'week' ? 'bg-secondary text-primary' : 'text-secondary'}`}
-                    >
-                        Week Layout
-                    </button>
-                    <button 
-                        onClick={() => setLayout('month')}
-                        className={`px-3 py-1.5 text-sm rounded-full ${layout === 'month' ? 'bg-secondary text-primary' : 'text-secondary'}`}
-                        disabled // Disabled until implemented
-                    >
-                        Month Layout
-                    </button>
+                    <button onClick={() => setLayout('week')} className={`px-3 py-1.5 text-sm rounded-full ${layout === 'week' ? 'bg-secondary text-primary' : 'text-secondary'}`}>Week Layout</button>
+                    <button onClick={() => setLayout('month')} className={`px-3 py-1.5 text-sm rounded-full ${layout === 'month' ? 'bg-secondary text-primary' : 'text-secondary'}`}>Month Layout</button>
+                    <button onClick={() => setLayout('traditional')} className={`px-3 py-1.5 text-sm rounded-full ${layout === 'traditional' ? 'bg-secondary text-primary' : 'text-secondary'}`}>Traditional</button>
                  </div>
             </div>
             <div className="flex-grow min-h-0 relative">
-                {layout === 'week' ? renderWeekLayout() : <p className="text-center p-8 text-secondary">Month Layout coming soon!</p>}
+                {layout === 'week' && renderWeekLayout()}
+                {layout === 'month' && renderMonthLayout()}
+                {layout === 'traditional' && renderTraditionalLayout()}
                 <button
                     onClick={() => scrollToToday('smooth')}
                     className={`absolute bottom-6 right-6 z-30 px-4 py-2 bg-wha-blue text-white font-semibold rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 transform flex items-center ${
