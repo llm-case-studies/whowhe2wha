@@ -142,7 +142,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                       const project = projects.find(p => p.id === event.projectId);
                       return (
                         <EventCard 
-                          key={event.id} 
+                          key={`${event.id}-${event.when!.timestamp}`} 
                           event={event} 
                           project={project}
                           locations={locations} 
@@ -193,6 +193,8 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                 selectedProjectCategories={selectedProjectCategories}
                 setTimelineDate={setTimelineDate}
                 tierConfig={tierConfig}
+                onEditEvent={onEditEvent}
+                onDeleteEvent={onDeleteEvent}
             />
           )}
         </>

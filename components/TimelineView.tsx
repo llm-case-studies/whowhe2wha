@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EventNode, TimelineScale, Holiday, Project, WhatType, Tier, TierConfig } from '../types';
 import { HOLIDAY_DATA, PROJECT_CATEGORIES } from '../constants';
-import { MilestoneIcon, DeadlineIcon, CheckpointIcon, ChevronsLeftIcon, ChevronsRightIcon } from './icons';
+import { MilestoneIcon, DeadlineIcon, CheckpointIcon, ChevronsLeftIcon, ChevronsRightIcon, PencilIcon, TrashIcon } from './icons';
 
 interface TimelineViewProps {
   events: EventNode[];
@@ -12,6 +12,8 @@ interface TimelineViewProps {
   selectedProjectCategories: string[];
   setTimelineDate: (date: Date) => void;
   tierConfig: TierConfig;
+  onEditEvent: (event: EventNode) => void;
+  onDeleteEvent: (eventId: number) => void;
 }
 
 const projectColorStyles: Record<string, { bg: string, border: string, text: string }> = {
@@ -98,8 +100,8 @@ const PointEventMarker: React.FC<{event: EventNode, colorStyle: {bg: string, bor
 }
 
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig }) => {
-  const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig, onEditEvent, onDeleteEvent }) => {
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [hoveredHoliday, setHoveredHoliday] = useState<Holiday | null>(null);
   
@@ -320,7 +322,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
   const renderTooltip = (event: EventNode) => (
     <div className="absolute bottom-full mb-2 w-56 bg-tertiary text-primary text-xs rounded-md shadow-lg p-2 z-30 pointer-events-none">
-      <p className="font-bold text-sm">{event.what.name}</p>
+      <div className="flex justify-between items-start">
+        <p className="font-bold text-sm pr-2">{event.what.name}</p>
+        <div className="flex items-center space-x-1 flex-shrink-0 pointer-events-auto">
+            <button onClick={() => onEditEvent(event)} className="p-1 rounded-full text-secondary/70 hover:bg-secondary hover:text-primary transition-colors" title="Edit Event">
+                <PencilIcon className="h-3 w-3" />
+            </button>
+            <button onClick={() => onDeleteEvent(event.id)} className="p-1 rounded-full text-secondary/70 hover:bg-secondary hover:text-red-500 transition-colors" title="Delete Event">
+                <TrashIcon className="h-3 w-3" />
+            </button>
+        </div>
+      </div>
       {event.when && (
         <p className="text-wha-blue text-xs mt-1">{event.when.display}</p>
       )}
@@ -412,10 +424,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                 {pointEvents.map(event => {
                     const info = laneInfo.get(event.projectId);
                     if (!info || !event.when) return null;
-
+                    
+                    const eventKey = `${event.id}-${event.when.timestamp}`;
                     const position = getPositionPercent(new Date(event.when.timestamp));
                     const colorStyle = projectColorStyles[projectColorMap.get(event.projectId) || 'blue'] || defaultColorStyle;
-                    const isHovered = activeTooltip === event.id;
+                    const isHovered = activeTooltip === eventKey;
                     
                     const tierTop = tierPositions[info.tierIndex];
                     const eventY = tierTop + info.topOffset;
@@ -423,10 +436,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
                     
                     return (
                         <div 
-                            key={event.id}
+                            key={eventKey}
                             className="absolute flex flex-col items-center z-20 pointer-events-auto"
                             style={{ left: `${position}%`, top: `${eventY}px`, transform: 'translate(-50%, -50%)' }}
-                            onMouseEnter={() => setActiveTooltip(event.id)}
+                            onMouseEnter={() => setActiveTooltip(eventKey)}
                             onMouseLeave={() => setActiveTooltip(null)}
                         >
                             {isHovered && renderTooltip(event)}
