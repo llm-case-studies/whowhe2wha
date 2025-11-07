@@ -12,9 +12,10 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { ProjectTemplatesModal } from './components/ProjectTemplatesModal';
 import { ShareModal } from './components/ShareModal';
 import { ShareView } from './components/ShareView';
+import { ShareTemplateView } from './components/ShareTemplateView';
 import { queryGraph } from './services/geminiService';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData } from './types';
 
 // --- Helper functions for compression and base64 encoding ---
 
@@ -103,6 +104,7 @@ const App: React.FC = () => {
     
     // Share state
     const [shareData, setShareData] = useState<SharedProjectData | null>(null);
+    const [shareTemplateData, setShareTemplateData] = useState<SharedTemplateData | null>(null);
     const [isShareView, setIsShareView] = useState(false);
     const [shareModalUrl, setShareModalUrl] = useState<string | null>(null);
 
@@ -119,6 +121,13 @@ const App: React.FC = () => {
                     // Basic validation
                     if (data.project && data.events && data.locations && data.contacts) {
                         setShareData(data);
+                        setIsShareView(true);
+                    }
+                } else if (hash.startsWith('#share-template=')) {
+                    const encodedData = hash.substring(16); // remove #share-template=
+                    const data = await decodeAndDecompress<SharedTemplateData>(encodedData);
+                     if (data.template) {
+                        setShareTemplateData(data);
                         setIsShareView(true);
                     }
                 }
@@ -477,9 +486,25 @@ const App: React.FC = () => {
         const url = `${window.location.origin}${window.location.pathname}#share=${encodedData}`;
         setShareModalUrl(url);
     };
+    
+    const handleShareTemplate = async (templateId: number) => {
+        const template = projectTemplates.find(t => t.id === templateId);
+        if (!template) return;
 
-    if (isShareView && shareData) {
-        return <ShareView data={shareData} />;
+        const data: SharedTemplateData = { template };
+
+        const encodedData = await compressAndEncode(data);
+        const url = `${window.location.origin}${window.location.pathname}#share-template=${encodedData}`;
+        setShareModalUrl(url);
+    };
+
+    if (isShareView) {
+        if (shareData) {
+            return <ShareView data={shareData} />;
+        }
+        if (shareTemplateData) {
+            return <ShareTemplateView data={shareTemplateData} />;
+        }
     }
 
     return (
@@ -561,6 +586,7 @@ const App: React.FC = () => {
                     templates={projectTemplates}
                     onSave={handleSaveTemplate}
                     onDelete={handleDeleteTemplate}
+                    onShare={handleShareTemplate}
                 />
             )}
             {shareModalUrl && (

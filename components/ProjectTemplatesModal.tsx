@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProjectTemplate, ProjectTemplateEvent, WhatType } from '../types';
-import { TrashIcon, PlusIcon } from './icons';
+import { TrashIcon, PlusIcon, ShareIcon } from './icons';
 
 interface ProjectTemplatesModalProps {
     isOpen: boolean;
@@ -8,6 +8,7 @@ interface ProjectTemplatesModalProps {
     templates: ProjectTemplate[];
     onSave: (template: ProjectTemplate) => void;
     onDelete: (templateId: number) => void;
+    onShare: (templateId: number) => void;
 }
 
 const EmptyTemplateEvent: ProjectTemplateEvent = {
@@ -25,7 +26,7 @@ const EmptyTemplate: Omit<ProjectTemplate, 'id'> = {
     events: [EmptyTemplateEvent]
 };
 
-export const ProjectTemplatesModal: React.FC<ProjectTemplatesModalProps> = ({ isOpen, onClose, templates, onSave, onDelete }) => {
+export const ProjectTemplatesModal: React.FC<ProjectTemplatesModalProps> = ({ isOpen, onClose, templates, onSave, onDelete, onShare }) => {
     const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
     const [isCreatingNew, setIsCreatingNew] = useState(false);
     const [formData, setFormData] = useState<Omit<ProjectTemplate, 'id'>>(EmptyTemplate);
@@ -161,10 +162,28 @@ export const ProjectTemplatesModal: React.FC<ProjectTemplatesModalProps> = ({ is
                                  <PlusIcon className="h-4 w-4" />
                                  <span>Add Event</span>
                              </button>
-                             <div className="flex justify-end pt-4 space-x-2">
+                             <div className="flex justify-end items-center pt-4 space-x-2">
+                                {!isCreatingNew && selectedTemplate && (
+                                    <button 
+                                        onClick={() => onDelete(selectedTemplate.id)} 
+                                        className="px-5 py-2 rounded-md bg-tertiary text-secondary hover:bg-red-800 hover:text-primary"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+                                <div className="flex-grow" /> {/* Spacer */}
+                                {!isCreatingNew && selectedTemplate && (
+                                    <button
+                                        onClick={() => onShare(selectedTemplate.id)}
+                                        type="button"
+                                        className="p-2.5 rounded-md bg-tertiary text-secondary hover:bg-wha-blue/30 transition-colors"
+                                        title="Share Template"
+                                    >
+                                        <ShareIcon className="h-5 w-5" />
+                                    </button>
+                                )}
                                 <button onClick={handleSave} className="px-5 py-2 rounded-md bg-wha-blue text-white font-bold hover:bg-blue-600">Save Template</button>
-                                {!isCreatingNew && selectedTemplate && <button onClick={() => onDelete(selectedTemplate.id)} className="px-5 py-2 rounded-md bg-tertiary text-secondary hover:bg-red-800 hover:text-primary">Delete</button>}
-                             </div>
+                            </div>
                         </div>
                       )}
                     </div>

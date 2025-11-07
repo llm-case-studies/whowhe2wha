@@ -146,3 +146,7 @@ export interface SharedProjectData {
     locations: Location[];
     contacts: Contact[];
 }
+
+export interface SharedTemplateData {
+    template: ProjectTemplate;
+}
