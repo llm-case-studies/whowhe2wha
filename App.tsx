@@ -17,8 +17,10 @@ import { SettingsModal } from './components/SettingsModal';
 import { ImportReviewModal } from './components/ImportReviewModal';
 import { queryGraph } from './services/geminiService';
 import { parseICS } from './utils/icsParser';
+import { generateICS } from './utils/icsGenerator';
+import { expandRecurringEvents } from './utils/recurrence';
 import { MOCK_EVENTS, MOCK_PROJECTS, MOCK_LOCATIONS, MOCK_CONTACTS, MOCK_TEMPLATES } from './mockData';
-import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView, ParsedEvent } from './types';
+import { Theme, EventNode, Project, Location, Contact, HistoryEntry, AppState, ProjectTemplate, EntityType, WhatType, SharedProjectData, SharedTemplateData, MainView, ParsedEvent, ProjectAndTemplateData } from './types';
 
 // --- Helper functions for compression and base64 encoding ---
 
@@ -103,7 +105,7 @@ const App: React.FC = () => {
     const [addLocationQuery, setAddLocationQuery] = useState('');
 
     // Confirmation modal state
-    const [confirmation, setConfirmation] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
+    const [confirmation, setConfirmation] = useState<{ title: string; message: string; onConfirm: () => void; confirmText?: string; } | null>(null);
 
     // History state
     const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -115,7 +117,8 @@ const App: React.FC = () => {
     const [shareModalUrl, setShareModalUrl] = useState<string | null>(null);
     
     // Import/Export State
-    const [parsedICS, setParsedICS] = useState<ParsedEvent[] | null>(null);
+    const [parsedICSEvents, setParsedICSEvents] = useState<ParsedEvent[] | null>(null);
+    const [jsonEventsToImport, setJsonEventsToImport] = useState<EventNode[] | null>(null);
 
 
     useEffect(() => {
@@ -215,14 +218,28 @@ const App: React.FC = () => {
 
     // Filter events based on search or project selection
     const displayedEvents = React.useMemo(() => {
+        let baseEvents = allEvents;
         if (selectedProjectId !== null) {
-            return allEvents.filter(e => e.projectId === selectedProjectId);
+            baseEvents = allEvents.filter(e => e.projectId === selectedProjectId);
         }
         if (filteredEventIds !== null) {
             const idSet = new Set(filteredEventIds);
-            return allEvents.filter(e => idSet.has(e.id));
+            baseEvents = allEvents.filter(e => idSet.has(e.id));
         }
-        return allEvents;
+
+        // For stream view, expand events for the next 2 years.
+        // For timeline view, this would need to be adjusted based on timeline's visible range,
+        // but for now, a fixed future window is a good start and will work for both.
+        const viewStartDate = new Date();
+        viewStartDate.setMonth(viewStartDate.getMonth() - 3); // show some past events
+        const viewEndDate = new Date();
+        viewEndDate.setFullYear(viewEndDate.getFullYear() + 2);
+    
+        // Expand recurring events
+        const expanded = expandRecurringEvents(baseEvents, viewStartDate, viewEndDate);
+    
+        return expanded;
+
     }, [allEvents, filteredEventIds, selectedProjectId]);
 
 
@@ -247,23 +264,51 @@ const App: React.FC = () => {
     };
 
     const handleEditEventClick = (event: EventNode) => {
-        setEventToEdit(event);
-        setIsAddEventModalOpen(true);
+        const masterEvent = allEvents.find(e => e.id === event.id);
+        if (!masterEvent) return;
+
+        const openEditModal = () => {
+            setEventToEdit(masterEvent);
+            setIsAddEventModalOpen(true);
+            if (confirmation) setConfirmation(null);
+        };
+
+        if (masterEvent.recurrence) {
+            setConfirmation({
+                title: "Edit Recurring Event?",
+                message: "This is a recurring event. Your changes will apply to all future occurrences of this event.",
+                onConfirm: openEditModal,
+                confirmText: 'Edit All',
+            });
+        } else {
+            openEditModal();
+        }
     };
 
     const handleDeleteEvent = (eventId: number) => {
         const eventToDelete = allEvents.find(e => e.id === eventId);
         if (!eventToDelete) return;
-        setConfirmation({
-            title: "Delete Event?",
-            message: "Are you sure you want to permanently delete this event?",
-            onConfirm: () => {
-                const beforeState = getCurrentAppState();
-                addHistoryEntry(`Deleted event: "${eventToDelete.what.name}"`, beforeState);
-                setAllEvents(allEvents.filter(e => e.id !== eventId));
-                setConfirmation(null);
-            }
-        });
+
+        const confirmDelete = () => {
+            const beforeState = getCurrentAppState();
+            addHistoryEntry(`Deleted event: "${eventToDelete.what.name}"`, beforeState);
+            setAllEvents(allEvents.filter(e => e.id !== eventId));
+            setConfirmation(null);
+        };
+
+        if (eventToDelete.recurrence) {
+             setConfirmation({
+                title: "Delete Recurring Event?",
+                message: "This is a recurring event. Deleting it will remove all future occurrences. Are you sure?",
+                onConfirm: confirmDelete
+            });
+        } else {
+            setConfirmation({
+                title: "Delete Event?",
+                message: "Are you sure you want to permanently delete this event?",
+                onConfirm: confirmDelete
+            });
+        }
     };
     
     const handleSaveProject = (project: Project, templateId?: number, startDate?: string) => {
@@ -509,27 +554,55 @@ const App: React.FC = () => {
     };
     
     // --- Data Import/Export Handlers ---
-    const handleExportData = () => {
-        const appState = getCurrentAppState();
-        const jsonString = JSON.stringify(appState, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
+    
+    const triggerDownload = (blob: Blob, filename: string) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const date = new Date().toISOString().split('T')[0];
-        a.download = `whowhe2wha_backup_${date}.json`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    };
+
+    const handleExportFullBackup = () => {
+        const appState = getCurrentAppState();
+        const jsonString = JSON.stringify(appState, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const date = new Date().toISOString().split('T')[0];
+        triggerDownload(blob, `whowhe2wha_backup_${date}.json`);
         setIsSettingsModalOpen(false);
     };
+
+    const handleExportEventsICS = () => {
+        const icsString = generateICS(allEvents, allProjects, allLocations);
+        const blob = new Blob([icsString], { type: 'text/calendar' });
+        const date = new Date().toISOString().split('T')[0];
+        triggerDownload(blob, `whowhe2wha_events_${date}.ics`);
+    };
+
+    const handleExportEventsJSON = () => {
+        const jsonString = JSON.stringify(allEvents, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        triggerDownload(blob, `whowhe2wha_events.json`);
+    };
     
+    const handleExportProjectsAndTemplates = () => {
+        const data: ProjectAndTemplateData = {
+            projects: allProjects,
+            projectTemplates: projectTemplates
+        };
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        triggerDownload(blob, `whowhe2wha_projects_templates.json`);
+    };
+
     const handleImportICS = (fileContent: string) => {
         try {
-            const parsedEvents = parseICS(fileContent);
-            if(parsedEvents.length > 0) {
-                setParsedICS(parsedEvents);
+            const parsed = parseICS(fileContent);
+            if(parsed.length > 0) {
+                setParsedICSEvents(parsed);
                 setIsSettingsModalOpen(false);
                 setIsImportReviewModalOpen(true);
             } else {
@@ -537,32 +610,103 @@ const App: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to parse ICS file:", error);
-            alert("An error occurred while parsing the .ics file. Please ensure it is a valid iCalendar file.");
+            alert("An error occurred while parsing the .ics file.");
         }
     };
     
-    const handleConfirmImport = (projectId: number) => {
-        if (!parsedICS || !projectId) return;
-        const beforeState = getCurrentAppState();
+    const handleImportEventsJSON = (fileContent: string) => {
+        try {
+            const parsed = JSON.parse(fileContent);
+            if(Array.isArray(parsed) && parsed.length > 0) {
+                // Basic validation
+                if ('what' in parsed[0] && 'projectId' in parsed[0]) {
+                     setJsonEventsToImport(parsed as EventNode[]);
+                     setIsSettingsModalOpen(false);
+                     setIsImportReviewModalOpen(true);
+                } else {
+                    throw new Error("Invalid event format");
+                }
+            } else {
+                 alert("No valid events found in the JSON file.");
+            }
+        } catch (error) {
+            console.error("Failed to parse JSON event file:", error);
+            alert("An error occurred while parsing the JSON file. Please ensure it is a valid event export.");
+        }
+    };
+    
+    const handleImportProjectsAndTemplates = (fileContent: string) => {
+        try {
+            const parsed = JSON.parse(fileContent) as ProjectAndTemplateData;
+            if (Array.isArray(parsed.projects) && Array.isArray(parsed.projectTemplates)) {
+                setConfirmation({
+                    title: "Confirm Import",
+                    message: `This will add ${parsed.projects.length} projects and ${parsed.projectTemplates.length} templates. Existing items will not be overwritten. Continue?`,
+                    onConfirm: () => {
+                        const beforeState = getCurrentAppState();
+                        const newProjects = parsed.projects.map(p => ({ ...p, id: Date.now() + Math.random() }));
+                        const newTemplates = parsed.projectTemplates.map(t => ({ ...t, id: Date.now() + Math.random() }));
+                        
+                        setAllProjects(prev => [...prev, ...newProjects]);
+                        setProjectTemplates(prev => [...prev, ...newTemplates]);
+                        addHistoryEntry(`Imported ${newProjects.length} projects and ${newTemplates.length} templates`, beforeState);
+                        setConfirmation(null);
+                        setIsSettingsModalOpen(false);
+                    }
+                })
+            } else {
+                throw new Error("Invalid projects/templates format");
+            }
+        } catch (error) {
+            console.error("Failed to parse projects/templates file:", error);
+            alert("An error occurred while parsing the JSON file. Please ensure it is a valid projects & templates export.");
+        }
+    };
 
+    const handleImportFromBackup = (fileContent: string) => {
+         try {
+            const parsed = JSON.parse(fileContent) as AppState;
+            if (parsed.projects && parsed.events && parsed.locations && parsed.contacts && parsed.projectTemplates) {
+                setConfirmation({
+                    title: "DANGER: Restore from Backup",
+                    message: "This will completely overwrite all current data. This action cannot be undone. Are you sure you want to proceed?",
+                    onConfirm: () => {
+                        setAllProjects(parsed.projects);
+                        setAllEvents(parsed.events);
+                        setAllLocations(parsed.locations);
+                        setAllContacts(parsed.contacts);
+                        setProjectTemplates(parsed.projectTemplates);
+                        setHistory([]); // History is invalidated
+                        setConfirmation(null);
+                        setIsSettingsModalOpen(false);
+                    }
+                })
+            } else {
+                throw new Error("Invalid backup file format");
+            }
+        } catch (error) {
+            console.error("Failed to parse backup file:", error);
+            alert("An error occurred while parsing the backup file. It appears to be invalid.");
+        }
+    };
+
+    
+    const handleConfirmICSImport = (projectId: number) => {
+        if (!parsedICSEvents || !projectId) return;
+        const beforeState = getCurrentAppState();
         const newLocations: Location[] = [];
         const newEvents: EventNode[] = [];
         let currentLocations = [...allLocations];
 
-        for (const parsedEvent of parsedICS) {
+        for (const parsedEvent of parsedICSEvents) {
             let eventWhereId = '';
             if (parsedEvent.location) {
                 let existingLocation = currentLocations.find(l => 
                     l.name.toLowerCase() === parsedEvent.location!.toLowerCase() ||
                     l.alias?.toLowerCase() === parsedEvent.location!.toLowerCase()
                 );
-
                 if (!existingLocation) {
-                    const newLoc: Location = {
-                        id: `where-${Date.now() + Math.random()}`,
-                        name: parsedEvent.location,
-                        type: EntityType.Where,
-                    };
+                    const newLoc: Location = { id: `where-${Date.now() + Math.random()}`, name: parsedEvent.location, type: EntityType.Where };
                     newLocations.push(newLoc);
                     currentLocations.push(newLoc);
                     eventWhereId = newLoc.id;
@@ -570,7 +714,6 @@ const App: React.FC = () => {
                     eventWhereId = existingLocation.id;
                 }
             }
-            
             const startDate = parsedEvent.startDate;
             const endDate = parsedEvent.endDate;
             const isPeriod = endDate && (endDate.getTime() - startDate.getTime()) >= (24 * 60 * 60 * 1000);
@@ -578,27 +721,9 @@ const App: React.FC = () => {
             const newEv: EventNode = {
                 id: Date.now() + Math.random(),
                 projectId,
-                what: {
-                    id: `what-${Date.now() + Math.random()}`,
-                    name: parsedEvent.summary,
-                    description: parsedEvent.description,
-                    type: EntityType.What,
-                    whatType: isPeriod ? WhatType.Period : WhatType.Appointment,
-                },
-                when: {
-                    id: `when-${Date.now() + Math.random()}`,
-                    name: startDate.toISOString(),
-                    timestamp: startDate.toISOString(),
-                    display: startDate.toLocaleString(),
-                    type: EntityType.When,
-                },
-                endWhen: isPeriod ? {
-                    id: `endwhen-${Date.now() + Math.random()}`,
-                    name: endDate!.toISOString(),
-                    timestamp: endDate!.toISOString(),
-                    display: endDate!.toLocaleString(),
-                    type: EntityType.When,
-                } : undefined,
+                what: { id: `what-${Date.now() + Math.random()}`, name: parsedEvent.summary, description: parsedEvent.description, type: EntityType.What, whatType: isPeriod ? WhatType.Period : WhatType.Appointment },
+                when: { id: `when-${Date.now() + Math.random()}`, name: startDate.toISOString(), timestamp: startDate.toISOString(), display: startDate.toLocaleString(), type: EntityType.When },
+                endWhen: isPeriod ? { id: `endwhen-${Date.now() + Math.random()}`, name: endDate!.toISOString(), timestamp: endDate!.toISOString(), display: endDate!.toLocaleString(), type: EntityType.When } : undefined,
                 who: [],
                 whereId: eventWhereId,
             };
@@ -606,13 +731,24 @@ const App: React.FC = () => {
         }
 
         setAllEvents(prev => [...prev, ...newEvents]);
-        if (newLocations.length > 0) {
-            setAllLocations(prev => [...prev, ...newLocations]);
-        }
-        
+        if (newLocations.length > 0) setAllLocations(prev => [...prev, ...newLocations]);
         addHistoryEntry(`Imported ${newEvents.length} events from .ics file`, beforeState);
 
-        setParsedICS(null);
+        setParsedICSEvents(null);
+        setIsImportReviewModalOpen(false);
+    };
+    
+    const handleConfirmJSONEventImport = (projectId: number) => {
+        if (!jsonEventsToImport || !projectId) return;
+        const beforeState = getCurrentAppState();
+        const newEvents = jsonEventsToImport.map(event => ({
+            ...event,
+            id: Date.now() + Math.random(),
+            projectId: projectId,
+        }));
+        setAllEvents(prev => [...prev, ...newEvents]);
+        addHistoryEntry(`Imported ${newEvents.length} events from JSON file`, beforeState);
+        setJsonEventsToImport(null);
         setIsImportReviewModalOpen(false);
     };
 
@@ -716,16 +852,24 @@ const App: React.FC = () => {
             {isSettingsModalOpen && (
                 <SettingsModal
                     onClose={() => setIsSettingsModalOpen(false)}
-                    onExport={handleExportData}
-                    onImport={handleImportICS}
+                    onExportFullBackup={handleExportFullBackup}
+                    onExportEventsICS={handleExportEventsICS}
+                    onExportEventsJSON={handleExportEventsJSON}
+                    onExportProjectsAndTemplates={handleExportProjectsAndTemplates}
+                    onImportICS={handleImportICS}
+                    onImportEventsJSON={handleImportEventsJSON}
+                    onImportProjectsAndTemplates={handleImportProjectsAndTemplates}
+                    onImportFromBackup={handleImportFromBackup}
                 />
             )}
-            {isImportReviewModalOpen && parsedICS && (
+            {isImportReviewModalOpen && (parsedICSEvents || jsonEventsToImport) && (
                 <ImportReviewModal
-                    parsedEvents={parsedICS}
+                    parsedICSEvents={parsedICSEvents}
+                    jsonEvents={jsonEventsToImport}
                     projects={allProjects}
-                    onClose={() => { setIsImportReviewModalOpen(false); setParsedICS(null); }}
-                    onConfirm={handleConfirmImport}
+                    onClose={() => { setIsImportReviewModalOpen(false); setParsedICSEvents(null); setJsonEventsToImport(null); }}
+                    onConfirmICS={handleConfirmICSImport}
+                    onConfirmJSON={handleConfirmJSONEventImport}
                 />
             )}
             {confirmation && (
@@ -734,6 +878,7 @@ const App: React.FC = () => {
                     message={confirmation.message}
                     onConfirm={confirmation.onConfirm}
                     onCancel={() => setConfirmation(null)}
+                    confirmText={confirmation.confirmText}
                 />
             )}
             {isHistoryPanelOpen && (

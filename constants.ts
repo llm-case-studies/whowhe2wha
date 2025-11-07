@@ -1,3 +1,4 @@
+// FIX: Changed import from './types' to './types' to break circular dependency after swapping file contents.
 import { EntityType, Holiday } from './types';
 
 export const COLORS: Record<EntityType, string> = {

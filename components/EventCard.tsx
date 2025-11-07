@@ -1,7 +1,7 @@
 import React from 'react';
 import { EventNode, Project, Location, EntityType, WhenNode } from '../types';
 import { EntityTag } from './EntityTag';
-import { PencilIcon, TrashIcon } from './icons';
+import { PencilIcon, TrashIcon, RepeatIcon } from './icons';
 import { PROJECT_COLOR_CLASSES } from '../constants';
 
 interface EventCardProps {
@@ -22,10 +22,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event, project, locations,
   return (
     <div className={`border-l-4 p-4 rounded-r-lg shadow-sm ${!isReadOnly && 'hover:shadow-md'} transition-shadow duration-200 ${colorClass}`}>
       <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-primary text-lg">{event.what.name}</h3>
-          {project && <p className="text-sm font-semibold text-secondary">{project.name}</p>}
-          {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
+        <div className="flex items-center space-x-2">
+            {event.recurrence && <RepeatIcon className="h-4 w-4 text-secondary flex-shrink-0" title="Recurring Event" />}
+            <h3 className="font-bold text-primary text-lg">{event.what.name}</h3>
         </div>
         {!isReadOnly && (
           <div className="flex items-center space-x-1 flex-shrink-0">
@@ -38,6 +37,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, project, locations,
           </div>
         )}
       </div>
+       {project && <p className="text-sm font-semibold text-secondary mt-1">{project.name}</p>}
+       {event.what.description && <p className="text-sm text-secondary mt-1">{event.what.description}</p>}
       <div className="flex flex-wrap gap-2 mt-3 items-center">
         {event.when && (
             <EntityTag 

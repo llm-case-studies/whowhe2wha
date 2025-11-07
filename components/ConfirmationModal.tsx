@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 interface ConfirmationModalProps {
@@ -25,7 +26,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="text-secondary mb-6">{message}</div>
         <div className="flex justify-end space-x-4">
           <button onClick={onCancel} className="px-5 py-2 rounded-md font-semibold text-primary hover:bg-tertiary transition-colors duration-200">{cancelText}</button>
-          <button onClick={onConfirm} className="px-5 py-2 rounded-md bg-red-600 text-white font-bold hover:bg-red-700 transition-colors duration-200">{confirmText}</button>
+          <button onClick={onConfirm} className={`px-5 py-2 rounded-md text-white font-bold transition-colors duration-200 ${confirmText.toLowerCase().includes('delete') ? 'bg-red-600 hover:bg-red-700' : 'bg-wha-blue hover:bg-blue-600'}`}>{confirmText}</button>
         </div>
       </div>
     </div>

@@ -76,6 +76,11 @@ export interface Project {
     status: 'Active' | 'On Hold' | 'Completed';
 }
 
+export interface RecurrenceRule {
+    frequency: 'daily' | 'weekly' | 'monthly';
+    endDate?: string; // ISO string
+}
+
 export interface EventNode {
     id: number;
     projectId: number;
@@ -84,6 +89,7 @@ export interface EventNode {
     endWhen?: WhenNode;
     who: WhoNode[];
     whereId: string;
+    recurrence?: RecurrenceRule;
 }
 
 export interface Holiday {
@@ -159,4 +165,9 @@ export interface ParsedEvent {
   endDate?: Date;
   location?: string;
   description?: string;
+}
+
+export interface ProjectAndTemplateData {
+    projects: Project[];
+    projectTemplates: ProjectTemplate[];
 }

@@ -22,6 +22,11 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
   const [whereId, setWhereId] = useState<string | ''>('');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
+  // Recurrence state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+
   useEffect(() => {
     if (eventToEdit) {
       setWhatName(eventToEdit.what.name);
@@ -35,10 +40,27 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
       // FIX: The original ID parsing was brittle and caused a type error.
       // Switched to a more robust name-based lookup to find the correct contact IDs.
       setWhoIds(eventToEdit.who.map(w => contacts.find(c => c.name === w.name)?.id).filter(Boolean) as string[]);
-    } else if (preselectedProjectId) {
-        setProjectId(preselectedProjectId);
-    } else if (projects.length > 0) {
-        setProjectId(projects[0].id)
+      
+      if (eventToEdit.recurrence) {
+        setIsRecurring(true);
+        setFrequency(eventToEdit.recurrence.frequency);
+        setRecurrenceEndDate(eventToEdit.recurrence.endDate ? eventToEdit.recurrence.endDate.split('T')[0] : '');
+      } else {
+        setIsRecurring(false);
+        setFrequency('weekly');
+        setRecurrenceEndDate('');
+      }
+
+    } else {
+      if (preselectedProjectId) {
+          setProjectId(preselectedProjectId);
+      } else if (projects.length > 0) {
+          setProjectId(projects[0].id)
+      }
+      // Reset recurrence for new event
+      setIsRecurring(false);
+      setFrequency('weekly');
+      setRecurrenceEndDate('');
     }
   }, [eventToEdit, preselectedProjectId, projects, contacts]);
 
@@ -70,6 +92,10 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
           return { id: `who-${id}`, name: contact?.name || 'Unknown', type: EntityType.Who };
       }),
       whereId: whereId,
+      recurrence: isRecurring ? {
+        frequency: frequency,
+        endDate: recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : undefined,
+      } : undefined,
     };
     onSave(eventData);
   };
@@ -97,7 +123,8 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
                 <div>
                      <label htmlFor="whatType" className="block text-sm font-medium text-secondary mb-1">Event Type</label>
                     <select id="whatType" value={whatType} onChange={(e) => setWhatType(e.target.value as WhatType)} className="w-full px-3 py-2 bg-input border border-primary rounded-lg">
-                        {Object.values(WhatType).map(type => <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>)}
+                        {/* FIX: Corrected a type error where the 'type' variable was inferred as 'unknown'. Added an explicit cast to string to ensure type safety. */}
+                        {Object.values(WhatType).map(type => <option key={type as string} value={type as string}>{(type as string).charAt(0).toUpperCase() + (type as string).slice(1)}</option>)}
                     </select>
                 </div>
                  <div>
@@ -123,6 +150,48 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ projects, location
                         {whereId ? locations.find(l=>l.id === whereId)?.alias || locations.find(l=>l.id === whereId)?.name : 'Select a location...'}
                     </button>
                 </div>
+            </div>
+             <div className="space-y-2 pt-2">
+                <div className="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="isRecurring"
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        className="h-4 w-4 rounded bg-input border-primary text-wha-blue focus:ring-wha-blue"
+                    />
+                    <label htmlFor="isRecurring" className="ml-2 block text-sm font-medium text-secondary">
+                        This event repeats
+                    </label>
+                </div>
+
+                {isRecurring && (
+                    <div className="grid grid-cols-2 gap-4 p-3 bg-tertiary/50 rounded-lg">
+                        <div>
+                            <label htmlFor="frequency" className="block text-xs font-medium text-secondary mb-1">Frequency</label>
+                            <select 
+                                id="frequency" 
+                                value={frequency} 
+                                onChange={(e) => setFrequency(e.target.value as any)} 
+                                className="w-full px-3 py-2 text-sm bg-input border border-primary rounded-lg"
+                            >
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="recurrenceEndDate" className="block text-xs font-medium text-secondary mb-1">End Date (optional)</label>
+                            <input 
+                                type="date" 
+                                id="recurrenceEndDate" 
+                                value={recurrenceEndDate} 
+                                onChange={(e) => setRecurrenceEndDate(e.target.value)} 
+                                className="w-full px-3 py-2 text-sm bg-input border border-primary rounded-lg" 
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
           </div>
 

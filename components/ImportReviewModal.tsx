@@ -1,21 +1,32 @@
 import React, { useState } from 'react';
-import { ParsedEvent, Project } from '../types';
+import { ParsedEvent, Project, EventNode } from '../types';
 
 interface ImportReviewModalProps {
-  parsedEvents: ParsedEvent[];
+  parsedICSEvents: ParsedEvent[] | null;
+  jsonEvents: EventNode[] | null;
   projects: Project[];
   onClose: () => void;
-  onConfirm: (projectId: number) => void;
+  onConfirmICS: (projectId: number) => void;
+  onConfirmJSON: (projectId: number) => void;
 }
 
-export const ImportReviewModal: React.FC<ImportReviewModalProps> = ({ parsedEvents, projects, onClose, onConfirm }) => {
+export const ImportReviewModal: React.FC<ImportReviewModalProps> = ({ parsedICSEvents, jsonEvents, projects, onClose, onConfirmICS, onConfirmJSON }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  
+  const events = parsedICSEvents || jsonEvents;
+  const isICS = !!parsedICSEvents;
 
   const handleConfirm = () => {
     if (selectedProjectId) {
-      onConfirm(Number(selectedProjectId));
+      if(isICS) {
+        onConfirmICS(Number(selectedProjectId));
+      } else {
+        onConfirmJSON(Number(selectedProjectId));
+      }
     }
   };
+  
+  if (!events) return null;
 
   return (
     <div className="fixed inset-0 bg-modal-overlay flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="import-review-title">
@@ -25,7 +36,7 @@ export const ImportReviewModal: React.FC<ImportReviewModalProps> = ({ parsedEven
           <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none" aria-label="Close form">&times;</button>
         </div>
 
-        <p className="text-sm text-secondary mb-4 flex-shrink-0">Found {parsedEvents.length} event(s). Please select a project to import them into.</p>
+        <p className="text-sm text-secondary mb-4 flex-shrink-0">Found {events.length} event(s). Please select a project to import them into.</p>
 
         <div className="mb-4 flex-shrink-0">
           <label htmlFor="projectId" className="block text-sm font-medium text-secondary mb-1">Import to Project:</label>
@@ -42,13 +53,26 @@ export const ImportReviewModal: React.FC<ImportReviewModalProps> = ({ parsedEven
 
         <div className="overflow-y-auto flex-grow border-t border-b border-primary py-4 pr-2">
           <div className="space-y-3">
-            {parsedEvents.map((event, index) => (
-              <div key={index} className="bg-tertiary p-3 rounded-md">
-                <p className="font-semibold text-primary">{event.summary}</p>
-                <p className="text-xs text-secondary mt-1">{event.startDate.toLocaleString()}</p>
-                {event.location && <p className="text-xs text-secondary">Location: {event.location}</p>}
-              </div>
-            ))}
+            {events.map((event, index) => {
+               if (isICS) {
+                    const parsedEvent = event as ParsedEvent;
+                    return (
+                        <div key={index} className="bg-tertiary p-3 rounded-md">
+                            <p className="font-semibold text-primary">{parsedEvent.summary}</p>
+                            <p className="text-xs text-secondary mt-1">{parsedEvent.startDate.toLocaleString()}</p>
+                            {parsedEvent.location && <p className="text-xs text-secondary">Location: {parsedEvent.location}</p>}
+                        </div>
+                    );
+                } else {
+                    const jsonEvent = event as EventNode;
+                    return (
+                         <div key={index} className="bg-tertiary p-3 rounded-md">
+                            <p className="font-semibold text-primary">{jsonEvent.what.name}</p>
+                            {jsonEvent.when && <p className="text-xs text-secondary mt-1">{new Date(jsonEvent.when.timestamp).toLocaleString()}</p>}
+                        </div>
+                    );
+                }
+            })}
           </div>
         </div>
 
