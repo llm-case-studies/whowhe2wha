@@ -1,7 +1,7 @@
 import React from 'react';
 
-// FIX: Allow passing standard SVG attributes like `title` to all icon components.
-type IconProps = { className?: string } & React.ComponentProps<'svg'>;
+// FIX: Updated the 'IconProps' type to use React.SVGProps directly, ensuring all standard SVG attributes like `title` are accepted.
+type IconProps = React.SVGProps<SVGSVGElement>;
 
 export const HistoryIcon: React.FC<IconProps> = ({ className = "h-6 w-6", ...props }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

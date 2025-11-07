@@ -321,6 +321,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const renderTooltip = (event: EventNode) => (
     <div className="absolute bottom-full mb-2 w-56 bg-tertiary text-primary text-xs rounded-md shadow-lg p-2 z-30 pointer-events-none">
       <p className="font-bold text-sm">{event.what.name}</p>
+      {event.when && (
+        <p className="text-wha-blue text-xs mt-1">{event.when.display}</p>
+      )}
       {event.what.description && <p className="text-secondary mt-1">{event.what.description}</p>}
     </div>
   );
