@@ -15,13 +15,14 @@ const projectColorClasses: Record<string, string> = {
     yellow: 'bg-yellow-500',
 };
 
+// Re-ordered for better visual contrast between adjacent months
 const MONTH_COLORS = [
     { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+    { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
+    { bg: 'bg-pink-500/10', text: 'text-pink-400' },
     { bg: 'bg-green-500/10', text: 'text-green-400' },
     { bg: 'bg-orange-500/10', text: 'text-orange-400' },
-    { bg: 'bg-pink-500/10', text: 'text-pink-400' },
     { bg: 'bg-purple-500/10', text: 'text-purple-400' },
-    { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
 ];
 
 interface TooltipData {
@@ -43,14 +44,22 @@ const isSameDay = (d1: Date, d2: Date): boolean =>
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-const MonthLabelColumn: React.FC<{ labels: MonthLabelData[], align?: 'left' | 'right' }> = ({ labels, align = 'right' }) => {
-    const textAlignClass = align === 'right' ? 'text-right' : 'text-left';
+const getStartOfWeek = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    // adjust when day is sunday (0), assuming week starts on monday (1)
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+    d.setHours(0, 0, 0, 0);
+    return new Date(d.setDate(diff));
+};
+
+const MonthLabelColumn: React.FC<{ labels: MonthLabelData[] }> = ({ labels }) => {
     return (
         <div className={`w-28 flex-shrink-0 px-4`}>
             {labels.map(label => {
                 const height = (label.endRow - label.startRow + 1) * 48; // h-12 is 3rem = 48px
                 return (
-                    <div key={label.name} className={`flex items-center ${align === 'right' ? 'justify-end' : 'justify-start'}`} style={{ height: `${height}px` }}>
+                    <div key={label.name} className={`flex items-center justify-end`} style={{ height: `${height}px` }}>
                         <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color}`}>
                             {label.name}
                         </h3>
@@ -61,7 +70,6 @@ const MonthLabelColumn: React.FC<{ labels: MonthLabelData[], align?: 'left' | 'r
     );
 };
 
-
 export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, projects }) => {
     const [layout, setLayout] = useState<'week' | 'month'>('week');
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -69,6 +77,9 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     const todayRowRef = useRef<HTMLDivElement>(null);
 
     const today = new Date();
+    const startOfThisWeek = getStartOfWeek(today);
+    const endOfThisWeek = new Date(startOfThisWeek);
+    endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
 
     const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
@@ -88,14 +99,18 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     }, [events]);
     
      useEffect(() => {
-        if (todayRowRef.current && scrollContainerRef.current) {
-            const container = scrollContainerRef.current;
-            const row = todayRowRef.current;
-            const containerHeight = container.offsetHeight;
-            const rowHeight = row.offsetHeight;
-            const scrollTop = row.offsetTop - (containerHeight / 2) + (rowHeight / 2);
-            container.scrollTo({ top: scrollTop, behavior: 'auto' });
-        }
+        // Defer scroll until after the next paint to ensure layout is complete
+        const timer = setTimeout(() => {
+            if (todayRowRef.current && scrollContainerRef.current) {
+                const container = scrollContainerRef.current;
+                const row = todayRowRef.current;
+                const containerHeight = container.offsetHeight;
+                const rowHeight = row.offsetHeight;
+                const scrollTop = row.offsetTop - (containerHeight / 2) + (rowHeight / 2);
+                container.scrollTo({ top: scrollTop, behavior: 'auto' });
+            }
+        }, 0);
+        return () => clearTimeout(timer);
     }, []); // Run only on initial mount
 
 
@@ -114,7 +129,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         setTooltip(null);
     };
 
-    const { gridCells, monthLabels } = useMemo(() => {
+    const { gridRows, monthLabels } = useMemo(() => {
         const startYear = today.getFullYear() - 2;
         const endYear = today.getFullYear() + 2;
         const yearStartDate = new Date(startYear, 0, 1);
@@ -126,18 +141,21 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
 
         const totalWeeks = (endYear - startYear + 1) * 53;
         
-        const cells = [];
         const monthLabelMap = new Map<string, MonthLabelData>();
+        // FIX: Replaced `JSX.Element` with `React.ReactNode` to fix "Cannot find namespace 'JSX'" error.
+        const generatedRows: React.ReactNode[] = [];
+
+        const todayWeekIndex = Math.floor((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
         for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
-            const rowCells = [];
-            let rowHasToday = false;
-
+            // FIX: Replaced `JSX.Element` with `React.ReactNode` to fix "Cannot find namespace 'JSX'" error.
+            const rowCells: React.ReactNode[] = [];
+            
             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-                const i = weekIndex * 7 + dayIndex;
                 const cellDate = new Date(gridStartDate);
-                cellDate.setDate(gridStartDate.getDate() + i);
+                cellDate.setDate(gridStartDate.getDate() + (weekIndex * 7 + dayIndex));
 
+                // Populate month labels
                 const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
                 if (!monthLabelMap.has(monthKey)) {
                     const color = MONTH_COLORS[cellDate.getMonth() % MONTH_COLORS.length];
@@ -152,14 +170,14 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
 
                 const dateKey = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
                 const dayEvents = eventsByDate.get(dateKey) || [];
-                const isToday = isSameDay(cellDate, today);
-                if (isToday) rowHasToday = true;
-
+                const isTodayCell = isSameDay(cellDate, today);
+                
                 const monthColor = MONTH_COLORS[cellDate.getMonth() % MONTH_COLORS.length].bg;
 
                 rowCells.push(
-                    <div key={i} className={`relative border-r border-b border-primary h-12 ${monthColor}`}>
-                        <span className={`absolute top-0.5 left-1 text-xs ${isToday ? 'text-primary font-bold' : 'text-tertiary'}`}>
+                    <div key={`${weekIndex}-${dayIndex}`} className={`relative border-r border-b border-secondary/50 h-12 ${monthColor}`}>
+                        {weekIndex === todayWeekIndex && <div className="absolute inset-0 bg-blue-500/20 pointer-events-none" />}
+                        <span className={`absolute top-0.5 left-1 text-xs ${isTodayCell ? 'text-primary font-bold' : 'text-tertiary'}`}>
                             {cellDate.getDate()}
                         </span>
                         <div className="absolute inset-0 flex flex-wrap gap-1 p-1 justify-center items-center">
@@ -169,44 +187,44 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                                 return (
                                     <div
                                         key={`${event.id}-${event.when?.timestamp}`}
-                                        className={`w-3 h-3 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white`}
+                                        className={`w-3 h-3 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`}
                                         onMouseEnter={(e) => handleMouseEnter(e, event)}
                                         onMouseLeave={handleMouseLeave}
                                     />
                                 );
                             })}
                         </div>
-                        {isToday && <div className="absolute inset-0 ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
+                        {isTodayCell && <div className="absolute inset-[-1px] ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
                     </div>
                 );
             }
-            // A `div` with `display: contents` acts as a non-rendering wrapper, allowing the ref to be attached to the logical row.
-            cells.push(
-                <div key={weekIndex} ref={rowHasToday ? todayRowRef : null} className="contents">
+            generatedRows.push(
+                 <div key={weekIndex} ref={weekIndex === todayWeekIndex ? todayRowRef : null} className="contents">
                     {rowCells}
                 </div>
-            );
+            )
         }
 
-        return { gridCells: cells, monthLabels: Array.from(monthLabelMap.values()) };
-    }, [eventsByDate, today]);
-
+        return { gridRows: generatedRows, monthLabels: Array.from(monthLabelMap.values()) };
+    }, [eventsByDate, today, startOfThisWeek]);
 
     const renderWeekLayout = () => {
         const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         return (
             <div className="flex">
-                <MonthLabelColumn labels={monthLabels} align="right" />
+                <MonthLabelColumn labels={monthLabels} />
                 <div className="flex-grow">
-                    <div className="grid grid-cols-7 border-l border-t border-primary">
-                        {dayHeaders.map(day => (
-                            <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-primary bg-secondary sticky top-0 z-10">{day}</div>
+                    <div className="grid grid-cols-7 border-l border-t border-secondary/50">
+                        {/* Sticky Header */}
+                         {dayHeaders.map(day => (
+                            <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary/50 bg-secondary sticky top-0 z-20">{day}</div>
                         ))}
-                        {gridCells}
+                        {/* Grid Body */}
+                        {gridRows}
                     </div>
                 </div>
-                <MonthLabelColumn labels={monthLabels} align="left" />
+                <MonthLabelColumn labels={monthLabels} />
             </div>
         );
     };
