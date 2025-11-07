@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewMode, TimelineScale, MainView } from '../types';
-import { StreamIcon, TimelineIcon, StarIcon, FilterIcon, LayersIcon, CalendarIcon, BriefcaseIcon, UsersIcon, PinIcon, ClipboardListIcon } from './icons';
+import { StreamIcon, TimelineIcon, GridIcon, StarIcon, FilterIcon, LayersIcon, CalendarIcon, BriefcaseIcon, UsersIcon, PinIcon, ClipboardListIcon } from './icons';
 import { HOLIDAY_CATEGORIES, PROJECT_CATEGORIES } from '../constants';
 import { useI18n } from '../hooks/useI18n';
 
@@ -161,6 +161,16 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         >
           <TimelineIcon className="h-4 w-4" />
           <span>{t('timeline')}</span>
+        </button>
+         <button
+          onClick={() => { setMainView('dashboard'); setViewMode('grid'); }}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full transition-colors duration-200 text-sm ${
+            isDashboardActive && viewMode === 'grid' ? 'bg-secondary text-primary shadow-sm' : 'text-secondary hover:bg-secondary/20'
+          }`}
+          aria-label="Switch to Grid view"
+        >
+          <GridIcon className="h-4 w-4" />
+          <span>Grid</span>
         </button>
          <button
           onClick={() => setMainView('contacts')}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { EventNode, Project, Location, Contact, ViewMode, TimelineScale, TierConfig, MainView } from '../types';
 import { ViewControls } from './ViewControls';
 import { TimelineView } from './TimelineView';
+import { RhythmicGridView } from './RhythmicGridView';
 import { EventCard } from './EventCard';
 import { ProjectCard } from './ProjectCard';
 import { TierConfigModal } from './TierConfigModal';
@@ -198,6 +199,13 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                   tierConfig={tierConfig}
                   onEditEvent={onEditEvent}
                   onDeleteEvent={onDeleteEvent}
+              />
+            )}
+
+            {viewMode === 'grid' && (
+              <RhythmicGridView
+                events={events}
+                projects={projects}
               />
             )}
           </div>
