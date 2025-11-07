@@ -1,11 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { EventNode, Project } from '../types';
 
-interface RhythmicGridViewProps {
-  events: EventNode[];
-  projects: Project[];
-}
-
 const projectColorClasses: Record<string, string> = {
     blue: 'bg-blue-500',
     green: 'bg-green-500',
@@ -15,19 +10,17 @@ const projectColorClasses: Record<string, string> = {
     yellow: 'bg-yellow-500',
 };
 
-// Re-ordered for better visual contrast between adjacent months
-const MONTH_COLORS = [
-    { bg: 'bg-blue-500/10', text: 'text-blue-400' },      // Jan
-    { bg: 'bg-green-500/10', text: 'text-green-400' },    // Feb
-    { bg: 'bg-orange-500/10', text: 'text-orange-400' },   // Mar
-    { bg: 'bg-pink-500/10', text: 'text-pink-400' },      // Apr
-    { bg: 'bg-purple-500/10', text: 'text-purple-400' },   // May
-    { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },   // Jun
+// Simplified two-color palette for alternating months to ensure high contrast
+const MONTH_COLORS_ALT = [
+    { bg: 'bg-pink-500/10', text: 'text-pink-400' },    // For odd months (Jan, Mar, etc.)
+    { bg: 'bg-green-500/10', text: 'text-green-400' },  // For even months (Feb, Apr, etc.)
 ];
+
 
 interface TooltipData {
     event: EventNode;
-    project: Project | undefined;
+    // FIX: Made project optional to correctly handle events that may not be associated with a project.
+    project?: Project;
     x: number;
     y: number;
 }
@@ -70,15 +63,20 @@ const MonthLabelColumn: React.FC<{ labels: MonthLabelData[] }> = ({ labels }) =>
     );
 };
 
+// FIX: Added missing RhythmicGridViewProps interface definition to provide strong typing for component props.
+interface RhythmicGridViewProps {
+    events: EventNode[];
+    projects: Project[];
+}
+
 export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, projects }) => {
     const [layout, setLayout] = useState<'week' | 'month'>('week');
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const todayRowRef = useRef<HTMLDivElement>(null);
 
-    // FIX: Set "today" to the user-specified date for consistent context.
-    const today = new Date('2025-11-07T12:00:00Z');
-    const startOfThisWeek = getStartOfWeek(today);
+    // Use the system's current date
+    const today = new Date();
 
     const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
@@ -143,6 +141,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         const monthLabelMap = new Map<string, MonthLabelData>();
         const generatedRows: React.ReactNode[] = [];
 
+        const startOfThisWeek = getStartOfWeek(today);
         const todayWeekIndex = Math.floor((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
         for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
@@ -155,7 +154,8 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 // Populate month labels
                 const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
                 if (!monthLabelMap.has(monthKey)) {
-                    const color = MONTH_COLORS[cellDate.getMonth() % MONTH_COLORS.length];
+                    // FIX: Added non-null assertion to ensure the color object is defined, resolving a potential 'unknown' type error.
+                    const color = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!;
                     monthLabelMap.set(monthKey, {
                         name: cellDate.toLocaleString('default', { month: 'long', year: 'numeric' }),
                         startRow: weekIndex,
@@ -169,7 +169,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 const dayEvents = eventsByDate.get(dateKey) || [];
                 const isTodayCell = isSameDay(cellDate, today);
                 
-                const monthColor = MONTH_COLORS[cellDate.getMonth() % MONTH_COLORS.length].bg;
+                const monthColor = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!.bg;
 
                 rowCells.push(
                     <div key={`${weekIndex}-${dayIndex}`} className={`relative border-r border-b border-secondary h-12 ${monthColor}`}>
@@ -203,7 +203,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         }
 
         return { gridRows: generatedRows, monthLabels: Array.from(monthLabelMap.values()) };
-    }, [eventsByDate, today, startOfThisWeek]);
+    }, [eventsByDate, today]);
 
     const renderWeekLayout = () => {
         const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -211,7 +211,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         return (
             <div className="flex flex-col h-full">
                 {/* Sticky Header */}
-                <div className="flex flex-shrink-0 z-20">
+                <div className="flex flex-shrink-0 z-20 sticky top-0 bg-secondary">
                     <div className="w-28 flex-shrink-0" /> {/* Spacer for left month labels */}
                     <div className="flex-grow grid grid-cols-7 border-l border-t border-secondary">
                         {dayHeaders.map(day => (
