@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { EventNode, Project } from '../types';
+import { CalendarIcon } from './icons';
 
 const projectColorClasses: Record<string, string> = {
     blue: 'bg-blue-500',
@@ -16,7 +17,6 @@ const MONTH_COLORS_ALT = [
     { bg: 'bg-green-500/10', text: 'text-green-400' },  // For even months (Feb, Apr, etc.)
 ];
 
-
 interface TooltipData {
     event: EventNode;
     project?: Project;
@@ -30,6 +30,37 @@ interface MonthLabelData {
     endRow: number;
     color: string;
 }
+
+interface MonthLabelColumnProps {
+    labels: MonthLabelData[];
+    totalWeeks: number;
+    isRight?: boolean;
+}
+
+const MonthLabelColumn: React.FC<MonthLabelColumnProps> = ({ labels, totalWeeks, isRight }) => {
+    const totalHeight = totalWeeks * 48; // 48 is h-12
+
+    return (
+        <div className="w-28 flex-shrink-0 px-4 relative" style={{ height: `${totalHeight}px` }}>
+            {labels.map((label) => {
+                const top = label.startRow * 48;
+                const height = (label.endRow - label.startRow + 1) * 48;
+
+                return (
+                    <div 
+                        key={label.name} 
+                        className={`absolute w-full px-4 flex items-center ${isRight ? 'justify-start' : 'justify-end'}`} 
+                        style={{ top: `${top}px`, height: `${height}px`, left: 0 }}
+                    >
+                        <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color}`}>
+                            {label.name}
+                        </h3>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 const isSameDay = (d1: Date, d2: Date): boolean =>
     d1.getFullYear() === d2.getFullYear() &&
@@ -45,38 +76,6 @@ const getStartOfWeek = (date: Date): Date => {
     return new Date(d.setDate(diff));
 };
 
-const MonthLabelColumn: React.FC<{ labels: MonthLabelData[] }> = ({ labels }) => {
-    if (labels.length === 0) {
-        return <div className="w-28 flex-shrink-0 px-4" />;
-    }
-
-    return (
-        <div className={`w-28 flex-shrink-0 px-4 flex flex-col`}>
-            {/* Render a spacer for any rows before the first label begins */}
-            {labels[0].startRow > 0 && (
-                <div style={{ height: `${labels[0].startRow * 48}px`, flexShrink: 0 }} />
-            )}
-
-            {labels.map((label, index) => {
-                // The previous month's label covered rows up to prevEndRow.
-                // This label needs to cover the new rows from there up to its own endRow.
-                const prevEndRow = index > 0 ? (labels[index - 1] as MonthLabelData).endRow : label.startRow - 1;
-                const height = (label.endRow - prevEndRow) * 48;
-
-                if (height <= 0) return null; // Don't render if it doesn't occupy new space
-
-                return (
-                    <div key={label.name} className={`flex items-center justify-end`} style={{ height: `${height}px`, flexShrink: 0 }}>
-                        <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color}`}>
-                            {label.name}
-                        </h3>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
 interface RhythmicGridViewProps {
     events: EventNode[];
     projects: Project[];
@@ -87,6 +86,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const todayRowRef = useRef<HTMLDivElement>(null);
+    const [showGoToToday, setShowGoToToday] = useState(false);
 
     // Use the system's current date
     const today = new Date();
@@ -107,22 +107,56 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         });
         return map;
     }, [events]);
-    
-     useEffect(() => {
-        // Defer scroll until after the next paint to ensure layout is complete
-        const timer = setTimeout(() => {
-            if (todayRowRef.current && scrollContainerRef.current) {
-                const container = scrollContainerRef.current;
-                const row = todayRowRef.current;
-                const containerHeight = container.offsetHeight;
-                const rowHeight = row.offsetHeight;
-                const scrollTop = row.offsetTop - (containerHeight / 2) + (rowHeight / 2);
-                container.scrollTo({ top: scrollTop, behavior: 'auto' });
-            }
-        }, 0);
-        return () => clearTimeout(timer);
-    }, []); // Run only on initial mount
 
+    const scrollToToday = (behavior: 'auto' | 'smooth' = 'smooth') => {
+        if (todayRowRef.current && scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            const rowWrapper = todayRowRef.current;
+
+            const firstCell = rowWrapper.children[0] as HTMLElement;
+            if (!firstCell) return;
+
+            const containerHeight = container.offsetHeight;
+            const rowHeight = 48; // h-12
+            const scrollTop = firstCell.offsetTop - (containerHeight / 2) + (rowHeight / 2);
+            container.scrollTo({ top: scrollTop, behavior });
+        }
+    };
+
+    // Initial scroll on mount
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            scrollToToday('auto');
+        }, 100); // A small delay helps ensure layout is complete
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Scroll listener to show/hide the "Go to Today" button
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container || !todayRowRef.current) return;
+
+        const handleScroll = () => {
+            if (!todayRowRef.current) return;
+
+            const firstCell = todayRowRef.current.children[0] as HTMLElement;
+            if (!firstCell) return;
+
+            const { scrollTop, offsetHeight } = container;
+            const rowOffsetTop = firstCell.offsetTop;
+            const rowHeight = 48; // h-12
+
+            const isRowVisible = rowOffsetTop >= scrollTop && (rowOffsetTop + rowHeight) <= (scrollTop + offsetHeight);
+            setShowGoToToday(!isRowVisible);
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Initial check
+
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
 
     const handleMouseEnter = (e: React.MouseEvent, event: EventNode) => {
         const project = projectMap.get(event.projectId);
@@ -139,7 +173,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         setTooltip(null);
     };
 
-    const { gridRows, monthLabels } = useMemo(() => {
+    const { gridRows, monthLabels, totalWeeks } = useMemo(() => {
         const startYear = today.getFullYear() - 2;
         const endYear = today.getFullYear() + 2;
         const yearStartDate = new Date(startYear, 0, 1);
@@ -155,7 +189,9 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
         const generatedRows: React.ReactNode[] = [];
 
         const startOfThisWeek = getStartOfWeek(today);
-        const todayWeekIndex = Math.floor((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+        
+        // Correctly calculate today's week index relative to the grid start date
+        const todayWeekIndex = Math.round((startOfThisWeek.getTime() - gridStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
         for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
             const rowCells: React.ReactNode[] = [];
@@ -207,24 +243,25 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                     </div>
                 );
             }
-            generatedRows.push(
+             generatedRows.push(
                  <div key={weekIndex} ref={weekIndex === todayWeekIndex ? todayRowRef : null} className="contents">
                     {rowCells}
                 </div>
             )
         }
 
-        return { gridRows: generatedRows, monthLabels: Array.from(monthLabelMap.values()) };
+        return { gridRows: generatedRows, monthLabels: Array.from(monthLabelMap.values()), totalWeeks };
     }, [eventsByDate, today]);
 
     const renderWeekLayout = () => {
         const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const totalGridHeight = totalWeeks * 48;
 
         return (
             <div className="flex flex-col h-full">
                 {/* Sticky Header */}
                 <div className="flex flex-shrink-0 z-20 sticky top-0 bg-secondary">
-                    <div className="w-28 flex-shrink-0" /> {/* Spacer for left month labels */}
+                    <div className="w-28 flex-shrink-0" /> {/* Spacer */}
                     <div className="flex-grow grid grid-cols-7 border-l border-t border-secondary">
                         {dayHeaders.map(day => (
                             <div key={day} className="text-center font-bold text-xs uppercase py-2 border-r border-b border-secondary bg-secondary">
@@ -232,19 +269,19 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                             </div>
                         ))}
                     </div>
-                    <div className="w-28 flex-shrink-0" /> {/* Spacer for right month labels */}
+                    <div className="w-28 flex-shrink-0" /> {/* Spacer */}
                 </div>
                 
                 {/* Scrollable Body */}
                 <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
                     <div className="flex">
-                        <MonthLabelColumn labels={monthLabels} />
-                        <div className="flex-grow">
+                        <MonthLabelColumn labels={monthLabels} totalWeeks={totalWeeks} />
+                        <div className="flex-grow" style={{ minHeight: `${totalGridHeight}px` }}>
                             <div className="grid grid-cols-7 border-l border-secondary">
                                 {gridRows}
                             </div>
                         </div>
-                        <MonthLabelColumn labels={monthLabels} />
+                        <MonthLabelColumn labels={monthLabels} totalWeeks={totalWeeks} isRight />
                     </div>
                 </div>
             </div>
@@ -271,8 +308,17 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                     </button>
                  </div>
             </div>
-            <div className="flex-grow min-h-0">
+            <div className="flex-grow min-h-0 relative">
                 {layout === 'week' ? renderWeekLayout() : <p className="text-center p-8 text-secondary">Month Layout coming soon!</p>}
+                <button
+                    onClick={() => scrollToToday('smooth')}
+                    className={`absolute bottom-6 right-6 z-30 px-4 py-2 bg-wha-blue text-white font-semibold rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 transform flex items-center ${
+                        showGoToToday ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+                    }`}
+                >
+                    <CalendarIcon className="h-5 w-5 mr-2" />
+                    <span>Go to Today</span>
+                </button>
             </div>
             {tooltip && (
                 <div 
