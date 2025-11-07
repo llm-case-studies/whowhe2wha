@@ -19,7 +19,6 @@ const MONTH_COLORS_ALT = [
 
 interface TooltipData {
     event: EventNode;
-    // FIX: Made project optional to correctly handle events that may not be associated with a project.
     project?: Project;
     x: number;
     y: number;
@@ -47,12 +46,27 @@ const getStartOfWeek = (date: Date): Date => {
 };
 
 const MonthLabelColumn: React.FC<{ labels: MonthLabelData[] }> = ({ labels }) => {
+    if (labels.length === 0) {
+        return <div className="w-28 flex-shrink-0 px-4" />;
+    }
+
     return (
-        <div className={`w-28 flex-shrink-0 px-4`}>
-            {labels.map(label => {
-                const height = (label.endRow - label.startRow + 1) * 48; // h-12 is 3rem = 48px
+        <div className={`w-28 flex-shrink-0 px-4 flex flex-col`}>
+            {/* Render a spacer for any rows before the first label begins */}
+            {labels[0].startRow > 0 && (
+                <div style={{ height: `${labels[0].startRow * 48}px`, flexShrink: 0 }} />
+            )}
+
+            {labels.map((label, index) => {
+                // The previous month's label covered rows up to prevEndRow.
+                // This label needs to cover the new rows from there up to its own endRow.
+                const prevEndRow = index > 0 ? (labels[index - 1] as MonthLabelData).endRow : label.startRow - 1;
+                const height = (label.endRow - prevEndRow) * 48;
+
+                if (height <= 0) return null; // Don't render if it doesn't occupy new space
+
                 return (
-                    <div key={label.name} className={`flex items-center justify-end`} style={{ height: `${height}px` }}>
+                    <div key={label.name} className={`flex items-center justify-end`} style={{ height: `${height}px`, flexShrink: 0 }}>
                         <h3 className={`text-sm font-bold uppercase tracking-wider ${label.color}`}>
                             {label.name}
                         </h3>
@@ -63,7 +77,6 @@ const MonthLabelColumn: React.FC<{ labels: MonthLabelData[] }> = ({ labels }) =>
     );
 };
 
-// FIX: Added missing RhythmicGridViewProps interface definition to provide strong typing for component props.
 interface RhythmicGridViewProps {
     events: EventNode[];
     projects: Project[];
@@ -154,7 +167,6 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 // Populate month labels
                 const monthKey = `${cellDate.getFullYear()}-${cellDate.getMonth()}`;
                 if (!monthLabelMap.has(monthKey)) {
-                    // FIX: Added non-null assertion to ensure the color object is defined, resolving a potential 'unknown' type error.
                     const color = MONTH_COLORS_ALT[cellDate.getMonth() % 2]!;
                     monthLabelMap.set(monthKey, {
                         name: cellDate.toLocaleString('default', { month: 'long', year: 'numeric' }),
