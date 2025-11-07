@@ -36,20 +36,22 @@ This document tracks the development progress of the **whowhe2wha** application,
 -   [ ] **Data Import/Export:** Add functionality to export all user data to a standard format (JSON, CSV) and import events from `.ics` files.
 -   [ ] **Recurring Events:** Add support for creating events that repeat daily, weekly, or monthly.
 
-### Tier 2: AI & Intelligence
+### Tier 2: Collaboration & Integration
 
+-   [ ] **Sharing & Collaboration:** Introduce the ability to share a read-only or collaborative version of a project with another user.
+-   [ ] **External Calendar Integration:** Add options to sync with Google Calendar, Outlook, or other calendar services.
+-   [ ] **AI-Powered Event Creation from Text/Email:** Allow users to paste a block of text (e.g., an email confirmation) and have the AI automatically parse it to fill out the "Add Event" form.
+-   [ ] **File Attachments:** Allow users to attach documents, images, or links to events (e.g., receipts, tickets, meeting agendas).
+-   [ ] **Notifications & Reminders:** Implement browser-based notifications for upcoming events.
+
+### Tier 3: Globalization & Intelligence
+
+-   [ ] **Internationalization (i18n):** Refactor the UI to support multiple languages. This involves extracting all text strings into translation files and integrating an i18n library.
+-   [ ] **AI Content Translation:** Implement a feature to translate shared projects and templates into the user's preferred language on-the-fly using the Gemini API.
 -   [ ] **Enhanced AI Queries:** Expand the AI's capabilities to handle more complex temporal and summary-based questions.
     -   *Example:* "What do I have to do tomorrow morning?"
     -   *Example:* "Summarize my 'Series A Fundraising' project."
 -   [ ] **Proactive Suggestions:** Have the AI suggest optimal routes or flag potential scheduling conflicts.
--   [ ] **AI-Powered Event Creation:** Allow users to paste a block of text (e.g., an email confirmation) and have the AI automatically parse it to fill out the "Add Event" form.
-
-### Tier 3: Feature Expansion
-
--   [ ] **Sharing & Collaboration:** Introduce the ability to share a read-only or collaborative version of a project with another user.
--   [ ] **File Attachments:** Allow users to attach documents, images, or links to events (e.g., receipts, tickets, meeting agendas).
--   [ ] **Notifications & Reminders:** Implement browser-based notifications for upcoming events.
--   [ ] **External Calendar Integration:** Add options to sync with Google Calendar, Outlook, or other calendar services.
 
 ### Tier 4: UI/UX Polish
 
