@@ -1,0 +1,17 @@
+/*
+ * Patch for types.ts
+ *
+ * FIND (line 77):
+ * export type Theme = 'light' | 'dark' | 'focus';
+ *
+ * REPLACE WITH:
+ */
+
+export type Theme =
+  | 'light'
+  | 'dark'
+  | 'focus'
+  | 'actcli'
+  | 'actcli-light'
+  | 'actcli-nord'
+  | 'actcli-roundtable';

@@ -1,0 +1,146 @@
+/*
+ * ActCLI Theme Pack for WhoWhe2Wha
+ *
+ * Installation: Copy the contents below into index.html
+ * Insert AFTER the existing html.focus theme (around line 80)
+ */
+
+/* ========================================
+   ActCLI Dark Theme (VSCode-inspired)
+   ======================================== */
+html.actcli {
+  /* Base Colors - VSCode inspired */
+  --color-primary: 204 204 204; /* #cccccc - VSCode text */
+  --color-secondary: 136 136 136; /* #888888 - dimmed text */
+  --color-tertiary: 68 68 68; /* #444444 - borders */
+
+  /* Backgrounds - VSCode dark */
+  --background-primary: 30 30 30; /* #1e1e1e - VSCode editor bg */
+  --background-secondary: 37 37 38; /* #252526 - VSCode sidebar */
+  --background-input: 60 60 60; /* #3c3c3c - input fields */
+  --background-modal-overlay: 30 30 30 / 0.9;
+
+  /* Entity Colors - ActCLI signature palette */
+  --color-who-pink: 245 101 101; /* #f56565 - error red (repurposed) */
+  --color-where-green: 72 187 120; /* #48bb78 - success green */
+  --color-wha-blue: 0 122 204; /* #007acc - signature VSCode blue */
+  --color-to-orange: 255 193 7; /* #FFC107 - warning amber */
+
+  /* Status Colors */
+  --color-status-active: 72 187 120; /* #48bb78 - green */
+  --color-status-active-text: 240 253 244; /* green-50 */
+  --color-status-completed: 0 122 204; /* #007acc - VSCode blue */
+  --color-status-completed-text: 239 246 255; /* blue-50 */
+  --color-status-onhold: 255 193 7; /* #FFC107 - amber */
+  --color-status-onhold-text: 254 243 199; /* amber-50 */
+
+  /* Time of Day - ActCLI inspired */
+  --color-morning: 255 193 7; /* #FFC107 - amber sunrise */
+  --color-midday: 0 122 204; /* #007acc - blue noon */
+  --color-afternoon: 76 175 80; /* #4CAF50 - green evening */
+}
+
+/* ========================================
+   ActCLI Light Theme
+   ======================================== */
+html.actcli-light {
+  /* Base Colors */
+  --color-primary: 51 51 51; /* #333333 - dark text */
+  --color-secondary: 117 117 117; /* #757575 - gray text */
+  --color-tertiary: 230 230 230; /* #e6e6e6 - borders */
+
+  /* Backgrounds */
+  --background-primary: 255 255 255; /* #ffffff - white */
+  --background-secondary: 243 243 243; /* #f3f3f3 - light gray */
+  --background-input: 255 255 255; /* #ffffff - white inputs */
+  --background-modal-overlay: 255 255 255 / 0.9;
+
+  /* Entity Colors - adjusted for light background */
+  --color-who-pink: 220 38 38; /* #dc2626 - darker red */
+  --color-where-green: 22 163 74; /* #16a34a - darker green */
+  --color-wha-blue: 0 102 204; /* #0066cc - darker blue */
+  --color-to-orange: 217 119 6; /* #d97706 - darker amber */
+
+  /* Status Colors */
+  --color-status-active: 22 163 74; /* darker green */
+  --color-status-active-text: 240 253 244; /* green-50 */
+  --color-status-completed: 0 102 204; /* darker blue */
+  --color-status-completed-text: 239 246 255; /* blue-50 */
+  --color-status-onhold: 217 119 6; /* darker amber */
+  --color-status-onhold-text: 254 243 199; /* amber-50 */
+
+  /* Time of Day */
+  --color-morning: 217 119 6; /* #d97706 */
+  --color-midday: 0 102 204; /* #0066cc */
+  --color-afternoon: 22 163 74; /* #16a34a */
+}
+
+/* ========================================
+   ActCLI Nord Theme (Nord Polar Night)
+   ======================================== */
+html.actcli-nord {
+  /* Nord Base Colors */
+  --color-primary: 216 222 233; /* #d8dee9 - Snow Storm */
+  --color-secondary: 143 188 187; /* #8fbcbb - Frost */
+  --color-tertiary: 67 76 94; /* #434c5e - Polar Night */
+
+  /* Nord Backgrounds */
+  --background-primary: 46 52 64; /* #2e3440 - Polar Night darkest */
+  --background-secondary: 59 66 82; /* #3b4252 - Polar Night dark */
+  --background-input: 67 76 94; /* #434c5e - Polar Night */
+  --background-modal-overlay: 46 52 64 / 0.9;
+
+  /* Entity Colors - Nord Aurora */
+  --color-who-pink: 191 97 106; /* #bf616a - Nord red */
+  --color-where-green: 163 190 140; /* #a3be8c - Nord green */
+  --color-wha-blue: 136 192 208; /* #88c0d0 - Nord blue */
+  --color-to-orange: 235 203 139; /* #ebcb8b - Nord yellow */
+
+  /* Status Colors - Nord Aurora */
+  --color-status-active: 163 190 140; /* Nord green */
+  --color-status-active-text: 46 52 64; /* dark text on green */
+  --color-status-completed: 136 192 208; /* Nord blue */
+  --color-status-completed-text: 46 52 64; /* dark text on blue */
+  --color-status-onhold: 235 203 139; /* Nord yellow */
+  --color-status-onhold-text: 46 52 64; /* dark text on yellow */
+
+  /* Time of Day - Nord palette */
+  --color-morning: 235 203 139; /* #ebcb8b - yellow */
+  --color-midday: 136 192 208; /* #88c0d0 - blue */
+  --color-afternoon: 163 190 140; /* #a3be8c - green */
+}
+
+/* ========================================
+   ActCLI Round Table Theme (Multi-model chat)
+   ======================================== */
+html.actcli-roundtable {
+  /* Base - Professional dark */
+  --color-primary: 204 204 204; /* #cccccc */
+  --color-secondary: 156 163 175; /* #9ca3af */
+  --color-tertiary: 75 85 99; /* #4b5563 */
+
+  /* Backgrounds */
+  --background-primary: 26 26 26; /* #1a1a1a - darker */
+  --background-secondary: 45 55 72; /* #2d3748 - Tailwind gray-800 */
+  --background-input: 74 85 104; /* #4a5568 */
+  --background-modal-overlay: 26 26 26 / 0.9;
+
+  /* Model-specific entity colors */
+  --color-who-pink: 255 107 107; /* #ff6b6b - Llama red */
+  --color-where-green: 78 205 196; /* #4ecdc4 - Claude teal */
+  --color-wha-blue: 69 183 209; /* #45b7d1 - GPT blue */
+  --color-to-orange: 245 158 11; /* #f59e0b - Gemini amber */
+
+  /* Status Colors */
+  --color-status-active: 72 187 120; /* #48bb78 */
+  --color-status-active-text: 240 253 244;
+  --color-status-completed: 66 153 225; /* #4299e1 */
+  --color-status-completed-text: 239 246 255;
+  --color-status-onhold: 237 137 54; /* #ed8936 */
+  --color-status-onhold-text: 254 243 199;
+
+  /* Time of Day */
+  --color-morning: 245 158 11; /* amber */
+  --color-midday: 69 183 209; /* blue */
+  --color-afternoon: 236 72 153; /* pink */
+}
