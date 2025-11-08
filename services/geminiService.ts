@@ -79,17 +79,34 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
 export async function geocodeLocation(query: string, userLat?: number, userLng?: number): Promise<{ name: string; latitude: number; longitude: number; } | null> {
   const aiInstance = getAI();
 
-  // Add location context if available
-  const locationContext = (userLat !== undefined && userLng !== undefined)
+  // Check if query is a URL
+  const isUrl = query.startsWith('http://') || query.startsWith('https://');
+
+  // Add location context if available and not a URL
+  const locationContext = (!isUrl && userLat !== undefined && userLng !== undefined)
     ? ` The user is currently near latitude ${userLat.toFixed(4)}, longitude ${userLng.toFixed(4)}. If the location query is ambiguous, prefer the one closest to this location.`
     : '';
 
-  const prompt = `
-    Find the precise address and geographic coordinates (latitude and longitude) for the following location.
-    Return only the canonical, full address for the 'name' field.${locationContext}
+  const prompt = isUrl
+    ? `This is a Google Maps link: ${query}
 
-    Location: "${query}"
-  `;
+Please extract the exact address and precise geographic coordinates (latitude and longitude) for this specific location.
+Return the canonical, full address for the 'name' field.`
+    : (userLat !== undefined && userLng !== undefined)
+      ? `Find the precise address and geographic coordinates for this place:
+
+Place name: "${query}"
+User's current location: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}
+
+IMPORTANT: The user just selected this place from a location-aware search near their current position.
+Find the "${query}" that is CLOSEST to the user's location (${userLat.toFixed(4)}, ${userLng.toFixed(4)}).
+Do NOT return a place from a different city or state. It MUST be near the user's coordinates.
+
+Return the canonical, full address for the 'name' field.`
+      : `Find the precise address and geographic coordinates (latitude and longitude) for the following location.
+Return only the canonical, full address for the 'name' field.
+
+Location: "${query}"`;
 
   try {
     const response = await aiInstance.models.generateContent({
@@ -185,9 +202,15 @@ export async function discoverPlaces(query: string, userLat?: number, userLng?: 
  */
 export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> {
     const aiInstance = getAI();
-    const prompt = `Find the place associated with this URL: ${url}`;
-    
+    const prompt = `This is a Google Maps share link: ${url}
+
+Please visit this link and tell me:
+1. The name of the place/business
+2. The full address
+3. Use the Google Maps tool to find this exact location and return it in the grounding data.`;
+
     try {
+        console.log('Calling Gemini to resolve URL:', url);
         const response = await aiInstance.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
@@ -195,6 +218,12 @@ export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> 
                 // Use both tools; the model will prioritize the best one for the task.
                 tools: [{ googleSearch: {} }, { googleMaps: {} }],
             },
+        });
+
+        console.log('Gemini response received:', {
+            hasGroundingMetadata: !!response.candidates?.[0]?.groundingMetadata,
+            groundingChunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks,
+            textResponse: response.text
         });
 
         // Check for structured data from the Google Maps tool.
@@ -207,6 +236,8 @@ export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> 
                     uri: chunk.maps.uri,
                 }));
 
+            console.log('Extracted places from grounding:', places);
+
             if (places.length > 0) {
                 return places;
             }
@@ -214,6 +245,7 @@ export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> 
 
         // If we couldn't extract place data from the URL, return empty.
         // Don't fall back to unreliable methods that might return wrong locations.
+        console.warn('No place data found in grounding metadata');
         return [];
 
     } catch (error) {

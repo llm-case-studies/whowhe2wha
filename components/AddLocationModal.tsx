@@ -69,6 +69,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     
     useEffect(() => {
         if (selectedPlace) {
+            // Geocode using the place title with user location context
+            // This is more reliable than trying to parse the URI
             handleGeocode(selectedPlace.title);
             setAlias(selectedPlace.title);
             setView('confirm');
@@ -86,16 +88,19 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         setError(null);
         setResults([]);
         try {
+            console.log('Processing URL:', url);
             const places = await findPlaceFromUrl(url);
+            console.log('Places found:', places);
             if (places.length > 0) {
                 // The API should return one specific place for a direct URL.
                 // Go directly to confirmation with the first result.
                 setSelectedPlace(places[0]);
             } else {
-                setError('Could not extract location data from that URL. Please try searching by name.');
+                setError('Could not extract location data from that URL. Try copying the place name and searching instead, or click "Find on Google Maps" to get a new link.');
             }
         } catch (err) {
-            setError('An error occurred while processing the URL. Please try again.');
+            console.error('URL processing error:', err);
+            setError(`An error occurred while processing the URL: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`);
         } finally {
             setIsProcessingUrl(false);
         }
@@ -245,8 +250,23 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         </>
     );
     
-    const renderConfirmView = () => (
+    const renderConfirmView = () => {
+        const mapSrc = geocodedData ? `https://maps.google.com/maps?q=${geocodedData.latitude},${geocodedData.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed` : '';
+
+        return (
         <div className="space-y-4">
+            {mapSrc && (
+                <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">Location Preview</label>
+                    <iframe
+                        src={mapSrc}
+                        className="w-full h-48 rounded-lg border-2 border-primary"
+                        loading="lazy"
+                        title="Location preview"
+                    ></iframe>
+                    <p className="text-xs text-yellow-400 mt-1">⚠️ Verify this is the correct location on the map above</p>
+                </div>
+            )}
             <div>
                 <label className="block text-sm font-medium text-secondary mb-1">{t('alias')}</label>
                 <input
