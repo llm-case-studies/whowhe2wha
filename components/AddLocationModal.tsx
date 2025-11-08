@@ -20,6 +20,10 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const [view, setView] = useState<View>('search');
     const { t } = useI18n();
 
+    // User location state
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [locationPermission, setLocationPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+
     // Search state
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessingUrl, setIsProcessingUrl] = useState(false);
@@ -35,6 +39,25 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     const [finalName, setFinalName] = useState('');
 
     useEffect(() => {
+        // Request user's location on mount
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setUserLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                    setLocationPermission('granted');
+                },
+                (error) => {
+                    console.warn('Geolocation permission denied or unavailable:', error);
+                    setLocationPermission('denied');
+                }
+            );
+        } else {
+            setLocationPermission('denied');
+        }
+
         // Run initial action on mount
         const match = query.match(URL_REGEX);
         if (match) {
@@ -95,7 +118,11 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         setError(null);
         setResults([]);
         try {
-            const places = await discoverPlaces(query);
+            const places = await discoverPlaces(
+                query,
+                userLocation?.lat,
+                userLocation?.lng
+            );
             setResults(places);
         } catch (err) {
             setError('Failed to search for places. Please try again.');
@@ -109,7 +136,11 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
         setIsGeocoding(true);
         setGeocodedData(null);
         try {
-            const data = await geocodeLocation(placeTitle);
+            const data = await geocodeLocation(
+                placeTitle,
+                userLocation?.lat,
+                userLocation?.lng
+            );
             if (data) {
                 setGeocodedData(data);
             }
@@ -150,6 +181,18 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
 
     const renderSearchView = () => (
         <>
+            {locationPermission === 'granted' && userLocation && (
+                <div className="mb-2 text-xs text-green-400 flex items-center gap-1">
+                    <span>📍</span>
+                    <span>Location-aware search enabled</span>
+                </div>
+            )}
+            {locationPermission === 'denied' && (
+                <div className="mb-2 text-xs text-yellow-400 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>Enable location for better search results</span>
+                </div>
+            )}
             {renderSearchBar()}
             {error && <p className="text-red-400 text-center text-sm">{error}</p>}
             
@@ -183,10 +226,21 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
                     !isLoading && !isProcessingUrl && !error && <p className="text-secondary text-center py-4">{t('noResultsFound')}</p>
                 )}
             </div>
-            <div className="border-t border-primary mt-4 pt-4 text-center">
-                 <button onClick={() => setView('manual')} className="text-sm text-blue-400 hover:underline">
-                    {t('addLocationManually')}
-                </button>
+            <div className="border-t border-primary mt-4 pt-4 space-y-2">
+                <div className="text-center">
+                    <button
+                        onClick={() => window.open('https://maps.google.com', '_blank')}
+                        className="text-sm text-blue-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+                    >
+                        <span>🗺️</span>
+                        <span>Find on Google Maps and paste link here</span>
+                    </button>
+                </div>
+                <div className="text-center">
+                    <button onClick={() => setView('manual')} className="text-sm text-blue-400 hover:underline">
+                        {t('addLocationManually')}
+                    </button>
+                </div>
             </div>
         </>
     );

@@ -76,11 +76,17 @@ export async function queryGraph(userQuery: string, data: { projects: Project[],
   }
 }
 
-export async function geocodeLocation(query: string): Promise<{ name: string; latitude: number; longitude: number; } | null> {
+export async function geocodeLocation(query: string, userLat?: number, userLng?: number): Promise<{ name: string; latitude: number; longitude: number; } | null> {
   const aiInstance = getAI();
+
+  // Add location context if available
+  const locationContext = (userLat !== undefined && userLng !== undefined)
+    ? ` The user is currently near latitude ${userLat.toFixed(4)}, longitude ${userLng.toFixed(4)}. If the location query is ambiguous, prefer the one closest to this location.`
+    : '';
+
   const prompt = `
     Find the precise address and geographic coordinates (latitude and longitude) for the following location.
-    Return only the canonical, full address for the 'name' field.
+    Return only the canonical, full address for the 'name' field.${locationContext}
 
     Location: "${query}"
   `;
@@ -128,11 +134,19 @@ export async function geocodeLocation(query: string): Promise<{ name: string; la
 /**
  * Uses the Gemini API with Google Maps grounding to discover real-world places from a text query.
  * @param query The user's search query for a place (e.g., "library downtown").
+ * @param userLat Optional user latitude for location-aware search.
+ * @param userLng Optional user longitude for location-aware search.
  * @returns A promise that resolves to an array of discovered places.
  */
-export async function discoverPlaces(query: string): Promise<DiscoveredPlace[]> {
+export async function discoverPlaces(query: string, userLat?: number, userLng?: number): Promise<DiscoveredPlace[]> {
     const aiInstance = getAI();
-    const prompt = `List business or public places that match the query: "${query}".`;
+
+    // Add location context if available
+    const locationContext = (userLat !== undefined && userLng !== undefined)
+        ? ` The user is currently near latitude ${userLat.toFixed(4)}, longitude ${userLng.toFixed(4)}. Prioritize places close to this location.`
+        : '';
+
+    const prompt = `List business or public places that match the query: "${query}".${locationContext}`;
 
     try {
         const response = await aiInstance.models.generateContent({
@@ -183,7 +197,7 @@ export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> 
             },
         });
 
-        // First, check for structured data from the Google Maps tool. This is the most reliable result.
+        // Check for structured data from the Google Maps tool.
         const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
         if (groundingChunks && Array.isArray(groundingChunks)) {
             const places: DiscoveredPlace[] = groundingChunks
@@ -192,22 +206,14 @@ export async function findPlaceFromUrl(url: string): Promise<DiscoveredPlace[]> 
                     title: chunk.maps.title,
                     uri: chunk.maps.uri,
                 }));
-            
+
             if (places.length > 0) {
                 return places;
             }
         }
-        
-        // If no map data, fall back to the text response from the Google Search tool.
-        const locationName = response.text.trim();
-        
-        // Basic sanity check to avoid using a generic or incorrect response.
-        if (locationName && !locationName.toLowerCase().includes('google maps') && !locationName.toLowerCase().includes('mountain view')) {
-            // Use the discovered name to perform a second, more precise search with the Maps tool.
-            return await discoverPlaces(locationName);
-        }
 
-        // If all else fails, return empty.
+        // If we couldn't extract place data from the URL, return empty.
+        // Don't fall back to unreliable methods that might return wrong locations.
         return [];
 
     } catch (error) {
