@@ -15,6 +15,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/16HCQUfRMItTpfH-yRnJ4b0
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Create `.env.local` with the required keys (see `Docs/GOOGLE_SETUP.md` for setup steps):
+   ```
+   GEMINI_API_KEY=your-ai-studio-or-vertex-gemini-key
+   VITE_GOOGLE_MAPS_API_KEY=your-google-maps-platform-key
+   ```
 3. Run the app:
    `npm run dev`

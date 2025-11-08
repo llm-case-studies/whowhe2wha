@@ -69,9 +69,9 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
     
     useEffect(() => {
         if (selectedPlace) {
-            // Geocode using the place title with user location context
-            // This is more reliable than trying to parse the URI
-            handleGeocode(selectedPlace.title);
+            // Geocode using the Google Maps URI from the search results
+            // This is more accurate than geocoding just the title
+            handleGeocode(selectedPlace.uri);
             setAlias(selectedPlace.title);
             setView('confirm');
         }
