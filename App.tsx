@@ -725,9 +725,9 @@ const AppContent: React.FC = () => {
     }
 
     return (
-        <div className="bg-background text-primary min-h-screen font-sans flex flex-col">
+        <div className="bg-background text-primary h-screen font-sans flex flex-col overflow-hidden">
             <Header theme={theme} setTheme={setTheme} onToggleHistory={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)} onOpenSettings={() => setIsSettingsModalOpen(true)} />
-            <main className="container mx-auto px-4 flex-grow flex flex-col">
+            <main className="container mx-auto px-4 flex-grow flex flex-col min-h-0">
                 <SearchBar onSearch={handleSearch} onClear={handleClearSearch} isLoading={isLoading} />
                 <Dashboard
                     mainView={mainView}

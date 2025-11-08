@@ -78,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
   const scheduledEvents = events.filter(e => !!e.when).sort((a, b) => new Date(a.when!.timestamp).getTime() - new Date(b.when!.timestamp).getTime());
 
   return (
-    <>
+    <div className="flex flex-col h-full min-h-0">
       <ViewControls
         mainView={mainView}
         setMainView={setMainView}
@@ -116,7 +116,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
           <div className="h-full">
             {viewMode === 'stream' && (
               <div className="flex md:flex-row flex-col gap-8 h-full min-h-0">
-                <div className="md:w-2/3 w-full overflow-y-auto space-y-6 pr-4">
+                <div className="md:w-2/3 w-full h-full overflow-y-auto space-y-6 pr-4 custom-scrollbar">
                   {unscheduledEvents.length > 0 && (
                     <div className="mb-10">
                        <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-primary">{t('unscheduledEvents')}</h2>
@@ -164,7 +164,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                     </div>
                   )}
                 </div>
-                <div className="md:w-1/3 w-full overflow-y-auto space-y-6 pr-4">
+                <div className="md:w-1/3 w-full h-full overflow-y-auto space-y-6 pr-4 custom-scrollbar">
                   <div className="flex justify-between items-center">
                       <h2 className="text-xl font-bold text-primary">{t('projects')}</h2>
                       {selectedProjectId && (
@@ -214,12 +214,12 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
 
       {isTierConfigModalOpen && <TierConfigModal currentConfig={tierConfig} onSave={handleSaveTierConfig} onClose={() => setIsTierConfigModalOpen(false)} />}
       {locationDetailModal && (
-        <LocationDetailModal 
-            location={locationDetailModal} 
-            allEvents={allEvents} 
-            allLocations={locations} 
+        <LocationDetailModal
+            location={locationDetailModal}
+            allEvents={allEvents}
+            allLocations={locations}
             contacts={contacts}
-            onClose={() => setLocationDetailModal(null)} 
+            onClose={() => setLocationDetailModal(null)}
             onEditLocation={onEditLocation}
             onDeleteLocation={onDeleteLocation}
             onEditContact={onEditContact}
@@ -227,6 +227,6 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         />
       )}
       {timeMapModalWhen && <TimeMapModal when={timeMapModalWhen} allEvents={allEvents} allLocations={locations} onClose={() => setTimeMapModalWhen(null)} />}
-    </>
+    </div>
   );
 };

@@ -101,6 +101,57 @@
           html.focus input[type="datetime-local"]::-webkit-calendar-picker-indicator {
             filter: invert(0.6);
           }
+
+          /* Scrollbar styling - subtle and theme-aware */
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+          }
+
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(75, 85, 99, 0.3);
+            border-radius: 3px;
+          }
+
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(75, 85, 99, 0.5);
+          }
+
+          /* Firefox scrollbar */
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(75, 85, 99, 0.3) transparent;
+          }
+
+          /* Light theme scrollbars */
+          html.light .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+          }
+
+          html.light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+          }
+
+          html.light .custom-scrollbar {
+            scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+          }
+
+          /* Focus/sepia theme scrollbars */
+          html.focus .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 112, 93, 0.3);
+          }
+
+          html.focus .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 112, 93, 0.5);
+          }
+
+          html.focus .custom-scrollbar {
+            scrollbar-color: rgba(148, 112, 93, 0.3) transparent;
+          }
         }
     </style>
     <script>
@@ -139,6 +190,9 @@
               },
               fontFamily: {
                   sans: ['Inter', 'sans-serif'],
+              },
+              gridTemplateColumns: {
+                  '31': 'repeat(31, minmax(0, 1fr))',
               },
             }
           }

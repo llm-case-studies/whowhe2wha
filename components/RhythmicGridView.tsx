@@ -286,14 +286,22 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                     const dayOfWeek = isRealDay ? cellDate.getDay() : -1;
                     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
+                    // Create density visualization
+                    let densityClass = '';
+                    if (dayEvents.length === 1) densityClass = 'bg-wha-blue/20';
+                    else if (dayEvents.length === 2) densityClass = 'bg-wha-blue/40';
+                    else if (dayEvents.length >= 3) densityClass = 'bg-wha-blue/60';
+
                     rowCells.push(
-                        <div key={`${monthIndex}-${day}`} className={`relative h-10 border-r border-b border-secondary/50 ${isRealDay ? (isWeekend ? 'bg-tertiary/10' : '') : 'bg-tertiary/30'}`}>
-                            {isRealDay && <div className="absolute inset-0 flex items-center justify-center">
-                                {dayEvents.map(event => {
+                        <div key={`${monthIndex}-${day}`} className={`relative h-10 border-r border-b border-secondary/50 ${isRealDay ? (isWeekend ? 'bg-tertiary/10' : '') : 'bg-tertiary/30'} ${densityClass}`}>
+                            {isRealDay && day <= 9 && <span className="absolute top-0.5 left-0.5 text-[9px] text-tertiary">{day}</span>}
+                            {isRealDay && <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-0.5">
+                                {dayEvents.slice(0, 4).map(event => {
                                     const project = projectMap.get(event.projectId);
                                     const colorClass = project ? (projectColorClasses[project.color] || 'bg-gray-500') : 'bg-gray-500';
-                                    return <div key={`${event.id}-${event.when?.timestamp}`} className={`w-2.5 h-2.5 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`} onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave} />;
+                                    return <div key={`${event.id}-${event.when?.timestamp}`} className={`w-3 h-3 rounded-full ${colorClass} cursor-pointer hover:ring-2 hover:ring-white z-10`} onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave} />;
                                 })}
+                                {dayEvents.length > 4 && <div className="text-[8px] font-bold text-primary">+{dayEvents.length - 4}</div>}
                             </div>}
                             {isTodayCell && <div className="absolute inset-[-1px] ring-2 ring-wha-blue rounded-sm pointer-events-none" />}
                         </div>
@@ -340,17 +348,39 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
 
     const renderMonthLayout = () => {
         const totalGridHeight = totalRows * rowHeight;
+        const monthLabels = gridRows.map((_, idx) => {
+            const year = today.getFullYear() - 2 + Math.floor(idx / 12);
+            const month = idx % 12;
+            const date = new Date(year, month, 1);
+            return date.toLocaleString('default', { month: 'short' });
+        });
+
         return (
              <div className="flex flex-col h-full">
                 <div className="flex flex-shrink-0 z-20 sticky top-0 bg-secondary">
-                    <div className="w-28 flex-shrink-0" />
+                    <div className="w-28 flex-shrink-0 text-xs font-bold text-secondary text-right pr-4 py-2 border-b border-secondary bg-secondary">Month</div>
                     <div className="flex-grow grid grid-cols-31 border-l border-t border-secondary">
                         {Array.from({ length: 31 }, (_, i) => i + 1).map(day => <div key={day} className="text-center font-bold text-xs py-2 border-r border-b border-secondary bg-secondary">{day}</div>)}
                     </div>
                 </div>
                 <div className="overflow-auto flex-grow" ref={scrollContainerRef}>
                     <div className="flex">
-                        <LabelColumn labels={rowLabels} totalRows={totalRows} rowHeight={rowHeight} />
+                        <div className="w-28 flex-shrink-0 px-4 relative" style={{ height: `${totalGridHeight}px` }}>
+                            {monthLabels.map((monthName, idx) => {
+                                const top = idx * rowHeight;
+                                return (
+                                    <div
+                                        key={idx}
+                                        className="absolute w-full px-4 flex items-center justify-end"
+                                        style={{ top: `${top}px`, height: `${rowHeight}px`, left: 0 }}
+                                    >
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-secondary">
+                                            {monthName}
+                                        </h3>
+                                    </div>
+                                );
+                            })}
+                        </div>
                         <div className="flex-grow" style={{ minHeight: `${totalGridHeight}px` }}>
                            <div className="border-l border-secondary">{gridRows}</div>
                         </div>
@@ -361,35 +391,33 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
     };
     
     const renderTraditionalLayout = () => {
-        const calendarDays = useMemo(() => {
-            const days = [];
-            const year = calendarDate.getFullYear();
-            const month = calendarDate.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const days = [];
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const date = new Date(firstDay);
-                date.setDate(date.getDate() - (startDayOfWeek - i));
-                days.push({ date, isCurrentMonth: false });
-            }
-            for (let i = 1; i <= lastDay.getDate(); i++) {
-                days.push({ date: new Date(year, month, i), isCurrentMonth: true });
-            }
-            const remaining = 42 - days.length;
-            for (let i = 1; i <= remaining; i++) {
-                const date = new Date(lastDay);
-                date.setDate(lastDay.getDate() + i);
-                days.push({ date, isCurrentMonth: false });
-            }
-            return days;
-        }, [calendarDate]);
+        for (let i = 0; i < startDayOfWeek; i++) {
+            const date = new Date(firstDay);
+            date.setDate(date.getDate() - (startDayOfWeek - i));
+            days.push({ date, isCurrentMonth: false });
+        }
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            days.push({ date: new Date(year, month, i), isCurrentMonth: true });
+        }
+        const remaining = 42 - days.length;
+        for (let i = 1; i <= remaining; i++) {
+            const date = new Date(lastDay);
+            date.setDate(lastDay.getDate() + i);
+            days.push({ date, isCurrentMonth: false });
+        }
+        const calendarDays = days;
 
         let animationClass = '';
-        if(transitionDirection === 'next') animationClass = 'animate-[fadeOutRight_150ms_ease-in-out]';
-        if(transitionDirection === 'prev') animationClass = 'animate-[fadeOutLeft_150ms_ease-in-out]';
-        
+        if(transitionDirection === 'next') animationClass = 'opacity-0';
+        if(transitionDirection === 'prev') animationClass = 'opacity-0';
+
         return (
             <div className="flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
@@ -403,7 +431,7 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                 <div className="grid grid-cols-7 flex-shrink-0">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} className="text-center text-xs font-bold uppercase text-secondary pb-2">{day}</div>)}
                 </div>
-                <div key={calendarDate.getMonth()} className={`grid grid-cols-7 grid-rows-6 flex-grow border-t border-l border-secondary animate-[fadeIn_300ms_ease-in-out] ${animationClass}`}>
+                <div key={calendarDate.getMonth()} className={`grid grid-cols-7 grid-rows-6 flex-grow border-t border-l border-secondary transition-opacity duration-300 ${animationClass}`}>
                     {calendarDays.map(({ date, isCurrentMonth }, index) => {
                         const isTodayCell = isSameDay(date, today);
                         const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -421,10 +449,10 @@ export const RhythmicGridView: React.FC<RhythmicGridViewProps> = ({ events, proj
                                 <div className="flex-grow overflow-hidden mt-1 space-y-0.5">
                                     {dayEvents.slice(0, 2).map(event => {
                                         const project = projectMap.get(event.projectId);
-                                        const color = project?.color || 'gray';
+                                        const colorClass = project ? (projectColorClasses[project.color] || 'bg-gray-500') : 'bg-gray-500';
                                         return (
                                             <div key={`${event.id}-${event.when?.timestamp}`} className="text-xs text-primary whitespace-nowrap overflow-hidden text-ellipsis flex items-center cursor-pointer" onMouseEnter={(e) => handleMouseEnter(e, event)} onMouseLeave={handleMouseLeave}>
-                                                <div className={`w-1.5 h-1.5 rounded-full bg-${color}-500 mr-1.5 flex-shrink-0`}></div>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${colorClass} mr-1.5 flex-shrink-0`}></div>
                                                 <span>{event.what.name}</span>
                                             </div>
                                         );
