@@ -5,7 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { AddEventModal } from './components/AddEventForm';
 import { AddProjectModal } from './components/AddProjectModal';
 import { AddContactModal } from './components/AddContactModal';
-import { AddLocationModal } from './components/AddLocationModal';
+import { AddLocationModalV2 as AddLocationModal } from './components/AddLocationModalV2';
 import { EditLocationModal } from './components/EditLocationModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { HistoryPanel } from './components/HistoryPanel';
