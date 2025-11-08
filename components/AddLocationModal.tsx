@@ -305,7 +305,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({ initialQuery
             </div>
         </div>
     );
-    
+    }
+
     const renderManualView = () => (
          <div className="space-y-4">
             <p className="text-sm text-secondary">Adding "{initialQuery}" as a custom location without address details.</p>
