@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Location, EntityType } from '../types';
 import { SpinnerIcon, PinIcon } from './icons';
 import { useI18n } from '../hooks/useI18n';
@@ -66,13 +66,16 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
     const rawMapsApiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
     const mapsApiKey = rawMapsApiKey && rawMapsApiKey !== 'undefined' && rawMapsApiKey !== 'null' ? rawMapsApiKey : '';
     const inputRef = useRef<HTMLInputElement>(null);
-    const autocompleteListener = useRef<google.maps.MapsEventListener | null>(null);
+    const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+    const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
     const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
     const dummyMapRef = useRef<HTMLDivElement | null>(null);
+    const predictionRequestIdRef = useRef(0);
 
     const [searchValue, setSearchValue] = useState(initialQuery);
     const [view, setView] = useState<ViewMode>('search');
-    const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
+    const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+    const [isPredictionLoading, setIsPredictionLoading] = useState(false);
     const [isMapsLoading, setIsMapsLoading] = useState(true);
     const [isFetchingDetails, setIsFetchingDetails] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -127,65 +130,28 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
             };
         }
 
-        setIsMapsLoading(true);
-        loadGoogleMapsAPI(mapsApiKey)
-            .then(() => {
-                if (!isMounted || !inputRef.current) return;
+        const initMaps = async () => {
+            setIsMapsLoading(true);
+            try {
+                await loadGoogleMapsAPI(mapsApiKey);
+                if (!isMounted) return;
 
                 dummyMapRef.current = document.createElement('div');
                 placesServiceRef.current = new google.maps.places.PlacesService(dummyMapRef.current);
 
-                const autocompleteInstance = new google.maps.places.Autocomplete(inputRef.current, {
-                    fields: ['formatted_address', 'geometry', 'name', 'place_id'],
-                    types: ['establishment', 'geocode']
-                });
-
-                autocompleteListener.current = autocompleteInstance.addListener('place_changed', () => {
-                    const place = autocompleteInstance.getPlace();
-                    setSelectedPlace(place || null);
-                    setError(null);
-
-                    if (!place) {
-                        return;
+                try {
+                    const importLibrary = (google.maps as unknown as { importLibrary?: (name: string) => Promise<void> }).importLibrary;
+                    if (typeof importLibrary === 'function') {
+                        await importLibrary('places');
                     }
+                } catch (libErr) {
+                    console.warn('google.maps.importLibrary unavailable; continuing with legacy globals.', libErr);
+                }
 
-                    const latestInputValue = inputRef.current?.value || '';
-                    setSearchValue(latestInputValue);
-
-                    const handleResult = (result: google.maps.places.PlaceResult) => {
-                        if (!result) return;
-                        const fallbackLabel = result.name || result.formatted_address || latestInputValue || initialQuery;
-                        applyResolvedLocation({
-                            aliasValue: fallbackLabel,
-                            officialAddress: result.formatted_address || fallbackLabel,
-                            lat: result.geometry?.location?.lat(),
-                            lng: result.geometry?.location?.lng(),
-                        });
-                    };
-
-                    if (place.place_id && placesServiceRef.current) {
-                        setIsFetchingDetails(true);
-                        placesServiceRef.current.getDetails(
-                            {
-                                placeId: place.place_id,
-                                fields: ['formatted_address', 'geometry', 'name']
-                            },
-                            (result, status) => {
-                                if (!isMounted) return;
-                                setIsFetchingDetails(false);
-                                if (status !== google.maps.places.PlacesServiceStatus.OK || !result) {
-                                    setError('Unable to load place details. Please pick another result.');
-                                    return;
-                                }
-                                handleResult(result);
-                            }
-                        );
-                    } else if (place.geometry?.location) {
-                        handleResult(place);
-                    } else {
-                        setError('This result did not include coordinates. Try another suggestion.');
-                    }
-                });
+                autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
+                if (google.maps.places.AutocompleteSessionToken) {
+                    sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
+                }
 
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
@@ -197,14 +163,6 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                                 lng: position.coords.longitude,
                             };
                             setUserLocation(coords);
-                            const circle = new google.maps.Circle({
-                                center: coords,
-                                radius: 50000,
-                            });
-                            const bounds = circle.getBounds();
-                            if (bounds) {
-                                autocompleteInstance.setBounds(bounds);
-                            }
                         },
                         (err) => {
                             console.warn('Geolocation failed:', err);
@@ -216,21 +174,164 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                     setLocationPermission('denied');
                 }
 
-                setIsMapsLoading(false);
-            })
-            .catch((err) => {
+                if (isMounted) {
+                    setIsMapsLoading(false);
+                }
+            } catch (err) {
                 if (!isMounted) return;
                 console.error('Failed to load Google Maps:', err);
                 setError(err instanceof Error ? err.message : 'Failed to load Google Maps.');
                 setIsMapsLoading(false);
-            });
+            }
+        };
+
+        initMaps();
 
         return () => {
             isMounted = false;
             window.gm_authFailure = undefined;
-            autocompleteListener.current?.remove();
         };
-    }, [mapsApiKey, initialQuery]);
+    }, [mapsApiKey]);
+
+    const ensureSessionToken = () => {
+        if (typeof google === 'undefined') {
+            return undefined;
+        }
+        if (!sessionTokenRef.current && google?.maps?.places?.AutocompleteSessionToken) {
+            sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
+        }
+        return sessionTokenRef.current ?? undefined;
+    };
+
+    const getDisplayNameText = (value: unknown): string | undefined => {
+        if (!value) return undefined;
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object' && 'text' in (value as { text?: string })) {
+            const text = (value as { text?: string }).text;
+            if (typeof text === 'string') {
+                return text;
+            }
+        }
+        return undefined;
+    };
+
+    const normalizeLatLng = (location: unknown): { lat?: number; lng?: number } => {
+        if (!location) return {};
+        const candidate = location as { lat?: number | (() => number); lng?: number | (() => number) };
+        const lat = typeof candidate.lat === 'function' ? candidate.lat() : candidate.lat;
+        const lng = typeof candidate.lng === 'function' ? candidate.lng() : candidate.lng;
+        return {
+            lat: typeof lat === 'number' ? lat : undefined,
+            lng: typeof lng === 'number' ? lng : undefined,
+        };
+    };
+
+    const fetchPlaceDetailsWithModernApi = async (placeId: string, fallbackLabel: string, fallbackAddress: string) => {
+        if (typeof google === 'undefined') {
+            return false;
+        }
+        const PlaceCtor = (google.maps.places as unknown as { Place?: new (options: { id: string }) => any }).Place;
+        if (!PlaceCtor) {
+            return false;
+        }
+        const modernPlace = new PlaceCtor({ id: placeId });
+        if (typeof modernPlace.fetchFields === 'function') {
+            await modernPlace.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+        }
+        const coords = normalizeLatLng(modernPlace.location);
+        applyResolvedLocation({
+            aliasValue: getDisplayNameText(modernPlace.displayName) ?? fallbackLabel,
+            officialAddress: modernPlace.formattedAddress || fallbackAddress,
+            lat: coords.lat ?? null,
+            lng: coords.lng ?? null,
+        });
+        return true;
+    };
+
+    const fetchPlaceDetailsWithLegacyService = (placeId: string, fallbackLabel: string, fallbackAddress: string) =>
+        new Promise<void>((resolve, reject) => {
+            if (typeof google === 'undefined') {
+                reject(new Error('Google Maps has not loaded.'));
+                return;
+            }
+            if (!placesServiceRef.current) {
+                reject(new Error('PlacesService is not initialized.'));
+                return;
+            }
+            placesServiceRef.current.getDetails(
+                {
+                    placeId,
+                    fields: ['formatted_address', 'geometry', 'name']
+                },
+                (result, status) => {
+                    if (status !== google.maps.places.PlacesServiceStatus.OK || !result) {
+                        reject(new Error('PlacesService failed to return details.'));
+                        return;
+                    }
+                    applyResolvedLocation({
+                        aliasValue: result.name || fallbackLabel,
+                        officialAddress: result.formatted_address || fallbackAddress,
+                        lat: result.geometry?.location?.lat(),
+                        lng: result.geometry?.location?.lng(),
+                    });
+                    resolve();
+                }
+            );
+        });
+
+    const fetchPredictions = useCallback((value: string) => {
+        if (typeof google === 'undefined') {
+            return;
+        }
+        const trimmed = value.trim();
+        if (!autocompleteServiceRef.current || trimmed.length < 3) {
+            setPredictions([]);
+            setIsPredictionLoading(false);
+            return;
+        }
+        const requestId = ++predictionRequestIdRef.current;
+        setIsPredictionLoading(true);
+        const request: google.maps.places.AutocompletionRequest = {
+            input: trimmed,
+            sessionToken: ensureSessionToken(),
+            types: ['establishment', 'geocode'],
+        };
+        if (userLocation) {
+            request.locationBias = userLocation;
+        }
+        autocompleteServiceRef.current.getPlacePredictions(request, (results, status) => {
+            if (requestId !== predictionRequestIdRef.current) {
+                return;
+            }
+            setIsPredictionLoading(false);
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                setPredictions(results);
+            } else {
+                setPredictions([]);
+            }
+        });
+    }, [userLocation]);
+
+    const handlePredictionSelect = async (prediction: google.maps.places.AutocompletePrediction) => {
+        setSearchValue(prediction.description);
+        setPredictions([]);
+        setIsFetchingDetails(true);
+        setError(null);
+        try {
+            const fallbackLabel = prediction.structured_formatting?.main_text || prediction.description;
+            const fallbackAddress = prediction.description;
+            const resolvedWithModernApi = await fetchPlaceDetailsWithModernApi(prediction.place_id, fallbackLabel, fallbackAddress);
+            if (!resolvedWithModernApi) {
+                await fetchPlaceDetailsWithLegacyService(prediction.place_id, fallbackLabel, fallbackAddress);
+            }
+            sessionTokenRef.current = null;
+        } catch (err) {
+            console.error('Failed to retrieve place details', err);
+            setError('Unable to load place details. Please pick another result.');
+        } finally {
+            setIsFetchingDetails(false);
+        }
+    };
 
     const handleManualGeocode = async () => {
         if (!officialName) {
@@ -254,7 +355,7 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                     lat: result.geometry?.location?.lat ?? null,
                     lng: result.geometry?.location?.lng ?? null,
                 });
-                setSelectedPlace(null);
+                setPredictions([]);
             } else {
                 setError('Google Maps could not find that address. Please refine it and try again.');
             }
@@ -267,10 +368,13 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
     };
 
     const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchValue(e.target.value);
-        setSelectedPlace(null);
-        if (!e.target.value) {
+        const value = e.target.value;
+        setSearchValue(value);
+        if (!value) {
             applyResolvedLocation({ officialAddress: '', lat: null, lng: null });
+            setPredictions([]);
+        } else {
+            fetchPredictions(value);
         }
     };
 
@@ -381,19 +485,53 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                 <label className="block text-sm font-medium text-secondary mb-1">
                     Search for a place
                 </label>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={searchValue}
-                    onChange={handleSearchInputChange}
-                    className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
-                    placeholder="Start typing to search..."
-                />
-                <p className="text-xs text-secondary mt-1">
+                <div className="relative">
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={searchValue}
+                        onChange={handleSearchInputChange}
+                        className="w-full px-3 py-2 bg-input border border-primary rounded-lg focus:ring-2 focus:ring-wha-blue focus:outline-none"
+                        placeholder="Start typing to search..."
+                        autoComplete="off"
+                    />
+                    {isPredictionLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-secondary flex items-center gap-2">
+                            <SpinnerIcon className="h-3 w-3 animate-spin" />
+                            <span>Searching…</span>
+                        </div>
+                    )}
+                </div>
+                {predictions.length > 0 && (
+                    <ul className="mt-2 bg-tertiary border border-primary rounded-lg divide-y divide-primary max-h-48 overflow-y-auto">
+                        {predictions.map(prediction => (
+                            <li key={prediction.place_id}>
+                                <button
+                                    type="button"
+                                    onClick={() => handlePredictionSelect(prediction)}
+                                    className="w-full text-left px-3 py-2 hover:bg-primary/20 transition"
+                                >
+                                    <p className="text-sm font-semibold text-white">
+                                        {prediction.structured_formatting?.main_text || prediction.description}
+                                    </p>
+                                    {prediction.structured_formatting?.secondary_text && (
+                                        <p className="text-xs text-secondary">
+                                            {prediction.structured_formatting.secondary_text}
+                                        </p>
+                                    )}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                {!isPredictionLoading && searchValue.trim().length >= 3 && predictions.length === 0 && (
+                    <p className="text-xs text-secondary mt-2">No suggestions yet. Refine the name or city.</p>
+                )}
+                <p className="text-xs text-secondary mt-2">
                     Powered by Google Places - select from dropdown
                 </p>
             </div>
-            {(selectedPlace || hasCoordinates) && renderLocationDetails()}
+            {hasCoordinates && renderLocationDetails()}
         </>
     );
 
@@ -439,7 +577,10 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setView(view === 'search' ? 'manual' : 'search')}
+                                onClick={() => {
+                                    setView(view === 'search' ? 'manual' : 'search');
+                                    setPredictions([]);
+                                }}
                                 className="text-blue-400 hover:underline"
                             >
                                 {view === 'search' ? t('addLocationManually') : 'Back to search'}
