@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EventNode, Project, Location, Contact, ViewMode, TimelineScale, TierConfig, MainView } from '../types';
 import { ViewControls } from './ViewControls';
 import { TimelineView } from './TimelineView';
@@ -10,6 +10,7 @@ import { LocationDetailModal } from './LocationDetailModal';
 import { TimeMapModal } from './TimeMapModal';
 import { ContactsView } from './ContactsView';
 import { useI18n } from '../hooks/useI18n';
+import { getTimelineDurationMs, getNearestTimelineScale } from '../utils/timeline';
 
 interface DashboardProps {
   mainView: MainView;
@@ -55,8 +56,10 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
   } = props;
 
   const [viewMode, setViewMode] = useState<ViewMode>('stream');
+  const initialTimelineDate = new Date('2025-11-15T12:00:00Z');
   const [timelineScale, setTimelineScale] = useState<TimelineScale>('month');
-  const [timelineDate, setTimelineDate] = useState(new Date('2025-11-15T12:00:00Z'));
+  const [timelineDate, setTimelineDate] = useState(initialTimelineDate);
+  const [timelineDurationMs, setTimelineDurationMs] = useState(() => getTimelineDurationMs('month', initialTimelineDate));
   const { t } = useI18n();
   
   const [selectedHolidayCategories, setSelectedHolidayCategories] = useState<string[]>(['US']);
@@ -72,6 +75,27 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
     setIsTierConfigModalOpen(false);
   };
 
+  useEffect(() => {
+    const baseDuration = getTimelineDurationMs(timelineScale, timelineDate);
+    setTimelineDurationMs(prev => {
+      const diff = Math.abs(Math.log(prev) - Math.log(baseDuration));
+      return diff < 0.01 ? baseDuration : prev;
+    });
+  }, [timelineScale, timelineDate]);
+
+  const handleTimelineScaleChange = (newScale: TimelineScale) => {
+    setTimelineScale(newScale);
+    setTimelineDurationMs(getTimelineDurationMs(newScale, timelineDate));
+  };
+
+  const handleTimelineDurationChange = (nextDurationMs: number) => {
+    setTimelineDurationMs(nextDurationMs);
+    const inferredScale = getNearestTimelineScale(nextDurationMs, timelineDate);
+    if (inferredScale !== timelineScale) {
+      setTimelineScale(inferredScale);
+    }
+  };
+
   const visibleProjects = projects.filter(p => selectedProjectCategories.includes(p.category));
 
   const unscheduledEvents = events.filter(e => !e.when).sort((a,b) => a.id - b.id);
@@ -85,7 +109,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
         viewMode={viewMode}
         setViewMode={setViewMode}
         timelineScale={timelineScale}
-        setTimelineScale={setTimelineScale}
+        setTimelineScale={handleTimelineScaleChange}
         timelineDate={timelineDate}
         setTimelineDate={setTimelineDate}
         onAddEventClick={() => onAddEvent()}
@@ -193,13 +217,14 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                   projects={visibleProjects} 
                   currentDate={timelineDate} 
                   scale={timelineScale}
+                  durationMs={timelineDurationMs}
                   selectedHolidayCategories={selectedHolidayCategories}
                   selectedProjectCategories={selectedProjectCategories}
                   setTimelineDate={setTimelineDate}
                   tierConfig={tierConfig}
                   onEditEvent={onEditEvent}
                   onDeleteEvent={onDeleteEvent}
-                  onScaleChange={setTimelineScale}
+                  onDurationChange={handleTimelineDurationChange}
               />
             )}
 

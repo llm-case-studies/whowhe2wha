@@ -1,20 +1,21 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { EventNode, TimelineScale, Holiday, Project, WhatType, Tier, TierConfig } from '../types';
+import { EventNode, Holiday, Project, WhatType, Tier, TierConfig } from '../types';
 import { HOLIDAY_DATA, PROJECT_CATEGORIES } from '../constants';
 import { MilestoneIcon, DeadlineIcon, CheckpointIcon, ChevronsLeftIcon, ChevronsRightIcon, PencilIcon, TrashIcon } from './icons';
+import { MIN_TIMELINE_DURATION_MS, MAX_TIMELINE_DURATION_MS } from '../utils/timeline';
 
 interface TimelineViewProps {
   events: EventNode[];
   projects: Project[];
   currentDate: Date;
-  scale: TimelineScale;
+  durationMs: number;
   selectedHolidayCategories: string[];
   selectedProjectCategories: string[];
   setTimelineDate: (date: Date) => void;
   tierConfig: TierConfig;
   onEditEvent: (event: EventNode) => void;
   onDeleteEvent: (eventId: number) => void;
-  onScaleChange: (scale: TimelineScale) => void;
+  onDurationChange: (nextDurationMs: number) => void;
 }
 
 const projectColorStyles: Record<string, { bg: string, border: string, text: string }> = {
@@ -34,28 +35,9 @@ const CATEGORY_GAP = 16;
 const TIMELINE_BAR_HEIGHT = 10;
 const MIN_CONTAINER_HEIGHT = 350;
 const HOLIDAY_AREA_HEIGHT = 48;
-const SCALE_ORDER: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-const MS_IN_DAY = 24 * 60 * 60 * 1000;
-
-const getDurationForScale = (scale: TimelineScale, referenceDate: Date): number => {
-  switch (scale) {
-    case 'week':
-      return 7 * MS_IN_DAY;
-    case 'month': {
-      const daysInMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0).getDate();
-      return daysInMonth * MS_IN_DAY;
-    }
-    case 'quarter':
-      return Math.round(91.25 * MS_IN_DAY);
-    case 'year': {
-      const isLeap = new Date(referenceDate.getFullYear(), 1, 29).getDate() === 29;
-      return (isLeap ? 366 : 365) * MS_IN_DAY;
-    }
-    default:
-      return 30 * MS_IN_DAY;
-  }
-};
+const WHEEL_ZOOM_SENSITIVITY = 0.0015;
+const PINCH_DEADBAND = 0.03;
 
 const getIconForHoliday = (holiday: Holiday): string => {
   const category = holiday.category;
@@ -133,7 +115,7 @@ const PointEventMarker: React.FC<PointEventMarkerProps> = ({ event, colorStyle }
 }
 
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig, onEditEvent, onDeleteEvent, onScaleChange }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, durationMs, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig, onEditEvent, onDeleteEvent, onDurationChange }) => {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [hoveredHoliday, setHoveredHoliday] = useState<Holiday | null>(null);
@@ -144,6 +126,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const latestMouseX = useRef(0);
   const animationFrameId = useRef<number | null>(null);
   const pinchState = useRef<{ distance: number; anchorPercent: number } | null>(null);
+  const lastWheelTimeRef = useRef(0);
   
   const projectColorMap = useMemo(() => new Map(projects.map(p => [p.id, p.color])), [projects]);
 
@@ -244,11 +227,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
 
   const { startDate, endDate, totalDuration } = useMemo(() => {
-    const durationMs = getDurationForScale(scale, currentDate);
     const start = new Date(currentDate.getTime() - durationMs / 2);
     const end = new Date(currentDate.getTime() + durationMs / 2);
     return { startDate: start, endDate: end, totalDuration: durationMs };
-  }, [currentDate, scale]);
+  }, [currentDate, durationMs]);
   
   const todayDate = new Date();
   const startDateMs = startDate.getTime();
@@ -308,29 +290,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     }
   };
 
-  const zoomTimeline = (direction: 'in' | 'out', anchorPercent: number) => {
-    if (!onScaleChange) return;
-    const currentIndex = SCALE_ORDER.indexOf(scale);
-    if (currentIndex === -1) return;
-    const nextIndex = direction === 'in' ? Math.max(0, currentIndex - 1) : Math.min(SCALE_ORDER.length - 1, currentIndex + 1);
-    if (nextIndex === currentIndex) return;
-    const newScale = SCALE_ORDER[nextIndex];
+  const applyZoom = (targetDuration: number, anchorPercent: number) => {
     const clampedAnchor = clamp(anchorPercent);
+    const clampedDuration = Math.max(MIN_TIMELINE_DURATION_MS, Math.min(MAX_TIMELINE_DURATION_MS, targetDuration));
+    if (clampedDuration === totalDuration) return;
     const pointerDateMs = startDateMs + clampedAnchor * totalDuration;
-    const nextDuration = getDurationForScale(newScale, new Date(pointerDateMs));
-    const newStartMs = pointerDateMs - clampedAnchor * nextDuration;
-    const newCenterDate = new Date(newStartMs + nextDuration / 2);
-    onScaleChange(newScale);
+    const newStartMs = pointerDateMs - clampedAnchor * clampedDuration;
+    const newCenterDate = new Date(newStartMs + clampedDuration / 2);
     setTimelineDate(newCenterDate);
+    onDurationChange(clampedDuration);
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
     e.preventDefault();
+    const now = performance.now();
+    if (now - lastWheelTimeRef.current < 16) {
+        return;
+    }
+    lastWheelTimeRef.current = now;
     const rect = timelineRef.current.getBoundingClientRect();
     const anchorPercent = rect.width > 0 ? clamp((e.clientX - rect.left) / rect.width) : 0.5;
-    const direction = e.deltaY < 0 ? 'in' : 'out';
-    zoomTimeline(direction, anchorPercent);
+    const delta = Math.max(-100, Math.min(100, e.deltaY));
+    const factor = Math.exp(delta * WHEEL_ZOOM_SENSITIVITY);
+    const targetDuration = totalDuration * factor;
+    applyZoom(targetDuration, anchorPercent);
   };
 
   const getPinchDetails = (touches: React.TouchList) => {
@@ -359,12 +343,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
       e.preventDefault();
       const details = getPinchDetails(e.touches);
       if (!details) return;
-      const ratio = details.distance / (pinchState.current.distance || 1);
-      if (ratio > 1.08) {
-        zoomTimeline('in', details.anchorPercent);
-        pinchState.current = details;
-      } else if (ratio < 0.92) {
-        zoomTimeline('out', details.anchorPercent);
+      const ratio = details.distance / (pinchState.current.distance || details.distance);
+      if (Math.abs(Math.log(ratio)) > PINCH_DEADBAND) {
+        const targetDuration = totalDuration / ratio;
+        applyZoom(targetDuration, details.anchorPercent);
         pinchState.current = details;
       }
     }
