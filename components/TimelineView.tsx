@@ -410,7 +410,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
             {holidays.map(holiday => {
               const posPercent = getPositionPercent(holiday.date);
               const isHovered = hoveredHoliday?.name === holiday.name && hoveredHoliday.date.getTime() === holiday.date.getTime();
-              const lineClasses = `absolute top-0 bottom-0 z-0 pointer-events-none transition-all duration-200 ${
+              const lineClasses = `absolute top-0 bottom-0 z-0 pointer-events-none transition-colors duration-200 ${
                   isHovered 
                   ? 'w-0.5 bg-wha-blue shadow-[0_0_8px_1px_rgba(59,130,246,0.5)]' 
                   : 'w-px bg-wha-blue/50'
