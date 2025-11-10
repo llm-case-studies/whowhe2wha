@@ -1,4 +1,4 @@
-Demo Video Script (2–3 minutes)
+Demo Video Script (2 minutes)
 ---------------------------------
 
 1. Intro (10s)
@@ -11,25 +11,18 @@ Demo Video Script (2–3 minutes)
 
 3. Projects/Tiers (20s)
    - Point to categories/tiers on left sidebar.
-   - Show period bar expansion/collapse briefly.
+   - Show a Period bar to highlight how multi-day work blocks look.
 
-4. Template Drag (20s)
-   - Open Templates modal, drop a template onto the timeline.
-   - Mention how templates encode prep/travel blocks.
+4. Location Finder (25s)
+   - Open Add Location modal.
+   - Type “Concordia Clubhouse” (or similar) using Google Places autocomplete.
+   - Show the map preview and manual entry fields.
 
-5. Location Finder (20s)
-   - Open add-location modal, type “Concordia Clubhouse” (or similar) using Google Places.
-   - Show autocomplete + preview map.
-
-6. Language Switch (15s)
+5. Language Switch (15s)
    - Open Settings → change language (e.g., English → Español → Français) to show i18n.
 
-7. Summon / Search (15s)
-   - Use Summon search bar; run a query (“find workouts next week”).
-   - Mention Gemini powering context-aware responses.
-
-8. Outro (10s)
-   - “That’s WhoWhe2Wha—timeline-first planning with templates, locations, AI. Thanks!”
+6. Outro (10s)
+   - “That’s WhoWhe2Wha—timeline-first planning with rich event types and global-ready UI. Thanks!”
 
 Recording tips:
 - Use iMac screen recorder (QuickTime: File → New Screen Recording) at 1080p.
