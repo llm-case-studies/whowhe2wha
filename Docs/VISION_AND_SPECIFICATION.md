@@ -108,3 +108,66 @@ A `ProjectTemplate` is not just a data structure; it is an interactive, visual o
     *   Clicking this button opens a small confirmation modal. This modal asks the user to confirm the start date and assign the new project to a `Category` and `Color`.
     *   Upon confirmation, the floating template renderer is removed from the timeline.
     *   The system creates a new `Project` and a series of new, concrete `EventNode`s based on the template's structure and the selected start date. These new events are then rendered on the timeline as normal, fully-interactive markers.
+
+---
+
+## 6. Roadmap: Additional Event Types & Global Overlays
+
+While the current `WhatType` palette covers core scheduling primitives (point events, periods, deadlines), real-world context management also needs richer semantics. Below are proposed future types and visual layers that extend the “Clarity at a Distance, Detail on Demand” principle without overwhelming the base view.
+
+### 6.1 Specialized Event Types
+
+1. **Travel Block**
+    * **Purpose:** Model trips with embedded prep/travel/recovery buffers and timezone changes.
+    * **Data:** Origin/destination, departure/arrival windows, associated downtime (before/after), optional location-specific metadata.
+    * **Visual:** A bar with directional arrows and a location pin icon; shaded lead/lag zones indicate “no-capacity” periods.
+    * **Behavior:** Dragging the trip automatically shifts its buffers; attaching it to a Project can auto-insert templated checklist items (tickets, lodging, briefings).
+
+2. **Prep Window**
+    * **Purpose:** Represent “start anytime between X and Y” work (e.g., expense reports, compliance filings, exam prep).
+    * **Data:** Earliest start, ideal start, latest finish, estimated effort.
+    * **Visual:** A translucent band spanning the window. The current viewport only shows the overlapping portion; edges display continuations with dashed indicators if the window extends offscreen.
+    * **Behavior:** Hovering reveals “ideal start” vs “hard stop” plus effort guidance. When zoomed out, the Prep Window compresses into a badge anchored to its deadline to avoid clutter.
+
+3. **Constraint / Availability Block**
+    * **Purpose:** Communicate blocks like “OOO,” focus sprints, or “no meetings” periods that restrict scheduling.
+    * **Data:** Affected categories or people, severity (soft vs hard block).
+    * **Visual:** Hatched overlays spanning the impacted tiers; opacity communicates severity.
+    * **Behavior:** Hover explains the constraint. Dragging templates or events into the blocked zone surfaces warnings instead of silent overlaps.
+
+4. **Decision Point**
+    * **Purpose:** Differentiate go/no-go reviews from celebratory milestones.
+    * **Data:** Required inputs, stakeholders, outcome notes.
+    * **Visual:** Diamond icon (classic decision symbol). If inputs are incomplete, the tooltip and color accent warn the user.
+
+5. **Habit / Routine Series**
+    * **Purpose:** Track recurring low-friction actions (workouts, standups) without littering the timeline with dozens of identical dots.
+    * **Visual:** Compact streak indicators (e.g., a single glyph with a progress ring). Zooming in can reveal individual occurrences; zooming out keeps the streak summary.
+    * **Behavior:** Hover shows adherence metrics (e.g., “5 of 7 workouts this week”).
+
+6. **Buffer Indicator**
+    * **Purpose:** Explicitly visualize slack between major phases.
+    * **Visual:** Semi-transparent filler segments between Period bars. Color shifts from green to red as buffer shrinks.
+    * **Behavior:** Auto-generated or manually inserted; shrinking buffer triggers sidebar alerts and tooltip warnings.
+
+### 6.2 Global Preview & Alert Layers
+
+1. **Quarter / Year Mini-Scales**
+    * **Concept:** Thin ruler-style strips above the main timeline showing longer horizons (e.g., full quarter and full year).
+    * **Visual:** Each strip displays tick marks, high-importance event glyphs, and a translucent block representing the current viewport. The block’s width matches the main view duration (e.g., a 10-day window covers ~1/9 of a quarter strip).
+    * **Interaction:** Hovering a glyph reveals the event; clicking recenters the main timeline. Dragging the viewport block pans the main view smoothly, acting like a scrubber.
+
+2. **Upcoming Deck**
+    * **Concept:** A compact carousel of critical events that may sit outside the current view.
+    * **Visual:** Chips or list entries showing the icon, due date, and recommended prep start (“Exam ▸ Start prep by Sep 1 · Due Nov 30”).
+    * **Behavior:** Always visible regardless of zoom. Selecting an entry jumps the timeline to that event, while hovering highlights its location on the mini-scale strip.
+
+3. **Viewport Edge Badges**
+    * **Concept:** Avoid drawing long runways by placing badges at the left/right edges whenever an offscreen, high-importance event requires prep soon.
+    * **Visual:** Small pill labeled “Actuarial Exam ▸ 92 days.” Color encodes urgency.
+    * **Behavior:** Hover shows details; clicking scrolls to the event. As the user pans, badges appear/disappear contextually.
+
+4. **Sidebar Reminders**
+    * **Concept:** The left category/Project column can host persistent reminder chips (“⚠️ Prep: Actuarial Exam”) tied to their projects so that critical prep items remain visible even when the timeline is centered elsewhere.
+
+Collectively, these additions extend the timeline from a passive log to an anticipatory planning canvas: travel and prep types encode real-world cadence; overlays (mini-scales, upcoming deck, edge badges) keep future obligations present without cluttering the core lanes; and habit/constraint types ensure availability and routines are first-class signals alongside tasks and milestones.
