@@ -45,7 +45,8 @@ const loadGoogleMapsAPI = (apiKey: string): Promise<typeof google> => {
 
             const script = document.createElement('script');
             script.id = 'google-maps-script';
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&v=weekly`;
+            // Avoid loading=async so google.maps.places.* APIs exist when onload fires.
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
             script.async = true;
             script.defer = true;
             script.onload = () => resolve(google);
@@ -62,7 +63,8 @@ const loadGoogleMapsAPI = (apiKey: string): Promise<typeof google> => {
 
 export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQuery, onSave, onClose }) => {
     const { t } = useI18n();
-    const mapsApiKey = process.env.VITE_GOOGLE_MAPS_API_KEY || '';
+    const rawMapsApiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+    const mapsApiKey = rawMapsApiKey && rawMapsApiKey !== 'undefined' && rawMapsApiKey !== 'null' ? rawMapsApiKey : '';
     const inputRef = useRef<HTMLInputElement>(null);
     const autocompleteListener = useRef<google.maps.MapsEventListener | null>(null);
     const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
@@ -109,7 +111,9 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
 
         const handleAuthFailure = () => {
             if (!isMounted) return;
-            setError('Google Maps rejected the API key. Verify domain restrictions in Google Cloud Console.');
+            const origin = typeof window !== 'undefined' ? window.location.origin : 'this origin';
+            console.error('[Location Finder] Google Maps API key rejected for origin:', origin);
+            setError(`Google Maps rejected the API key for ${origin}. Add this origin (with /*) to the HTTP referrer allowlist in Google Cloud Console, then wait a few minutes and reload.`);
             setIsMapsLoading(false);
         };
 
@@ -410,12 +414,7 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                     <button onClick={onClose} className="text-secondary hover:text-primary text-3xl leading-none">&times;</button>
                 </div>
 
-                {isMapsLoading ? (
-                    <div className="text-center py-8">
-                        <SpinnerIcon className="h-8 w-8 animate-spin mx-auto text-wha-blue" />
-                        <p className="text-secondary mt-2">Loading Google Maps...</p>
-                    </div>
-                ) : (
+                <div className="relative">
                     <div className="space-y-4">
                         {error && (
                             <div className="bg-red-900/20 border border-red-500 text-red-400 p-3 rounded">
@@ -449,7 +448,14 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
 
                         {view === 'search' ? renderSearchView() : renderManualView()}
                     </div>
-                )}
+
+                    {isMapsLoading && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary/90 backdrop-blur-sm rounded-lg">
+                            <SpinnerIcon className="h-8 w-8 animate-spin text-wha-blue" />
+                            <p className="text-secondary mt-2">Loading Google Maps...</p>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex justify-end space-x-4 pt-6">
                     <button
