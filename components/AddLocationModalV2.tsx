@@ -234,28 +234,29 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
         if (!PlaceCtor) {
             return false;
         }
-        const modernPlace = new PlaceCtor({ id: placeId });
-        if (typeof modernPlace.fetchFields === 'function') {
-            await modernPlace.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+        try {
+            const modernPlace = new PlaceCtor({ id: placeId });
+            if (typeof modernPlace.fetchFields === 'function') {
+                await modernPlace.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+            }
+            const coords = normalizeLatLng(modernPlace.location);
+            applyResolvedLocation({
+                aliasValue: getDisplayNameText(modernPlace.displayName) ?? fallbackLabel,
+                officialAddress: modernPlace.formattedAddress || fallbackAddress,
+                lat: coords.lat ?? null,
+                lng: coords.lng ?? null,
+            });
+            return true;
+        } catch (err) {
+            console.warn('google.maps.places.Place fetchFields failed, falling back to PlacesService.', err);
+            return false;
         }
-        const coords = normalizeLatLng(modernPlace.location);
-        applyResolvedLocation({
-            aliasValue: getDisplayNameText(modernPlace.displayName) ?? fallbackLabel,
-            officialAddress: modernPlace.formattedAddress || fallbackAddress,
-            lat: coords.lat ?? null,
-            lng: coords.lng ?? null,
-        });
-        return true;
     };
 
     const fetchPlaceDetailsWithLegacyService = (placeId: string, fallbackLabel: string, fallbackAddress: string) =>
-        new Promise<void>((resolve, reject) => {
-            if (typeof google === 'undefined') {
-                reject(new Error('Google Maps has not loaded.'));
-                return;
-            }
-            if (!placesServiceRef.current) {
-                reject(new Error('PlacesService is not initialized.'));
+        new Promise<boolean>((resolve) => {
+            if (typeof google === 'undefined' || !placesServiceRef.current) {
+                resolve(false);
                 return;
             }
             placesServiceRef.current.getDetails(
@@ -265,7 +266,8 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                 },
                 (result, status) => {
                     if (status !== google.maps.places.PlacesServiceStatus.OK || !result) {
-                        reject(new Error('PlacesService failed to return details.'));
+                        console.warn('PlacesService getDetails failed', status);
+                        resolve(false);
                         return;
                     }
                     applyResolvedLocation({
@@ -274,10 +276,40 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
                         lat: result.geometry?.location?.lat(),
                         lng: result.geometry?.location?.lng(),
                     });
-                    resolve();
+                    resolve(true);
                 }
             );
         });
+
+    const fetchPlaceDetailsViaHttp = async (placeId: string, fallbackLabel: string, fallbackAddress: string) => {
+        if (!mapsApiKey) {
+            return false;
+        }
+        try {
+            const params = new URLSearchParams({
+                place_id: placeId,
+                fields: 'name,formatted_address,geometry',
+                key: mapsApiKey,
+            });
+            const response = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?${params.toString()}`);
+            const data = await response.json();
+            if (data.status === 'OK' && data.result) {
+                const result = data.result;
+                applyResolvedLocation({
+                    aliasValue: result.name || fallbackLabel,
+                    officialAddress: result.formatted_address || fallbackAddress,
+                    lat: result.geometry?.location?.lat ?? null,
+                    lng: result.geometry?.location?.lng ?? null,
+                });
+                return true;
+            }
+            console.warn('HTTP Place Details failed', data.status, data.error_message);
+            return false;
+        } catch (err) {
+            console.error('HTTP Place Details error', err);
+            return false;
+        }
+    };
 
     const fetchPredictions = useCallback((value: string) => {
         if (typeof google === 'undefined') {
@@ -320,9 +352,15 @@ export const AddLocationModalV2: React.FC<AddLocationModalProps> = ({ initialQue
         try {
             const fallbackLabel = prediction.structured_formatting?.main_text || prediction.description;
             const fallbackAddress = prediction.description;
-            const resolvedWithModernApi = await fetchPlaceDetailsWithModernApi(prediction.place_id, fallbackLabel, fallbackAddress);
-            if (!resolvedWithModernApi) {
-                await fetchPlaceDetailsWithLegacyService(prediction.place_id, fallbackLabel, fallbackAddress);
+            let resolved = await fetchPlaceDetailsWithModernApi(prediction.place_id, fallbackLabel, fallbackAddress);
+            if (!resolved) {
+                resolved = await fetchPlaceDetailsWithLegacyService(prediction.place_id, fallbackLabel, fallbackAddress);
+            }
+            if (!resolved) {
+                resolved = await fetchPlaceDetailsViaHttp(prediction.place_id, fallbackLabel, fallbackAddress);
+            }
+            if (!resolved) {
+                throw new Error('Place detail providers failed');
             }
             sessionTokenRef.current = null;
         } catch (err) {
