@@ -199,6 +199,7 @@ export const Dashboard: React.FC<DashboardProps> = (props) => {
                   tierConfig={tierConfig}
                   onEditEvent={onEditEvent}
                   onDeleteEvent={onDeleteEvent}
+                  onScaleChange={setTimelineScale}
               />
             )}
 

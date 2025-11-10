@@ -14,6 +14,7 @@ interface TimelineViewProps {
   tierConfig: TierConfig;
   onEditEvent: (event: EventNode) => void;
   onDeleteEvent: (eventId: number) => void;
+  onScaleChange: (scale: TimelineScale) => void;
 }
 
 const projectColorStyles: Record<string, { bg: string, border: string, text: string }> = {
@@ -33,6 +34,28 @@ const CATEGORY_GAP = 16;
 const TIMELINE_BAR_HEIGHT = 10;
 const MIN_CONTAINER_HEIGHT = 350;
 const HOLIDAY_AREA_HEIGHT = 48;
+const SCALE_ORDER: TimelineScale[] = ['week', 'month', 'quarter', 'year'];
+const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
+const getDurationForScale = (scale: TimelineScale, referenceDate: Date): number => {
+  switch (scale) {
+    case 'week':
+      return 7 * MS_IN_DAY;
+    case 'month': {
+      const daysInMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0).getDate();
+      return daysInMonth * MS_IN_DAY;
+    }
+    case 'quarter':
+      return Math.round(91.25 * MS_IN_DAY);
+    case 'year': {
+      const isLeap = new Date(referenceDate.getFullYear(), 1, 29).getDate() === 29;
+      return (isLeap ? 366 : 365) * MS_IN_DAY;
+    }
+    default:
+      return 30 * MS_IN_DAY;
+  }
+};
 
 const getIconForHoliday = (holiday: Holiday): string => {
   const category = holiday.category;
@@ -110,7 +133,7 @@ const PointEventMarker: React.FC<PointEventMarkerProps> = ({ event, colorStyle }
 }
 
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig, onEditEvent, onDeleteEvent }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, currentDate, scale, selectedHolidayCategories, selectedProjectCategories, setTimelineDate, tierConfig, onEditEvent, onDeleteEvent, onScaleChange }) => {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [hoveredHoliday, setHoveredHoliday] = useState<Holiday | null>(null);
@@ -120,6 +143,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
   const dragInfo = useRef({ startX: 0, startDragDate: new Date() });
   const latestMouseX = useRef(0);
   const animationFrameId = useRef<number | null>(null);
+  const pinchState = useRef<{ distance: number; anchorPercent: number } | null>(null);
   
   const projectColorMap = useMemo(() => new Map(projects.map(p => [p.id, p.color])), [projects]);
 
@@ -220,19 +244,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
 
 
   const { startDate, endDate, totalDuration } = useMemo(() => {
-    const msInDay = 24 * 60 * 60 * 1000;
-    let durationMs: number;
-    switch (scale) {
-      case 'week': durationMs = 7 * msInDay; break;
-      case 'month':
-        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-        durationMs = daysInMonth * msInDay; break;
-      case 'quarter': durationMs = 91.25 * msInDay; break;
-      case 'year':
-        const isLeap = new Date(currentDate.getFullYear(), 1, 29).getDate() === 29;
-        durationMs = (isLeap ? 366 : 365) * msInDay; break;
-      default: durationMs = 30 * msInDay;
-    }
+    const durationMs = getDurationForScale(scale, currentDate);
     const start = new Date(currentDate.getTime() - durationMs / 2);
     const end = new Date(currentDate.getTime() + durationMs / 2);
     return { startDate: start, endDate: end, totalDuration: durationMs };
@@ -294,6 +306,72 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
     if (!animationFrameId.current) {
         animationFrameId.current = requestAnimationFrame(updateOnFrame);
     }
+  };
+
+  const zoomTimeline = (direction: 'in' | 'out', anchorPercent: number) => {
+    if (!onScaleChange) return;
+    const currentIndex = SCALE_ORDER.indexOf(scale);
+    if (currentIndex === -1) return;
+    const nextIndex = direction === 'in' ? Math.max(0, currentIndex - 1) : Math.min(SCALE_ORDER.length - 1, currentIndex + 1);
+    if (nextIndex === currentIndex) return;
+    const newScale = SCALE_ORDER[nextIndex];
+    const clampedAnchor = clamp(anchorPercent);
+    const pointerDateMs = startDateMs + clampedAnchor * totalDuration;
+    const nextDuration = getDurationForScale(newScale, new Date(pointerDateMs));
+    const newStartMs = pointerDateMs - clampedAnchor * nextDuration;
+    const newCenterDate = new Date(newStartMs + nextDuration / 2);
+    onScaleChange(newScale);
+    setTimelineDate(newCenterDate);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!timelineRef.current) return;
+    e.preventDefault();
+    const rect = timelineRef.current.getBoundingClientRect();
+    const anchorPercent = rect.width > 0 ? clamp((e.clientX - rect.left) / rect.width) : 0.5;
+    const direction = e.deltaY < 0 ? 'in' : 'out';
+    zoomTimeline(direction, anchorPercent);
+  };
+
+  const getPinchDetails = (touches: React.TouchList) => {
+    if (!timelineRef.current || touches.length < 2) {
+      return null;
+    }
+    const rect = timelineRef.current.getBoundingClientRect();
+    const [t1, t2] = [touches[0], touches[1]];
+    const distance = Math.abs(t1.clientX - t2.clientX);
+    const centerX = (t1.clientX + t2.clientX) / 2;
+    const anchorPercent = rect.width > 0 ? clamp((centerX - rect.left) / rect.width) : 0.5;
+    return { distance, anchorPercent };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const details = getPinchDetails(e.touches);
+      if (details) {
+        pinchState.current = details;
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (pinchState.current && e.touches.length === 2) {
+      e.preventDefault();
+      const details = getPinchDetails(e.touches);
+      if (!details) return;
+      const ratio = details.distance / (pinchState.current.distance || 1);
+      if (ratio > 1.08) {
+        zoomTimeline('in', details.anchorPercent);
+        pinchState.current = details;
+      } else if (ratio < 0.92) {
+        zoomTimeline('out', details.anchorPercent);
+        pinchState.current = details;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    pinchState.current = null;
   };
 
   const getPositionPercent = (date: Date) => {
@@ -399,6 +477,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events, projects, cu
             ref={timelineRef}
             className="relative w-full"
             style={{ height: `${containerHeight}px` }}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             {/* Draggable pane */}
             <div className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
