@@ -1,0 +1,1 @@
+I (Alex Sudakov) am the sole founder and primary engineer. I write the architecture, UX, and production code myself, using AI collaborators—Codex CLI, Claude CLI, and Google’s Gemini 2.5 Pro—as accelerators for boilerplate, refactors, and brainstorming. Aside from open-source libraries and those AI tools, no non-founders have contributed code.

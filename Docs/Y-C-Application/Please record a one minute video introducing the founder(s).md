@@ -1,0 +1,1 @@
+Plan: Record a 60-second selfie video covering (1) name/background (actuarial + workflow software), (2) what WhoWhe2Wha does, (3) traction so far, (4) why YC now. Will upload MP4 <100MB before submitting application.

@@ -1,0 +1,1 @@
+I already live in Monroe, NJ and have family roots here, so basing the LLC locally keeps operations simple while I focus on product. Engineering and go-to-market are remote-friendly, but the legal entity, banking, and initial ops will stay in New Jersey until it makes sense to flip into a Delaware C-corp for YC.

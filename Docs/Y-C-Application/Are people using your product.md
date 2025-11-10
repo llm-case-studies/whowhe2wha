@@ -1,0 +1,1 @@
+Not many outside of myself and my wife. We deployed the public demo two days ago; the next step is onboarding 5–10 planners (actuarial coworkers, tennis league captains, family event coordinators) to validate the richer event types and collaboration flows.

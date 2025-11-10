@@ -1,0 +1,1 @@
+Not actively. I’m comfortable carrying the product forward as a solo founder and have already built the current prototype myself. That said, I’m open to adding a cofounder later if I meet someone with deep go-to-market or community-building DNA who shares the same obsession with context-aware planning.
